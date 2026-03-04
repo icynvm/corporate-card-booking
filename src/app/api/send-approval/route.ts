@@ -3,101 +3,101 @@ import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_for_build");
 
 export async function POST(req: NextRequest) {
-    try {
-        const body = await req.json();
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  try {
+    const body = await req.json();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-        // Find or create the request record
-        let request;
+    // Find or create the request record
+    let request;
 
-        // Check if request already exists (by looking for matching data)
-        const existingRequests = await prisma.request.findMany({
-            where: { status: "PENDING" },
-            orderBy: { createdAt: "desc" },
-            take: 1,
-            include: { user: true, project: true },
+    // Check if request already exists (by looking for matching data)
+    const existingRequests = await prisma.request.findMany({
+      where: { status: "PENDING" },
+      orderBy: { createdAt: "desc" },
+      take: 1,
+      include: { user: true, project: true },
+    });
+
+    if (existingRequests.length > 0) {
+      request = existingRequests[0];
+    } else {
+      // Create a new request
+      const year = new Date().getFullYear();
+      const count = await prisma.request.count({
+        where: { eventId: { startsWith: `REQ-${year}` } },
+      });
+      const eventId = `REQ-${year}-${String(count + 1).padStart(4, "0")}`;
+
+      let user = await prisma.user.findFirst({
+        where: { email: "employee@company.com" },
+      });
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            name: body.fullName,
+            email: "employee@company.com",
+            department: body.department,
+            role: "USER",
+          },
         });
+      }
 
-        if (existingRequests.length > 0) {
-            request = existingRequests[0];
-        } else {
-            // Create a new request
-            const year = new Date().getFullYear();
-            const count = await prisma.request.count({
-                where: { eventId: { startsWith: `REQ-${year}` } },
-            });
-            const eventId = `REQ-${year}-${String(count + 1).padStart(4, "0")}`;
+      request = await prisma.request.create({
+        data: {
+          eventId,
+          userId: user.id,
+          projectId: body.projectId,
+          amount: parseFloat(body.amount),
+          objective: body.objective,
+          contactNo: body.contactNo,
+          billingType: body.billingType,
+          startDate: new Date(body.startDate),
+          endDate: new Date(body.endDate),
+          promotionalChannels: body.promotionalChannels || [],
+          status: "PENDING",
+        },
+        include: { user: true, project: true },
+      });
+    }
 
-            let user = await prisma.user.findFirst({
-                where: { email: "employee@company.com" },
-            });
+    // Generate approval token
+    const approvalToken = uuidv4();
+    const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-            if (!user) {
-                user = await prisma.user.create({
-                    data: {
-                        name: body.fullName,
-                        email: "employee@company.com",
-                        department: body.department,
-                        role: "USER",
-                    },
-                });
-            }
+    await prisma.request.update({
+      where: { id: request.id },
+      data: {
+        approvalToken,
+        approvalTokenExpiry: tokenExpiry,
+      },
+    });
 
-            request = await prisma.request.create({
-                data: {
-                    eventId,
-                    userId: user.id,
-                    projectId: body.projectId,
-                    amount: parseFloat(body.amount),
-                    objective: body.objective,
-                    contactNo: body.contactNo,
-                    billingType: body.billingType,
-                    startDate: new Date(body.startDate),
-                    endDate: new Date(body.endDate),
-                    promotionalChannels: body.promotionalChannels || [],
-                    status: "PENDING",
-                },
-                include: { user: true, project: true },
-            });
-        }
+    const approveUrl = `${appUrl}/api/approve?token=${approvalToken}&action=approve`;
+    const rejectUrl = `${appUrl}/api/approve?token=${approvalToken}&action=reject`;
 
-        // Generate approval token
-        const approvalToken = uuidv4();
-        const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const billingLabel = body.billingType
+      ?.replace("ONE_TIME", "One-time")
+      .replace("MONTHLY", "Monthly")
+      .replace("YEARLY", "Yearly");
 
-        await prisma.request.update({
-            where: { id: request.id },
-            data: {
-                approvalToken,
-                approvalTokenExpiry: tokenExpiry,
-            },
-        });
+    // Find manager to send to
+    const manager = await prisma.user.findFirst({
+      where: { role: "MANAGER" },
+    });
 
-        const approveUrl = `${appUrl}/api/approve?token=${approvalToken}&action=approve`;
-        const rejectUrl = `${appUrl}/api/approve?token=${approvalToken}&action=reject`;
+    const managerEmail = manager?.email || "manager@company.com";
 
-        const billingLabel = body.billingType
-            ?.replace("ONE_TIME", "One-time")
-            .replace("MONTHLY", "Monthly")
-            .replace("YEARLY", "Yearly");
-
-        // Find manager to send to
-        const manager = await prisma.user.findFirst({
-            where: { role: "MANAGER" },
-        });
-
-        const managerEmail = manager?.email || "manager@company.com";
-
-        // Send approval email via Resend
-        if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_xxxxxxxxxxxx") {
-            await resend.emails.send({
-                from: "Card Booking System <onboarding@resend.dev>",
-                to: managerEmail,
-                subject: `[Action Required] Card Request: ${request.eventId}`,
-                html: `
+    // Send approval email via Resend
+    if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_xxxxxxxxxxxx") {
+      await resend.emails.send({
+        from: "Card Booking System <onboarding@resend.dev>",
+        to: managerEmail,
+        subject: `[Action Required] Card Request: ${request.eventId}`,
+        html: `
           <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; padding: 32px;">
             <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 24px 32px; border-radius: 16px 16px 0 0;">
               <h1 style="color: white; margin: 0; font-size: 20px;">Corporate Card Request</h1>
@@ -142,19 +142,19 @@ export async function POST(req: NextRequest) {
             </div>
           </div>
         `,
-            });
-        }
-
-        return NextResponse.json({
-            success: true,
-            eventId: request.eventId,
-            message: "Approval request sent to manager",
-        });
-    } catch (error) {
-        console.error("Failed to send approval:", error);
-        return NextResponse.json(
-            { error: "Failed to send approval request" },
-            { status: 500 }
-        );
+      });
     }
+
+    return NextResponse.json({
+      success: true,
+      eventId: request.eventId,
+      message: "Approval request sent to manager",
+    });
+  } catch (error) {
+    console.error("Failed to send approval:", error);
+    return NextResponse.json(
+      { error: "Failed to send approval request" },
+      { status: 500 }
+    );
+  }
 }
