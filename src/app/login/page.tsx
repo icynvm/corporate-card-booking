@@ -10,6 +10,33 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [adminLoading, setAdminLoading] = useState(false);
+
+    const handleAdminLogin = async () => {
+        setAdminLoading(true);
+        setError("");
+        try {
+            // Create auto-confirmed admin and get credentials
+            const res = await fetch("/api/create-admin", { method: "POST" });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error || "Failed to create admin");
+
+            // Log in with those credentials
+            const { error: authError } = await supabase.auth.signInWithPassword({
+                email: data.email,
+                password: data.password
+            });
+
+            if (authError) throw authError;
+
+            router.push("/dashboard");
+            router.refresh();
+        } catch (err: any) {
+            setError(err.message);
+            setAdminLoading(false);
+        }
+    };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -96,6 +123,31 @@ export default function LoginPage() {
                                 </>
                             ) : (
                                 "Sign In"
+                            )}
+                        </button>
+
+                        <div className="relative flex items-center py-2">
+                            <div className="flex-grow border-t border-gray-200"></div>
+                            <span className="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase tracking-wider">or</span>
+                            <div className="flex-grow border-t border-gray-200"></div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleAdminLogin}
+                            disabled={adminLoading || loading}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all disabled:opacity-50"
+                        >
+                            {adminLoading ? (
+                                <>
+                                    <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                    Creating & Logging in...
+                                </>
+                            ) : (
+                                "Quick Admin Login (Bypass Email)"
                             )}
                         </button>
                     </form>
