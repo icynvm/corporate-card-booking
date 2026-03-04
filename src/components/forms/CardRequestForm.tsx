@@ -97,13 +97,24 @@ export function CardRequestForm() {
     };
 
     const onSubmit = async (data: RequestFormData) => {
-        // Get current user
+        // Get current user or use standalone fallback
         const { data: { user } } = await supabase.auth.getUser();
+        let userId = user?.id;
+
+        if (!userId) {
+            // Standalone mode: fetch the Developer profile
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("email", "dev@company.com")
+                .single();
+            userId = profile?.id;
+        }
 
         const requestBody = {
             ...data,
-            userId: user?.id || null,
-            email: user?.email || "",
+            userId: userId || null,
+            email: user?.email || "dev@company.com",
             projectId: selectedProjectId,
             projectName: projectSearch,
         };

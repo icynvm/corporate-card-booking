@@ -33,13 +33,23 @@ export async function POST(req: NextRequest) {
         const supabase = createServerSupabase();
         const body = await req.json();
 
+        let userId = body.userId;
+        if (!userId) {
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("email", "dev@company.com")
+                .single();
+            userId = profile?.id;
+        }
+
         const { data: project, error } = await supabase
             .from("projects")
             .insert({
                 project_name: body.projectName,
                 total_budget: parseFloat(body.totalBudget || "0"),
                 remaining_budget: parseFloat(body.totalBudget || "0"),
-                created_by: body.userId || null,
+                created_by: userId,
             })
             .select()
             .single();
@@ -51,8 +61,8 @@ export async function POST(req: NextRequest) {
             entity_type: "PROJECT",
             entity_id: project?.id || "",
             action: "CREATE",
-            user_id: body.userId || null,
-            user_name: body.userName || "",
+            user_id: userId,
+            user_name: body.userName || "Developer Admin",
             changes: { project_name: body.projectName, total_budget: body.totalBudget },
         });
 

@@ -45,18 +45,28 @@ export async function POST(req: NextRequest) {
 
         const eventId = `REQ-${year}-${String((count || 0) + 1).padStart(4, "0")}`;
 
+        let userId = body.userId;
+        if (!userId) {
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("email", "dev@company.com")
+                .single();
+            userId = profile?.id;
+        }
+
         // Create the request
         const { data: request, error } = await supabase
             .from("requests")
             .insert({
                 event_id: eventId,
-                user_id: body.userId,
+                user_id: userId,
                 project_id: body.projectId || null,
                 project_name: body.projectName || "",
                 amount: parseFloat(body.amount),
                 objective: body.objective,
                 contact_no: body.contactNo,
-                email: body.email || "",
+                email: body.email || "dev@company.com",
                 billing_type: body.billingType,
                 start_date: body.startDate,
                 end_date: body.endDate,
@@ -99,8 +109,8 @@ export async function POST(req: NextRequest) {
             entity_type: "REQUEST",
             entity_id: request?.id || eventId,
             action: "CREATE",
-            user_id: body.userId,
-            user_name: body.fullName || "",
+            user_id: userId,
+            user_name: body.fullName || "Developer Admin",
             changes: { event_id: eventId, amount: body.amount, project_name: body.projectName, billing_type: body.billingType },
         });
 
