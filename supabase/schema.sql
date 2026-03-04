@@ -1,6 +1,6 @@
 -- ============================================
 -- Corporate Card Booking System - Standalone Schema (No Auth)
--- Run this in Supabase SQL Editor (Dashboard → SQL Editor → New Query)
+-- Run this in Supabase SQL Editor (Dashboard โ’ SQL Editor โ’ New Query)
 -- ============================================
 
 -- 0. Cleanup existing triggers
@@ -123,6 +123,18 @@ ALTER TABLE receipts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE hosting_allocations DISABLE ROW LEVEL SECURITY;
 ALTER TABLE hosting_sites DISABLE ROW LEVEL SECURITY;
+
+-- 8. OTP Codes table (for custom auth)
+CREATE TABLE IF NOT EXISTS otp_codes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL,
+    code TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE otp_codes DISABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- Updated_at trigger function
