@@ -54,7 +54,12 @@ const navItems = [
     },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const [userName, setUserName] = useState("");
@@ -78,69 +83,88 @@ export function Sidebar() {
     };
 
     return (
-        <aside className="fixed left-0 top-0 h-full w-64 glass-card !rounded-none border-r border-white/20 flex flex-col z-50">
-            {/* Logo */}
-            <div className="p-6 border-b border-white/10">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shadow-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                            <line x1="1" y1="10" x2="23" y2="10" />
+        <>
+            {/* Mobile Overlay */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
+                    onClick={onClose}
+                />
+            )}
+
+            {/* Sidebar element */}
+            <aside className={`fixed left-0 top-0 h-full w-64 glass-card !rounded-none border-r border-white/20 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                {/* Logo & Close Button */}
+                <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                                <line x1="1" y1="10" x2="23" y2="10" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 className="font-bold text-gray-800 text-sm">Corporate Card</h1>
+                            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Booking System</p>
+                        </div>
+                    </div>
+                    {/* Mobile Close Button */}
+                    <button onClick={onClose} className="lg:hidden p-1 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
-                    </div>
-                    <div>
-                        <h1 className="font-bold text-gray-800 text-sm">Corporate Card</h1>
-                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Booking System</p>
-                    </div>
+                    </button>
                 </div>
-            </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                {navItems.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                                ${isActive
-                                    ? "bg-gradient-to-r from-brand-500 to-purple-600 text-white shadow-lg shadow-brand-500/25"
-                                    : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
-                                }`}
-                        >
-                            {item.icon}
-                            {item.label}
-                        </Link>
-                    );
-                })}
-            </nav>
+                {/* Navigation */}
+                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                    {navItems.map((item) => {
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={onClose}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                                    ${isActive
+                                        ? "bg-gradient-to-r from-brand-500 to-purple-600 text-white shadow-lg shadow-brand-500/25"
+                                        : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
+                                    }`}
+                            >
+                                {item.icon}
+                                {item.label}
+                            </Link>
+                        );
+                    })}
+                </nav>
 
-            {/* User Info + Logout */}
-            <div className="p-4 border-t border-white/10">
-                <div className="flex items-center gap-3 px-3 py-2 mb-2">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-200 to-purple-200 flex items-center justify-center">
-                        <span className="text-brand-700 text-xs font-bold">
-                            {userName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "U"}
-                        </span>
+                {/* User Info + Logout */}
+                <div className="p-4 border-t border-white/10">
+                    <div className="flex items-center gap-3 px-3 py-2 mb-2">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-200 to-purple-200 flex items-center justify-center flex-shrink-0">
+                            <span className="text-brand-700 text-xs font-bold">
+                                {userName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "U"}
+                            </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-700 truncate">{userName}</p>
+                            <p className="text-[10px] text-gray-400 truncate">{userDepartment}</p>
+                        </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-700 truncate">{userName}</p>
-                        <p className="text-[10px] text-gray-400 truncate">{userDepartment}</p>
-                    </div>
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm text-gray-500 hover:text-red-500 hover:bg-red-50/50 transition-all duration-200"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                        Sign Out
+                    </button>
                 </div>
-                <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-red-500 hover:bg-red-50/50 transition-all duration-200"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
-                    Sign Out
-                </button>
-            </div>
-        </aside>
+            </aside>
+        </>
     );
 }
