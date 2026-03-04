@@ -1,20 +1,22 @@
 -- ============================================
--- Corporate Card Booking System - Standalone Schema (No Auth)
--- Run this in Supabase SQL Editor (Dashboard โ’ SQL Editor โ’ New Query)
+-- Corporate Card Booking System - Schema (with Password Auth)
+-- Run this in Supabase SQL Editor
 -- ============================================
 
--- 0. Cleanup existing triggers
+-- 0. Cleanup old triggers
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
 
--- 1. Profiles table (Standalone, no longer references auth.users)
+-- 1. Profiles table (with password_hash)
 CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL DEFAULT '',
     department TEXT NOT NULL DEFAULT '',
     contact_no TEXT DEFAULT '',
-    role TEXT NOT NULL DEFAULT 'USER' CHECK (role IN ('USER', 'MANAGER', 'FA')),
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user', 'manager')),
+    email_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -57,7 +59,7 @@ CREATE TABLE IF NOT EXISTS requests (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3b. Hosting Allocations (for Web Hosting requests)
+-- 3b. Hosting Allocations
 CREATE TABLE IF NOT EXISTS hosting_allocations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     hosting_name TEXT NOT NULL,
@@ -111,20 +113,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ============================================
--- DISABLE Row Level Security (RLS) for Dev Mode
--- ============================================
-
-ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
-ALTER TABLE projects DISABLE ROW LEVEL SECURITY;
-ALTER TABLE requests DISABLE ROW LEVEL SECURITY;
-ALTER TABLE request_payments DISABLE ROW LEVEL SECURITY;
-ALTER TABLE receipts DISABLE ROW LEVEL SECURITY;
-ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY;
-ALTER TABLE hosting_allocations DISABLE ROW LEVEL SECURITY;
-ALTER TABLE hosting_sites DISABLE ROW LEVEL SECURITY;
-
--- 8. OTP Codes table (for custom auth)
+-- 7. OTP Codes table
 CREATE TABLE IF NOT EXISTS otp_codes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT NOT NULL,
@@ -134,12 +123,18 @@ CREATE TABLE IF NOT EXISTS otp_codes (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Disable RLS for dev
+ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE projects DISABLE ROW LEVEL SECURITY;
+ALTER TABLE requests DISABLE ROW LEVEL SECURITY;
+ALTER TABLE request_payments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE receipts DISABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE hosting_allocations DISABLE ROW LEVEL SECURITY;
+ALTER TABLE hosting_sites DISABLE ROW LEVEL SECURITY;
 ALTER TABLE otp_codes DISABLE ROW LEVEL SECURITY;
 
--- ============================================
--- Updated_at trigger function
--- ============================================
-
+-- Triggers
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
