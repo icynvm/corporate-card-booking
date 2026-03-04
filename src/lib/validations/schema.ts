@@ -15,6 +15,7 @@ export const requestFormSchema = z.object({
     fullName: z.string().min(1, "Full name is required"),
     department: z.string().min(1, "Department is required"),
     contactNo: z.string().min(1, "Contact number is required"),
+    email: z.string().email("Valid email is required"),
     projectId: z.string().optional(),
     objective: z.string().min(1, "Objective is required"),
     bookingDate: z.string().min(1, "Booking date is required"),
