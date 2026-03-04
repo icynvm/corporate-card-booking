@@ -27,7 +27,7 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
 
     const columns = useMemo(
         () => [
-            columnHelper.accessor("eventId", {
+            columnHelper.accessor("event_id", {
                 header: "Event ID",
                 cell: (info) => (
                     <span className="font-mono text-xs font-semibold text-brand-600">
@@ -35,20 +35,11 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                     </span>
                 ),
             }),
-            columnHelper.accessor("user.name", {
-                header: "Requester",
-                cell: (info) => (
-                    <div>
-                        <p className="font-medium text-gray-700 text-sm">{info.getValue()}</p>
-                        <p className="text-xs text-gray-400">{info.row.original.user?.department}</p>
-                    </div>
-                ),
-            }),
-            columnHelper.accessor("project.projectName", {
+            columnHelper.accessor("project_name", {
                 header: "Project",
                 cell: (info) => (
                     <span className="text-sm text-gray-600 truncate max-w-[150px] block">
-                        {info.getValue()}
+                        {info.getValue() || "N/A"}
                     </span>
                 ),
             }),
@@ -60,12 +51,13 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                     </span>
                 ),
             }),
-            columnHelper.accessor("billingType", {
+            columnHelper.accessor("billing_type", {
                 header: "Billing",
                 cell: (info) => {
                     const type = info.getValue();
                     const label = type
                         ?.replace("ONE_TIME", "One-time")
+                        .replace("YEARLY_MONTHLY", "Yearly (Monthly)")
                         .replace("MONTHLY", "Monthly")
                         .replace("YEARLY", "Yearly");
                     const color =
@@ -73,7 +65,9 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                             ? "bg-purple-100 text-purple-700"
                             : type === "YEARLY"
                                 ? "bg-blue-100 text-blue-700"
-                                : "bg-gray-100 text-gray-600";
+                                : type === "YEARLY_MONTHLY"
+                                    ? "bg-indigo-100 text-indigo-700"
+                                    : "bg-gray-100 text-gray-600";
                     return (
                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${color}`}>
                             {label}
@@ -96,7 +90,7 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                     return <span className={className}>{status}</span>;
                 },
             }),
-            columnHelper.accessor("createdAt", {
+            columnHelper.accessor("created_at", {
                 header: "Date",
                 cell: (info) => (
                     <span className="text-xs text-gray-500">
@@ -113,23 +107,22 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                 header: "Actions",
                 cell: (info) => {
                     const row = info.row.original;
-                    const isMonthly = row.billingType === "MONTHLY";
-                    const hasReceipt =
-                        row.receipts && row.receipts.length > 0;
+                    const isRecurring = row.billing_type === "MONTHLY" || row.billing_type === "YEARLY_MONTHLY";
+                    const hasReceipt = row.receipts && row.receipts.length > 0;
                     const latestReceipt = hasReceipt
                         ? row.receipts![row.receipts!.length - 1]
                         : null;
 
                     return (
                         <div className="flex gap-2">
-                            {isMonthly && (
+                            {isRecurring && (
                                 <button
                                     onClick={() => onUploadReceipt(row)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${latestReceipt?.status === "VERIFIED"
-                                            ? "bg-emerald-100 text-emerald-700"
-                                            : latestReceipt
-                                                ? "bg-amber-100 text-amber-700"
-                                                : "bg-red-100 text-red-700 hover:bg-red-200"
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : latestReceipt
+                                            ? "bg-amber-100 text-amber-700"
+                                            : "bg-red-100 text-red-700 hover:bg-red-200"
                                         }`}
                                 >
                                     {latestReceipt?.status === "VERIFIED"
@@ -164,7 +157,6 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
 
     return (
         <div className="glass-card overflow-hidden">
-            {/* Table */}
             <div className="overflow-x-auto scrollbar-thin">
                 <table className="w-full">
                     <thead>
@@ -221,7 +213,6 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                 </table>
             </div>
 
-            {/* Pagination */}
             <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100/50">
                 <p className="text-xs text-gray-400">
                     Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}

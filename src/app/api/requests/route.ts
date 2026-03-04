@@ -1,30 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createServerSupabase } from "@/lib/supabase";
 
 // GET: Fetch all requests
 export async function GET(req: NextRequest) {
     try {
+        const supabase = createServerSupabase();
         const { searchParams } = new URL(req.url);
         const status = searchParams.get("status");
-        const projectId = searchParams.get("projectId");
         const billingType = searchParams.get("billingType");
 
-        const where: Record<string, string> = {};
-        if (status) where.status = status;
-        if (projectId) where.projectId = projectId;
-        if (billingType) where.billingType = billingType;
+        let query = supabase
+            .from("requests")
+            .select("*, profiles(*), projects(*), receipts(*), request_payments(*)")
+            .order("created_at", { ascending: false });
 
-        const requests = await prisma.request.findMany({
-            where,
-            include: {
-                user: true,
-                project: true,
-                receipts: true,
-            },
-            orderBy: { createdAt: "desc" },
-        });
+        if (status) query = query.eq("status", status);
+        if (billingType) query = query.eq("billing_type", billingType);
 
-        return NextResponse.json(requests);
+        const { data, error } = await query;
+
+        if (error) throw error;
+        return NextResponse.json(data || []);
     } catch (error) {
         console.error("Failed to fetch requests:", error);
         return NextResponse.json(
@@ -37,61 +33,75 @@ export async function GET(req: NextRequest) {
 // POST: Create a new request
 export async function POST(req: NextRequest) {
     try {
+        const supabase = createServerSupabase();
         const body = await req.json();
 
         // Generate Event ID: REQ-YYYY-XXXX
         const year = new Date().getFullYear();
-        const count = await prisma.request.count({
-            where: {
-                eventId: { startsWith: `REQ-${year}` },
-            },
-        });
-        const eventId = `REQ-${year}-${String(count + 1).padStart(4, "0")}`;
+        const { count } = await supabase
+            .from("requests")
+            .select("*", { count: "exact", head: true })
+            .like("event_id", `REQ-${year}%`);
 
-        // For demo: use or create a default user
-        let user = await prisma.user.findFirst({
-            where: { email: "employee@company.com" },
-        });
+        const eventId = `REQ-${year}-${String((count || 0) + 1).padStart(4, "0")}`;
 
-        if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    name: body.fullName,
-                    email: "employee@company.com",
-                    department: body.department,
-                    role: "USER",
-                },
-            });
-        }
-
-        const request = await prisma.request.create({
-            data: {
-                eventId,
-                userId: user.id,
-                projectId: body.projectId,
+        // Create the request
+        const { data: request, error } = await supabase
+            .from("requests")
+            .insert({
+                event_id: eventId,
+                user_id: body.userId,
+                project_id: body.projectId || null,
+                project_name: body.projectName || "",
                 amount: parseFloat(body.amount),
                 objective: body.objective,
-                contactNo: body.contactNo,
-                billingType: body.billingType,
-                startDate: new Date(body.startDate),
-                endDate: new Date(body.endDate),
-                promotionalChannels: body.promotionalChannels || [],
+                contact_no: body.contactNo,
+                email: body.email || "",
+                billing_type: body.billingType,
+                start_date: body.startDate,
+                end_date: body.endDate,
+                booking_date: body.bookingDate || null,
+                effective_date: body.effectiveDate || null,
+                promotional_channels: body.promotionalChannels || [],
                 status: "PENDING",
-            },
-            include: {
-                user: true,
-                project: true,
-            },
-        });
+            })
+            .select()
+            .single();
 
-        // Deduct from project budget
-        await prisma.project.update({
-            where: { id: body.projectId },
-            data: {
-                remainingBudget: {
-                    decrement: parseFloat(body.amount),
-                },
-            },
+        if (error) throw error;
+
+        // If YEARLY_MONTHLY, create monthly payment entries
+        if (body.billingType === "YEARLY_MONTHLY" && request) {
+            const startDate = new Date(body.startDate);
+            const endDate = new Date(body.endDate);
+            const totalAmount = parseFloat(body.amount);
+            const months: string[] = [];
+            const current = new Date(startDate);
+            while (current <= endDate) {
+                months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`);
+                current.setMonth(current.getMonth() + 1);
+            }
+            const monthlyAmount = totalAmount / (months.length || 1);
+
+            const payments = months.map((my) => ({
+                request_id: request.id,
+                month_year: my,
+                amount_due: Math.round(monthlyAmount * 100) / 100,
+                amount_paid: 0,
+                status: "PENDING",
+            }));
+
+            await supabase.from("request_payments").insert(payments);
+        }
+
+        // Audit log
+        await supabase.from("audit_logs").insert({
+            entity_type: "REQUEST",
+            entity_id: request?.id || eventId,
+            action: "CREATE",
+            user_id: body.userId,
+            user_name: body.fullName || "",
+            changes: { event_id: eventId, amount: body.amount, project_name: body.projectName, billing_type: body.billingType },
         });
 
         return NextResponse.json(request, { status: 201 });

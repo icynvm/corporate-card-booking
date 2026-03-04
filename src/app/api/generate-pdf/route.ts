@@ -4,227 +4,209 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 export async function POST(req: NextRequest) {
     try {
         const formData = await req.json();
-
-        // Create a new PDF document (A4 size)
         const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage([595.28, 841.89]); // A4 dimensions in points
+        const page = pdfDoc.addPage([595.28, 841.89]); // A4
 
         const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
         const { width, height } = page.getSize();
         const textColor = rgb(0.15, 0.15, 0.15);
-        const labelColor = rgb(0.4, 0.4, 0.4);
-        const accentColor = rgb(0.39, 0.4, 0.95); // brand-500
-        const lineColor = rgb(0.9, 0.9, 0.9);
+        const labelColor = rgb(0.35, 0.35, 0.35);
+        const brownColor = rgb(0.55, 0.32, 0.15);
+        const lineColor = rgb(0.7, 0.7, 0.7);
+        const lightGray = rgb(0.85, 0.85, 0.85);
 
-        let yPos = height - 60;
+        let y = height - 50;
 
-        // ── Header ──
-        page.drawRectangle({
-            x: 0,
-            y: height - 100,
-            width: width,
-            height: 100,
-            color: rgb(0.95, 0.96, 1),
-        });
-
-        page.drawText("CORPORATE EXECUTIVE CARD", {
-            x: 50,
-            y: height - 45,
-            size: 18,
-            font: helveticaBold,
-            color: accentColor,
-        });
-
-        page.drawText("Card Usage Request Form", {
-            x: 50,
-            y: height - 68,
-            size: 11,
-            font: helvetica,
-            color: labelColor,
-        });
-
-        // Auto-generated Event ID
-        const eventId = `REQ-${new Date().getFullYear()}-${String(
-            Math.floor(Math.random() * 9999)
-        ).padStart(4, "0")}`;
-
-        page.drawText(`Event ID: ${eventId}`, {
-            x: width - 200,
-            y: height - 45,
-            size: 10,
-            font: helveticaBold,
-            color: textColor,
-        });
-
-        page.drawText(`Date: ${new Date().toLocaleDateString("en-GB")}`, {
-            x: width - 200,
-            y: height - 62,
-            size: 9,
-            font: helvetica,
-            color: labelColor,
-        });
-
-        yPos = height - 130;
-
-        // ── Section: Requester Information ──
-        const drawSectionHeader = (title: string, y: number): number => {
-            page.drawRectangle({
-                x: 40,
-                y: y - 5,
-                width: width - 80,
-                height: 22,
-                color: rgb(0.95, 0.96, 1),
-                borderColor: accentColor,
-                borderWidth: 0.5,
-            });
-            page.drawText(title, {
-                x: 50,
-                y: y,
-                size: 10,
-                font: helveticaBold,
-                color: accentColor,
-            });
-            return y - 30;
+        // Helper: draw underlined field
+        const drawField = (label: string, value: string, x: number, yPos: number, fieldWidth: number) => {
+            page.drawText(label, { x, y: yPos, size: 8, font: helvetica, color: labelColor });
+            page.drawText(value || "", { x: x + 5, y: yPos - 14, size: 9, font: helvetica, color: textColor });
+            page.drawLine({ start: { x, y: yPos - 18 }, end: { x: x + fieldWidth, y: yPos - 18 }, thickness: 0.5, color: lightGray });
         };
 
-        const drawField = (label: string, value: string, x: number, y: number, fieldWidth: number = 220): number => {
-            page.drawText(label, {
-                x,
-                y,
-                size: 8,
-                font: helvetica,
-                color: labelColor,
-            });
-            page.drawText(value || "—", {
-                x,
-                y: y - 14,
-                size: 10,
-                font: helvetica,
-                color: textColor,
-            });
-            // Underline
-            page.drawLine({
-                start: { x, y: y - 18 },
-                end: { x: x + fieldWidth, y: y - 18 },
-                thickness: 0.5,
-                color: lineColor,
-            });
-            return y - 35;
-        };
+        // ═══════════════════════════════════════════════════════════════
+        // HEADER
+        // ═══════════════════════════════════════════════════════════════
+        page.drawText("IMPACT", { x: width - 120, y: height - 40, size: 16, font: helveticaBold, color: rgb(0.0, 0.32, 0.65) });
+        page.drawText("MUANG THONG THANI", { x: width - 120, y: height - 52, size: 6, font: helvetica, color: rgb(0.5, 0.5, 0.5) });
 
-        yPos = drawSectionHeader("REQUESTER INFORMATION", yPos);
+        // Title (Thai + English)
+        page.drawText("แบบฟอร์มขอใช้ CORPORATE EXECUTIVE CARD", {
+            x: 100, y: y, size: 14, font: helveticaBold, color: textColor,
+        });
+        y -= 30;
 
-        // Row 1: Name & Department
-        drawField("Full Name", formData.fullName || "", 50, yPos, 220);
-        drawField("Department", formData.department || "", 310, yPos, 220);
-        yPos -= 35;
+        // CARD NO.
+        page.drawText("CARD NO.", { x: 200, y, size: 10, font: helveticaBold, color: textColor });
+        page.drawLine({ start: { x: 270, y: y - 4 }, end: { x: 430, y: y - 4 }, thickness: 0.5, color: lightGray });
 
-        // Row 2: Contact & Project
-        drawField("Contact No.", formData.contactNo || "", 50, yPos, 220);
-        drawField("Project", formData.projectId || "", 310, yPos, 220);
-        yPos -= 35;
+        const eventId = formData.eventId || `REQ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`;
+        page.drawText(eventId, { x: 275, y, size: 10, font: helvetica, color: textColor });
+        y -= 35;
 
-        // ── Section: Request Details ──
-        yPos = drawSectionHeader("REQUEST DETAILS", yPos);
+        // ═══════════════════════════════════════════════════════════════
+        // SECTION 1: REQUESTER STAFF / พนักงานผู้ขอใช้
+        // ═══════════════════════════════════════════════════════════════
+        page.drawText("REQUESTER STAFF / พนักงานผู้ขอใช้", {
+            x: 50, y, size: 10, font: helveticaBold, color: brownColor,
+        });
+        page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 1, color: brownColor });
+        y -= 25;
 
-        // Row: Objective
-        drawField("Objective", formData.objective || "", 50, yPos, 480);
-        yPos -= 35;
+        // Full Name
+        page.drawText("Full Name/ ชื่อ  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.fullName || "", { x: 140, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 138, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 22;
 
-        // Row: Dates
-        drawField("Booking Date", formData.bookingDate || "", 50, yPos, 140);
-        drawField("Start Date", formData.startDate || "", 210, yPos, 140);
-        drawField("End Date", formData.endDate || "", 370, yPos, 140);
-        yPos -= 35;
+        // Department
+        page.drawText("Department / แผนก  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.department || "", { x: 165, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 163, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 22;
 
-        // Row: Amount & Billing
-        const billingLabel = (formData.billingType || "")
-            .replace("ONE_TIME", "One-time")
-            .replace("MONTHLY", "Monthly")
-            .replace("YEARLY", "Yearly");
-        drawField("Amount (THB)", formData.amount?.toLocaleString() || "0", 50, yPos, 220);
-        drawField("Billing Type", billingLabel, 310, yPos, 220);
-        yPos -= 35;
+        // Contact No. + E-Mail
+        page.drawText("Contact No. / เบอร์ติดต่อ  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.contactNo || "", { x: 185, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 183, y: y - 4 }, end: { x: 320, y: y - 4 }, thickness: 0.5, color: lightGray });
 
-        // ── Section: Promotional Channels ──
-        if (formData.promotionalChannels && formData.promotionalChannels.length > 0) {
-            yPos = drawSectionHeader("PROMOTIONAL CHANNELS", yPos);
+        page.drawText("E-Mail  :", { x: 330, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.email || "", { x: 375, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 373, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 35;
 
-            for (const ch of formData.promotionalChannels) {
-                if (yPos < 100) {
-                    // Add new page if running out of space
-                    const extraPage = pdfDoc.addPage([595.28, 841.89]);
-                    yPos = extraPage.getSize().height - 60;
-                }
+        // ═══════════════════════════════════════════════════════════════
+        // SECTION 2: REQUEST DETAILS / รายละเอียดการขอใช้
+        // ═══════════════════════════════════════════════════════════════
+        page.drawText("REQUEST DETAILS / รายละเอียดการขอใช้", {
+            x: 50, y, size: 10, font: helveticaBold, color: brownColor,
+        });
+        page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 1, color: brownColor });
+        y -= 25;
 
-                page.drawText(`● ${ch.channel}`, {
-                    x: 55,
-                    y: yPos,
-                    size: 10,
-                    font: helveticaBold,
-                    color: textColor,
-                });
-                yPos -= 18;
-
-                drawField("Media Account", ch.mediaAccountEmail || "", 70, yPos, 200);
-                drawField("Access List", ch.accessList || "", 310, yPos, 200);
-                yPos -= 35;
-            }
+        // Objective
+        page.drawText("Objective / วัตถุประสงค์  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        const objectiveText = formData.objective || "";
+        page.drawText(objectiveText.substring(0, 70), { x: 180, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 178, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 18;
+        if (objectiveText.length > 70) {
+            page.drawText(objectiveText.substring(70, 140), { x: 100, y, size: 9, font: helvetica, color: textColor });
         }
+        page.drawLine({ start: { x: 98, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 30;
 
-        // ── Footer: Signature Lines ──
-        void yPos; // consumed above
+        // ═══════════════════════════════════════════════════════════════
+        // SECTION 3: Promotional Channels / ช่องทางในการโฆษณา
+        // ═══════════════════════════════════════════════════════════════
+        page.drawText("Promotional Channels / ช่องทางในการโฆษณา", {
+            x: 50, y, size: 9, font: helveticaBold, color: labelColor,
+        });
+        page.drawText("*Choose your type of Promotional Channels", {
+            x: 55, y: y - 12, size: 6.5, font: helvetica, color: rgb(0.6, 0.6, 0.6),
+        });
+        y -= 30;
 
-        page.drawLine({
-            start: { x: 50, y: 120 },
-            end: { x: 230, y: 120 },
-            thickness: 0.5,
-            color: textColor,
-        });
-        page.drawText("Requester Signature", {
-            x: 90,
-            y: 105,
-            size: 9,
-            font: helvetica,
-            color: labelColor,
-        });
+        const channels = ["Facebook", "Youtube", "Google", "IG", "Line", "Other", "Tiktok", "WeChat"];
+        const selectedChannels = (formData.promotionalChannels || []).map((c: { channel: string }) => c.channel);
+        const colWidth = (width - 100) / 3;
 
-        page.drawLine({
-            start: { x: 370, y: 120 },
-            end: { x: 545, y: 120 },
-            thickness: 0.5,
-            color: textColor,
-        });
-        page.drawText("Manager Approval", {
-            x: 415,
-            y: 105,
-            size: 9,
-            font: helvetica,
-            color: labelColor,
-        });
+        channels.forEach((ch, i) => {
+            const col = i % 3;
+            const row = Math.floor(i / 3);
+            const cx = 55 + col * colWidth;
+            const cy = y - row * 20;
 
-        // Footer text
-        page.drawText("Generated by Corporate Card Booking System", {
-            x: 50,
-            y: 40,
-            size: 7,
-            font: helvetica,
-            color: rgb(0.7, 0.7, 0.7),
+            const isChecked = selectedChannels.includes(ch);
+
+            // Checkbox
+            page.drawRectangle({ x: cx, y: cy - 3, width: 10, height: 10, borderColor: lineColor, borderWidth: 0.5 });
+            if (isChecked) {
+                page.drawText("✓", { x: cx + 1.5, y: cy - 1.5, size: 9, font: helveticaBold, color: textColor });
+            }
+            page.drawText(ch, { x: cx + 15, y: cy, size: 8.5, font: helvetica, color: textColor });
         });
 
-        page.drawText(`Generated: ${new Date().toLocaleString("en-GB")}`, {
-            x: width - 200,
-            y: 40,
-            size: 7,
-            font: helvetica,
-            color: rgb(0.7, 0.7, 0.7),
-        });
+        y -= 65;
 
-        // Serialize to bytes
+        // ═══════════════════════════════════════════════════════════════
+        // DATES
+        // ═══════════════════════════════════════════════════════════════
+        page.drawText("Booking Date / วันที่ส่งซื้อโฆษณา  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.bookingDate || "", { x: 230, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 228, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 22;
+
+        page.drawText("Effective Date / วันที่โฆษณาเริ่มมีผล", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.effectiveDate || "", { x: 230, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 228, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 22;
+
+        // Start + End
+        page.drawText("Start Date / วันเริ่ม  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.startDate || "", { x: 160, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 158, y: y - 4 }, end: { x: 280, y: y - 4 }, thickness: 0.5, color: lightGray });
+
+        page.drawText("End Date / วันสิ้นสุด  :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.endDate || "", { x: 400, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 398, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 22;
+
+        // Amount
+        page.drawText("Amount / จำนวนเงิน  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        const amountStr = formData.amount ? `฿${parseFloat(formData.amount).toLocaleString()}` : "";
+        page.drawText(amountStr, { x: 175, y, size: 9, font: helveticaBold, color: textColor });
+        page.drawLine({ start: { x: 173, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 40;
+
+        // ═══════════════════════════════════════════════════════════════
+        // SIGNATURES
+        // ═══════════════════════════════════════════════════════════════
+
+        // Requester Signature
+        page.drawText("REQUESTER SIGNATURE / ลงชื่อผู้ขอใช้", {
+            x: 50, y, size: 10, font: helveticaBold, color: brownColor,
+        });
+        page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 0.5, color: brownColor });
+        y -= 30;
+
+        page.drawText("Signature  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 110, y: y - 4 }, end: { x: 280, y: y - 4 }, thickness: 0.5, color: lightGray });
+        page.drawText("Date  :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 335, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 40;
+
+        // Authorizer Signature
+        page.drawText("AUTHORIZER / ลงชื่อผู้อนุมัติ", {
+            x: 50, y, size: 10, font: helveticaBold, color: brownColor,
+        });
+        page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 0.5, color: brownColor });
+        y -= 30;
+
+        page.drawText("Signature  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 110, y: y - 4 }, end: { x: 280, y: y - 4 }, thickness: 0.5, color: lightGray });
+        page.drawText("Date  :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 335, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 40;
+
+        // FA Department Use Only
+        page.drawText("FA  DEPARTMENT USE ONLY", {
+            x: 50, y, size: 10, font: helveticaBold, color: textColor,
+        });
+        y -= 25;
+
+        page.drawText("Verified By / ตรวจสอบโดย  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 190, y: y - 4 }, end: { x: 310, y: y - 4 }, thickness: 0.5, color: lightGray });
+        page.drawText("Date  :", { x: 340, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 370, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+
+        // Suppress unused y warning
+        void y;
+
+        // Serialize
         const pdfBytes = await pdfDoc.save();
-
         return new NextResponse(Buffer.from(pdfBytes), {
             headers: {
                 "Content-Type": "application/pdf",

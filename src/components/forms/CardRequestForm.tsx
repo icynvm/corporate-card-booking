@@ -1,27 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PostSubmissionActions } from "@/components/forms/PostSubmissionActions";
+import { supabase } from "@/lib/supabase";
 import {
     requestFormSchema,
     RequestFormData,
     PROMOTIONAL_CHANNELS,
 } from "@/lib/validations/schema";
 
-// Mock projects for demo (in production, fetch from API)
-const MOCK_PROJECTS = [
-    { id: "proj-001", projectName: "Q1 Digital Campaign 2026" },
-    { id: "proj-002", projectName: "Brand Awareness Initiative" },
-    { id: "proj-003", projectName: "Product Launch Campaign" },
-];
+interface ProjectOption {
+    id: string;
+    project_name: string;
+}
 
 export function CardRequestForm() {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [submittedData, setSubmittedData] = useState<RequestFormData | null>(null);
     const [selectedChannels, setSelectedChannels] = useState<Set<string>>(new Set());
+    const [projectSearch, setProjectSearch] = useState("");
+    const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
+    const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+    const projectRef = useRef<HTMLDivElement>(null);
 
     const {
         register,
@@ -50,11 +54,39 @@ export function CardRequestForm() {
         name: "promotionalChannels",
     });
 
+    // Fetch projects for autocomplete
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                const res = await fetch(`/api/projects?search=${encodeURIComponent(projectSearch)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setProjectOptions(data);
+                }
+            } catch {
+                // Ignore
+            }
+        };
+
+        const timer = setTimeout(fetchProjects, 300);
+        return () => clearTimeout(timer);
+    }, [projectSearch]);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            if (projectRef.current && !projectRef.current.contains(e.target as Node)) {
+                setShowProjectDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, []);
+
     const handleChannelToggle = (channel: string) => {
         const newSelection = new Set(selectedChannels);
         if (newSelection.has(channel)) {
             newSelection.delete(channel);
-            // Remove from field array
             const idx = fields.findIndex((f) => f.channel === channel);
             if (idx !== -1) remove(idx);
         } else {
@@ -65,10 +97,31 @@ export function CardRequestForm() {
     };
 
     const onSubmit = async (data: RequestFormData) => {
-        // Simulate API call
-        await new Promise((r) => setTimeout(r, 800));
-        setSubmittedData(data);
-        setIsSubmitted(true);
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+
+        const requestBody = {
+            ...data,
+            userId: user?.id || null,
+            email: user?.email || "",
+            projectId: selectedProjectId,
+            projectName: projectSearch,
+        };
+
+        try {
+            const res = await fetch("/api/requests", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestBody),
+            });
+
+            if (res.ok) {
+                setSubmittedData(data);
+                setIsSubmitted(true);
+            }
+        } catch {
+            // Handle error
+        }
     };
 
     if (isSubmitted && submittedData) {
@@ -77,7 +130,6 @@ export function CardRequestForm() {
 
     return (
         <div className="max-w-3xl mx-auto">
-            {/* Header */}
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
                     New Card <span className="gradient-text">Request</span>
@@ -110,14 +162,45 @@ export function CardRequestForm() {
                             <input {...register("contactNo")} className="input-field" placeholder="e.g. 081-234-5678" />
                             {errors.contactNo && <p className="text-red-400 text-xs mt-1">{errors.contactNo.message}</p>}
                         </div>
-                        <div>
-                            <label className="label-text">Project</label>
-                            <select {...register("projectId")} className="select-field">
-                                <option value="">Select a project</option>
-                                {MOCK_PROJECTS.map((p) => (
-                                    <option key={p.id} value={p.id}>{p.projectName}</option>
-                                ))}
-                            </select>
+                        <div ref={projectRef} className="relative">
+                            <label className="label-text">Project Name (type to search or create)</label>
+                            <input
+                                type="text"
+                                value={projectSearch}
+                                onChange={(e) => {
+                                    setProjectSearch(e.target.value);
+                                    setShowProjectDropdown(true);
+                                    setSelectedProjectId(null);
+                                }}
+                                onFocus={() => setShowProjectDropdown(true)}
+                                className="input-field"
+                                placeholder="Type project name..."
+                            />
+                            <input type="hidden" {...register("projectId")} value={selectedProjectId || ""} />
+
+                            {showProjectDropdown && projectSearch && (
+                                <div className="absolute z-10 w-full mt-1 bg-white/95 backdrop-blur-lg border border-white/30 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                                    {projectOptions.map((p) => (
+                                        <button
+                                            key={p.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setProjectSearch(p.project_name);
+                                                setSelectedProjectId(p.id);
+                                                setShowProjectDropdown(false);
+                                            }}
+                                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-brand-50 transition-colors first:rounded-t-xl last:rounded-b-xl"
+                                        >
+                                            {p.project_name}
+                                        </button>
+                                    ))}
+                                    {projectOptions.length === 0 && (
+                                        <div className="px-4 py-3 text-sm text-gray-400">
+                                            No matching projects — this name will create a new project
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                             {errors.projectId && <p className="text-red-400 text-xs mt-1">{errors.projectId.message}</p>}
                         </div>
                     </div>
@@ -140,12 +223,18 @@ export function CardRequestForm() {
                             />
                             {errors.objective && <p className="text-red-400 text-xs mt-1">{errors.objective.message}</p>}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label className="label-text">Booking Date</label>
                                 <input type="date" {...register("bookingDate")} className="input-field" />
                                 {errors.bookingDate && <p className="text-red-400 text-xs mt-1">{errors.bookingDate.message}</p>}
                             </div>
+                            <div>
+                                <label className="label-text">Effective Date</label>
+                                <input type="date" className="input-field" />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label className="label-text">Start Date</label>
                                 <input type="date" {...register("startDate")} className="input-field" />
@@ -175,6 +264,7 @@ export function CardRequestForm() {
                                     <option value="ONE_TIME">One-time</option>
                                     <option value="MONTHLY">Monthly</option>
                                     <option value="YEARLY">Yearly</option>
+                                    <option value="YEARLY_MONTHLY">Yearly (Monthly Payments)</option>
                                 </select>
                                 {errors.billingType && <p className="text-red-400 text-xs mt-1">{errors.billingType.message}</p>}
                             </div>
@@ -192,7 +282,6 @@ export function CardRequestForm() {
                         Select the advertising channels for this expense. For each selected channel, specify the media account and access details.
                     </p>
 
-                    {/* Channel Checkboxes */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                         {PROMOTIONAL_CHANNELS.map((channel) => {
                             const isChecked = selectedChannels.has(channel);
@@ -202,17 +291,13 @@ export function CardRequestForm() {
                                     type="button"
                                     onClick={() => handleChannelToggle(channel)}
                                     className={`px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-200 flex items-center gap-2
-                    ${isChecked
+                                    ${isChecked
                                             ? "bg-brand-50 border-brand-300 text-brand-700 shadow-sm"
                                             : "bg-white/60 border-gray-200 text-gray-500 hover:border-brand-200 hover:text-brand-500"
-                                        }
-                  `}
+                                        }`}
                                 >
-                                    <div
-                                        className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all
-                    ${isChecked ? "bg-brand-500 border-brand-500" : "border-gray-300"}
-                  `}
-                                    >
+                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all
+                                    ${isChecked ? "bg-brand-500 border-brand-500" : "border-gray-300"}`}>
                                         {isChecked && (
                                             <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                                 <polyline points="20 6 9 17 4 12" />
@@ -225,7 +310,6 @@ export function CardRequestForm() {
                         })}
                     </div>
 
-                    {/* Dynamic Channel Detail Fields */}
                     {fields.length > 0 && (
                         <div className="space-y-4">
                             {fields.map((field, index) => (
@@ -246,11 +330,6 @@ export function CardRequestForm() {
                                                 className="input-field"
                                                 placeholder="e.g. ads@company.com"
                                             />
-                                            {errors.promotionalChannels?.[index]?.mediaAccountEmail && (
-                                                <p className="text-red-400 text-xs mt-1">
-                                                    {errors.promotionalChannels[index]?.mediaAccountEmail?.message}
-                                                </p>
-                                            )}
                                         </div>
                                         <div>
                                             <label className="label-text">Access List (Who has access?)</label>
@@ -259,11 +338,6 @@ export function CardRequestForm() {
                                                 className="input-field"
                                                 placeholder="e.g. John, Sarah, Marketing Team"
                                             />
-                                            {errors.promotionalChannels?.[index]?.accessList && (
-                                                <p className="text-red-400 text-xs mt-1">
-                                                    {errors.promotionalChannels[index]?.accessList?.message}
-                                                </p>
-                                            )}
                                         </div>
                                     </div>
                                 </div>

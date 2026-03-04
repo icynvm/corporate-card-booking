@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createServerSupabase } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
     try {
+        const supabase = createServerSupabase();
         const { searchParams } = new URL(req.url);
         const token = searchParams.get("token");
         const action = searchParams.get("action");
@@ -20,19 +21,20 @@ export async function GET(req: NextRequest) {
         }
 
         // Find request by approval token
-        const request = await prisma.request.findUnique({
-            where: { approvalToken: token },
-            include: { user: true, project: true },
-        });
+        const { data: request, error } = await supabase
+            .from("requests")
+            .select("*, profiles(*)")
+            .eq("approval_token", token)
+            .single();
 
-        if (!request) {
+        if (error || !request) {
             return NextResponse.redirect(
                 new URL("/approval-result?status=error&message=Request+not+found+or+link+expired", req.url)
             );
         }
 
         // Check if token has expired
-        if (request.approvalTokenExpiry && new Date() > request.approvalTokenExpiry) {
+        if (request.approval_token_expiry && new Date() > new Date(request.approval_token_expiry)) {
             return NextResponse.redirect(
                 new URL("/approval-result?status=error&message=This+approval+link+has+expired", req.url)
             );
@@ -42,7 +44,7 @@ export async function GET(req: NextRequest) {
         if (request.status !== "PENDING") {
             return NextResponse.redirect(
                 new URL(
-                    `/approval-result?status=info&message=This+request+has+already+been+${request.status.toLowerCase()}&eventId=${request.eventId}`,
+                    `/approval-result?status=info&message=This+request+has+already+been+${request.status.toLowerCase()}&eventId=${request.event_id}`,
                     req.url
                 )
             );
@@ -51,30 +53,27 @@ export async function GET(req: NextRequest) {
         // Update request status
         const newStatus = action === "approve" ? "APPROVED" : "REJECTED";
 
-        await prisma.request.update({
-            where: { id: request.id },
-            data: {
+        await supabase
+            .from("requests")
+            .update({
                 status: newStatus,
-                approvalToken: null, // Invalidate token
-                approvalTokenExpiry: null,
-            },
-        });
+                approval_token: null,
+                approval_token_expiry: null,
+            })
+            .eq("id", request.id);
 
-        // If rejected, refund the budget
-        if (newStatus === "REJECTED") {
-            await prisma.project.update({
-                where: { id: request.projectId },
-                data: {
-                    remainingBudget: {
-                        increment: request.amount,
-                    },
-                },
-            });
-        }
+        // Audit log
+        await supabase.from("audit_logs").insert({
+            entity_type: "REQUEST",
+            entity_id: request.id,
+            action: action === "approve" ? "APPROVE" : "REJECT",
+            user_name: "Manager (via email link)",
+            changes: { event_id: request.event_id, new_status: newStatus },
+        });
 
         return NextResponse.redirect(
             new URL(
-                `/approval-result?status=success&action=${action}&eventId=${request.eventId}&requester=${encodeURIComponent(request.user.name)}&amount=${request.amount}`,
+                `/approval-result?status=success&action=${action}&eventId=${request.event_id}&requester=${encodeURIComponent(request.profiles?.name || "")}&amount=${request.amount}`,
                 req.url
             )
         );

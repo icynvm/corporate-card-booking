@@ -75,7 +75,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-400">Request</span>
                                 <span className="font-mono font-semibold text-brand-600">
-                                    {request.eventId}
+                                    {request.event_id}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center text-sm mt-1">
@@ -109,8 +109,8 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                         <label className="label-text">Upload Receipt (Image/PDF)</label>
                         <div
                             className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${file
-                                    ? "border-brand-300 bg-brand-50/50"
-                                    : "border-gray-200 hover:border-brand-200 hover:bg-brand-50/30"
+                                ? "border-brand-300 bg-brand-50/50"
+                                : "border-gray-200 hover:border-brand-200 hover:bg-brand-50/30"
                                 }`}
                             onClick={() => document.getElementById("receipt-file")?.click()}
                         >
@@ -162,11 +162,11 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                         key={receipt.id}
                                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm"
                                     >
-                                        <span className="text-gray-600">{receipt.monthYear}</span>
+                                        <span className="text-gray-600">{receipt.month_year}</span>
                                         <span
                                             className={`px-2 py-0.5 rounded-full text-xs font-medium ${receipt.status === "VERIFIED"
-                                                    ? "bg-emerald-100 text-emerald-700"
-                                                    : "bg-amber-100 text-amber-700"
+                                                ? "bg-emerald-100 text-emerald-700"
+                                                : "bg-amber-100 text-amber-700"
                                                 }`}
                                         >
                                             {receipt.status}

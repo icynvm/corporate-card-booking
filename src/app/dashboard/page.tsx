@@ -6,145 +6,27 @@ import { RequestsTable } from "@/components/dashboard/RequestsTable";
 import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
 import { RequestRecord } from "@/lib/types";
 
-// Demo data for when database is not connected
-const DEMO_DATA: RequestRecord[] = [
-    {
-        id: "1",
-        eventId: "REQ-2026-0001",
-        userId: "u1",
-        projectId: "proj-001",
-        amount: 45000,
-        objective: "Facebook Ads for Q1 Campaign",
-        contactNo: "081-234-5678",
-        billingType: "MONTHLY",
-        startDate: "2026-01-01",
-        endDate: "2026-03-31",
-        status: "APPROVED",
-        promotionalChannels: [
-            { channel: "Facebook", mediaAccountEmail: "ads@company.com", accessList: "Sarah, John" },
-        ],
-        pdfUrl: null,
-        createdAt: "2026-01-15T10:00:00Z",
-        updatedAt: "2026-01-16T10:00:00Z",
-        user: { id: "u1", name: "Alex Williams", email: "alex@company.com", department: "Digital Marketing", role: "USER" },
-        project: { id: "proj-001", projectName: "Q1 Digital Campaign 2026", totalBudget: 500000, remainingBudget: 455000 },
-        receipts: [
-            { id: "r1", requestId: "1", monthYear: "2026-01", receiptFileUrl: "/rec1.pdf", status: "VERIFIED", createdAt: "2026-02-01" },
-            { id: "r2", requestId: "1", monthYear: "2026-02", receiptFileUrl: "/rec2.pdf", status: "UPLOADED", createdAt: "2026-03-01" },
-        ],
-    },
-    {
-        id: "2",
-        eventId: "REQ-2026-0002",
-        userId: "u1",
-        projectId: "proj-002",
-        amount: 120000,
-        objective: "Google Ads for Brand Awareness",
-        contactNo: "081-234-5678",
-        billingType: "ONE_TIME",
-        startDate: "2026-02-01",
-        endDate: "2026-02-28",
-        status: "PENDING",
-        promotionalChannels: [
-            { channel: "Google", mediaAccountEmail: "google-ads@company.com", accessList: "Marketing Team" },
-        ],
-        pdfUrl: null,
-        createdAt: "2026-02-10T10:00:00Z",
-        updatedAt: "2026-02-10T10:00:00Z",
-        user: { id: "u1", name: "Alex Williams", email: "alex@company.com", department: "Digital Marketing", role: "USER" },
-        project: { id: "proj-002", projectName: "Brand Awareness Initiative", totalBudget: 250000, remainingBudget: 130000 },
-        receipts: [],
-    },
-    {
-        id: "3",
-        eventId: "REQ-2026-0003",
-        userId: "u2",
-        projectId: "proj-003",
-        amount: 85000,
-        objective: "TikTok & Instagram Campaign for Product Launch",
-        contactNo: "089-876-5432",
-        billingType: "MONTHLY",
-        startDate: "2026-03-01",
-        endDate: "2026-06-30",
-        status: "APPROVED",
-        promotionalChannels: [
-            { channel: "Tiktok", mediaAccountEmail: "tiktok@company.com", accessList: "Sarah, Emily" },
-            { channel: "Instagram", mediaAccountEmail: "ig@company.com", accessList: "Sarah" },
-        ],
-        pdfUrl: null,
-        createdAt: "2026-02-28T10:00:00Z",
-        updatedAt: "2026-03-01T10:00:00Z",
-        user: { id: "u2", name: "Emily Chen", email: "emily@company.com", department: "Content Marketing", role: "USER" },
-        project: { id: "proj-003", projectName: "Product Launch Campaign", totalBudget: 750000, remainingBudget: 665000 },
-        receipts: [],
-    },
-    {
-        id: "4",
-        eventId: "REQ-2026-0004",
-        userId: "u1",
-        projectId: "proj-001",
-        amount: 35000,
-        objective: "YouTube Video Promotion",
-        contactNo: "081-234-5678",
-        billingType: "ONE_TIME",
-        startDate: "2026-02-15",
-        endDate: "2026-02-28",
-        status: "REJECTED",
-        promotionalChannels: [
-            { channel: "Youtube", mediaAccountEmail: "yt@company.com", accessList: "John" },
-        ],
-        pdfUrl: null,
-        createdAt: "2026-02-12T10:00:00Z",
-        updatedAt: "2026-02-13T10:00:00Z",
-        user: { id: "u1", name: "Alex Williams", email: "alex@company.com", department: "Digital Marketing", role: "USER" },
-        project: { id: "proj-001", projectName: "Q1 Digital Campaign 2026", totalBudget: 500000, remainingBudget: 455000 },
-        receipts: [],
-    },
-    {
-        id: "5",
-        eventId: "REQ-2026-0005",
-        userId: "u3",
-        projectId: "proj-002",
-        amount: 62000,
-        objective: "LINE OA Campaign Ads",
-        contactNo: "082-111-2222",
-        billingType: "YEARLY",
-        startDate: "2026-01-01",
-        endDate: "2026-12-31",
-        status: "COMPLETED",
-        promotionalChannels: [
-            { channel: "Line", mediaAccountEmail: "line-oa@company.com", accessList: "Marketing Team" },
-        ],
-        pdfUrl: null,
-        createdAt: "2026-01-05T10:00:00Z",
-        updatedAt: "2026-01-10T10:00:00Z",
-        user: { id: "u3", name: "David Kim", email: "david@company.com", department: "Communications", role: "USER" },
-        project: { id: "proj-002", projectName: "Brand Awareness Initiative", totalBudget: 250000, remainingBudget: 130000 },
-        receipts: [],
-    },
-];
-
 export default function DashboardPage() {
-    const [requests, setRequests] = useState<RequestRecord[]>(DEMO_DATA);
+    const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [filterStatus, setFilterStatus] = useState("");
     const [filterBilling, setFilterBilling] = useState("");
     const [filterProject, setFilterProject] = useState("");
     const [receiptModalOpen, setReceiptModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<RequestRecord | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    // Try to fetch from API on mount; fall back to demo data
     useEffect(() => {
         const fetchRequests = async () => {
             try {
                 const res = await fetch("/api/requests");
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.length > 0) {
-                        setRequests(data);
-                    }
+                    setRequests(data);
                 }
             } catch {
-                // Use demo data
+                // No data
+            } finally {
+                setLoading(false);
             }
         };
         fetchRequests();
@@ -154,8 +36,8 @@ export default function DashboardPage() {
     const filteredData = useMemo(() => {
         return requests.filter((r) => {
             if (filterStatus && r.status !== filterStatus) return false;
-            if (filterBilling && r.billingType !== filterBilling) return false;
-            if (filterProject && r.projectId !== filterProject) return false;
+            if (filterBilling && r.billing_type !== filterBilling) return false;
+            if (filterProject && r.project_name !== filterProject) return false;
             return true;
         });
     }, [requests, filterStatus, filterBilling, filterProject]);
@@ -167,7 +49,7 @@ export default function DashboardPage() {
             .reduce((sum, r) => sum + r.amount, 0);
         const pendingCount = requests.filter((r) => r.status === "PENDING").length;
         const monthlyCommitments = requests
-            .filter((r) => r.billingType === "MONTHLY" && (r.status === "APPROVED" || r.status === "COMPLETED"))
+            .filter((r) => (r.billing_type === "MONTHLY" || r.billing_type === "YEARLY_MONTHLY") && (r.status === "APPROVED" || r.status === "COMPLETED"))
             .reduce((sum, r) => sum + r.amount, 0);
         const approvedCount = requests.filter((r) => r.status === "APPROVED").length;
 
@@ -176,11 +58,11 @@ export default function DashboardPage() {
 
     // Unique projects for filter
     const projects = useMemo(() => {
-        const map = new Map<string, string>();
+        const names = new Set<string>();
         requests.forEach((r) => {
-            if (r.project) map.set(r.projectId, r.project.projectName);
+            if (r.project_name) names.add(r.project_name);
         });
-        return Array.from(map.entries());
+        return Array.from(names);
     }, [requests]);
 
     const handleUploadReceipt = (request: RequestRecord) => {
@@ -190,7 +72,6 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-8">
-            {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
                     Tracking <span className="gradient-text">Dashboard</span>
@@ -267,8 +148,8 @@ export default function DashboardPage() {
                         className="select-field w-auto min-w-[180px]"
                     >
                         <option value="">All Projects</option>
-                        {projects.map(([id, name]) => (
-                            <option key={id} value={id}>{name}</option>
+                        {projects.map((name) => (
+                            <option key={name} value={name}>{name}</option>
                         ))}
                     </select>
 
@@ -293,6 +174,7 @@ export default function DashboardPage() {
                         <option value="ONE_TIME">One-time</option>
                         <option value="MONTHLY">Monthly</option>
                         <option value="YEARLY">Yearly</option>
+                        <option value="YEARLY_MONTHLY">Yearly (Monthly)</option>
                     </select>
 
                     {(filterStatus || filterBilling || filterProject) && (
@@ -311,7 +193,17 @@ export default function DashboardPage() {
             </div>
 
             {/* Requests Table */}
-            <RequestsTable data={filteredData} onUploadReceipt={handleUploadReceipt} />
+            {loading ? (
+                <div className="glass-card p-12 text-center">
+                    <svg className="animate-spin w-8 h-8 text-brand-500 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <p className="text-gray-400 text-sm">Loading requests...</p>
+                </div>
+            ) : (
+                <RequestsTable data={filteredData} onUploadReceipt={handleUploadReceipt} />
+            )}
 
             {/* Receipt Upload Modal */}
             <ReceiptUploadModal
