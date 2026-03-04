@@ -39,6 +39,7 @@ export function CardRequestForm() {
             fullName: "",
             department: "",
             contactNo: "",
+            email: "",
             objective: "",
             projectId: "",
             bookingDate: "",
@@ -103,8 +104,8 @@ export function CardRequestForm() {
         // Standalone mode: bypass auth and use dev profile
         const requestBody = {
             ...data,
-            userId: null, // API will handle finding/creating the dev user
-            email: "dev@company.com",
+            userId: null,
+            email: data.email,
             projectId: selectedProjectId,
             projectName: projectSearch,
         };
@@ -176,6 +177,11 @@ export function CardRequestForm() {
                             <input {...register("contactNo")} className="input-field" placeholder="e.g. 081-234-5678" />
                             {errors.contactNo && <p className="text-red-400 text-xs mt-1">{errors.contactNo.message}</p>}
                         </div>
+                        <div>
+                            <label className="label-text">E-Mail</label>
+                            <input {...register("email")} type="email" className="input-field" placeholder="you@company.com" />
+                            {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
+                        </div>
                         <div ref={projectRef} className="relative">
                             <label className="label-text">Project Name (type to search or create)</label>
                             <input
@@ -210,7 +216,7 @@ export function CardRequestForm() {
                                     ))}
                                     {projectOptions.length === 0 && (
                                         <div className="px-4 py-3 text-sm text-gray-400">
-                                            No matching projects — this name will create a new project
+                                            No matching projects โ€” this name will create a new project
                                         </div>
                                     )}
                                 </div>
