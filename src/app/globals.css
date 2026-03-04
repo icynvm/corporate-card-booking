@@ -18,7 +18,7 @@
   }
 
   * {
-    @apply border-border;
+    border-color: rgba(229, 231, 235, 1);
   }
 }
 
@@ -46,10 +46,7 @@
   }
 
   .input-field {
-    @apply w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 
-           backdrop-blur-sm text-sm text-gray-700
-           focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent
-           transition-all duration-200 placeholder:text-gray-400;
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent transition-all duration-200 placeholder:text-gray-400;
   }
 
   .input-field:hover {
@@ -70,35 +67,19 @@
   }
 
   .btn-primary {
-    @apply px-6 py-3 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium 
-           rounded-xl shadow-lg shadow-brand-500/25 
-           hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5
-           active:translate-y-0 
-           transition-all duration-200 text-sm;
+    @apply px-6 py-3 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium rounded-xl shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm;
   }
 
   .btn-secondary {
-    @apply px-6 py-3 bg-white/80 backdrop-blur-sm text-gray-700 font-medium 
-           rounded-xl border border-gray-200
-           hover:bg-white hover:shadow-md hover:-translate-y-0.5
-           active:translate-y-0
-           transition-all duration-200 text-sm;
+    @apply px-6 py-3 bg-white/80 backdrop-blur-sm text-gray-700 font-medium rounded-xl border border-gray-200 hover:bg-white hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm;
   }
 
   .btn-success {
-    @apply px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium 
-           rounded-xl shadow-lg shadow-emerald-500/25 
-           hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5
-           active:translate-y-0
-           transition-all duration-200 text-sm;
+    @apply px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm;
   }
 
   .btn-danger {
-    @apply px-6 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white font-medium 
-           rounded-xl shadow-lg shadow-red-500/25 
-           hover:shadow-xl hover:shadow-red-500/30 hover:-translate-y-0.5
-           active:translate-y-0
-           transition-all duration-200 text-sm;
+    @apply px-6 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white font-medium rounded-xl shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm;
   }
 
   .status-badge {
