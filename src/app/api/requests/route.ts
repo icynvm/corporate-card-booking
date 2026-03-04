@@ -25,8 +25,8 @@ export async function GET(req: NextRequest) {
             .select("*, profiles(*), projects(*), receipts(*), request_payments(*)")
             .order("created_at", { ascending: false });
 
-        // Role-based filtering: FA sees all, others see only their own
-        if (session.role !== "FA") {
+        // Role-based filtering: admin sees all, others see only their own
+        if (session.role !== "admin") {
             query = query.eq("user_id", session.pid);
         }
 
