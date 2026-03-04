@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
+import { parseSessionToken, getSessionCookieName } from "@/lib/session";
 
-// GET: Fetch all requests
+// Helper to get session from cookie
+function getSession(req: NextRequest) {
+    const token = req.cookies.get(getSessionCookieName())?.value;
+    if (!token) return null;
+    return parseSessionToken(token);
+}
+
+// GET: Fetch requests based on role
 export async function GET(req: NextRequest) {
     try {
+        const session = getSession(req);
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
         const supabase = createServerSupabase();
         const { searchParams } = new URL(req.url);
         const status = searchParams.get("status");
@@ -13,6 +24,11 @@ export async function GET(req: NextRequest) {
             .from("requests")
             .select("*, profiles(*), projects(*), receipts(*), request_payments(*)")
             .order("created_at", { ascending: false });
+
+        // Role-based filtering: FA sees all, others see only their own
+        if (session.role !== "FA") {
+            query = query.eq("user_id", session.pid);
+        }
 
         if (status) query = query.eq("status", status);
         if (billingType) query = query.eq("billing_type", billingType);
@@ -33,6 +49,9 @@ export async function GET(req: NextRequest) {
 // POST: Create a new request
 export async function POST(req: NextRequest) {
     try {
+        const session = getSession(req);
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
         const supabase = createServerSupabase();
         const body = await req.json();
 
@@ -44,35 +63,7 @@ export async function POST(req: NextRequest) {
             .like("event_id", `REQ-${year}%`);
 
         const eventId = `REQ-${year}-${String((count || 0) + 1).padStart(4, "0")}`;
-
-        let userId = body.userId;
-        if (!userId) {
-            // Find or create the dev profile
-            const { data: profile, error: profileError } = await supabase
-                .from("profiles")
-                .select("id")
-                .eq("email", "dev@company.com")
-                .maybeSingle();
-
-            if (profile) {
-                userId = profile.id;
-            } else {
-                // Auto-create dev profile if missing
-                const { data: newProfile, error: createError } = await supabase
-                    .from("profiles")
-                    .insert({
-                        name: "Developer Admin",
-                        email: "dev@company.com",
-                        department: "Development",
-                        role: "FA"
-                    })
-                    .select("id")
-                    .single();
-
-                if (createError) throw new Error(`Failed to create dev profile: ${createError.message}`);
-                userId = newProfile.id;
-            }
-        }
+        const userId = session.pid;
 
         // Create the request
         const { data: request, error: insertError } = await supabase
