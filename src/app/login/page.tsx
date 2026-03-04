@@ -2,66 +2,68 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
     const router = useRouter();
+    const [step, setStep] = useState<"email" | "otp">("email");
     const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [otpCode, setOtpCode] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const [adminLoading, setAdminLoading] = useState(false);
+    const [devCode, setDevCode] = useState("");
 
-    const handleAdminLogin = async () => {
-        setAdminLoading(true);
+    const handleSendOTP = async (e: React.FormEvent) => {
+        e.preventDefault();
         setError("");
+        setLoading(true);
+
         try {
-            // Create auto-confirmed admin and get credentials
-            const res = await fetch("/api/create-admin", { method: "POST" });
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
             const data = await res.json();
 
-            if (!res.ok) throw new Error(data.error || "Failed to create admin");
+            if (!res.ok) throw new Error(data.error);
 
-            // Log in with those credentials
-            const { error: authError } = await supabase.auth.signInWithPassword({
-                email: data.email,
-                password: data.password
+            if (data.devCode) setDevCode(data.devCode);
+            setStep("otp");
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+
+        try {
+            const res = await fetch("/api/auth/verify-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, code: otpCode }),
             });
+            const data = await res.json();
 
-            if (authError) throw authError;
+            if (!res.ok) throw new Error(data.error);
 
             router.push("/dashboard");
             router.refresh();
         } catch (err: any) {
             setError(err.message);
-            setAdminLoading(false);
-        }
-    };
-
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
-        setLoading(true);
-
-        const { error: authError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
-
-        if (authError) {
-            setError(authError.message);
+        } finally {
             setLoading(false);
-            return;
         }
-
-        router.push("/dashboard");
-        router.refresh();
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4">
             <div className="w-full max-w-md">
-                {/* Logo / Branding */}
+                {/* Logo */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-600 mb-4 shadow-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -72,92 +74,95 @@ export default function LoginPage() {
                     <h1 className="text-2xl font-bold text-gray-800">
                         Corporate Card <span className="gradient-text">Booking</span>
                     </h1>
-                    <p className="text-sm text-gray-500 mt-1">Sign in to manage your card requests</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                        {step === "email" ? "Enter your email to sign in" : "Enter the verification code"}
+                    </p>
                 </div>
 
-                {/* Login Form */}
                 <div className="glass-card !p-8">
-                    <form onSubmit={handleLogin} className="space-y-5">
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
-                                {error}
+                    {step === "email" ? (
+                        <form onSubmit={handleSendOTP} className="space-y-5">
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">{error}</div>
+                            )}
+
+                            <div>
+                                <label className="label-text">Email</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="input-field"
+                                    placeholder="you@company.com"
+                                    required
+                                    autoFocus
+                                />
                             </div>
-                        )}
 
-                        <div>
-                            <label className="label-text">Email</label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="input-field"
-                                placeholder="you@company.com"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="label-text">Password</label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="input-field"
-                                placeholder="Enter your password"
-                                required
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                            {loading ? (
-                                <>
-                                    <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                    </svg>
-                                    Signing in...
-                                </>
-                            ) : (
-                                "Sign In"
+                            <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
+                                {loading ? (
+                                    <>
+                                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                        </svg>
+                                        Sending code...
+                                    </>
+                                ) : "Send Verification Code"}
+                            </button>
+                        </form>
+                    ) : (
+                        <form onSubmit={handleVerifyOTP} className="space-y-5">
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">{error}</div>
                             )}
-                        </button>
 
-                        <div className="relative flex items-center py-2">
-                            <div className="flex-grow border-t border-gray-200"></div>
-                            <span className="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase tracking-wider">or</span>
-                            <div className="flex-grow border-t border-gray-200"></div>
-                        </div>
+                            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm">
+                                A 6-digit code was sent to <strong>{email}</strong>
+                            </div>
 
-                        <button
-                            type="button"
-                            onClick={handleAdminLogin}
-                            disabled={adminLoading || loading}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all disabled:opacity-50"
-                        >
-                            {adminLoading ? (
-                                <>
-                                    <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                    </svg>
-                                    Creating & Logging in...
-                                </>
-                            ) : (
-                                "Quick Admin Login (Bypass Email)"
+                            {devCode && (
+                                <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl text-sm">
+                                    <strong>Dev Mode:</strong> Your code is <span className="font-mono font-bold text-lg">{devCode}</span>
+                                </div>
                             )}
-                        </button>
-                    </form>
+
+                            <div>
+                                <label className="label-text">Verification Code</label>
+                                <input
+                                    type="text"
+                                    value={otpCode}
+                                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                    className="input-field text-center text-2xl tracking-[0.5em] font-mono"
+                                    placeholder="000000"
+                                    maxLength={6}
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+
+                            <button type="submit" disabled={loading || otpCode.length !== 6} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
+                                {loading ? (
+                                    <>
+                                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                        </svg>
+                                        Verifying...
+                                    </>
+                                ) : "Verify & Sign In"}
+                            </button>
+
+                            <button type="button" onClick={() => { setStep("email"); setError(""); setDevCode(""); }} className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors">
+                                โ Back to email
+                            </button>
+                        </form>
+                    )}
 
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-400">
                             Don&apos;t have an account?{" "}
-                            <a href="/register" className="text-brand-500 hover:text-brand-700 font-medium transition-colors">
-                                Register
-                            </a>
+                            <a href="/register" className="text-brand-500 hover:text-brand-700 font-medium transition-colors">Register</a>
                         </p>
                     </div>
                 </div>
