@@ -123,6 +123,14 @@ CREATE TABLE IF NOT EXISTS otp_codes (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 8. App Settings table (for email config etc)
+CREATE TABLE IF NOT EXISTS app_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    setting_key TEXT UNIQUE NOT NULL,
+    setting_value TEXT NOT NULL DEFAULT '',
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Disable RLS for dev
 ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
 ALTER TABLE projects DISABLE ROW LEVEL SECURITY;
@@ -133,6 +141,7 @@ ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE hosting_allocations DISABLE ROW LEVEL SECURITY;
 ALTER TABLE hosting_sites DISABLE ROW LEVEL SECURITY;
 ALTER TABLE otp_codes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE app_settings DISABLE ROW LEVEL SECURITY;
 
 -- Triggers
 CREATE OR REPLACE FUNCTION update_updated_at()
