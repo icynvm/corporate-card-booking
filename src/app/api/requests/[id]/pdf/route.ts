@@ -24,84 +24,181 @@ export async function GET(
             return NextResponse.json({ error: "Request not found" }, { status: 404 });
         }
 
-        // Only allow the request owner or admin to download
         if (session.role !== "admin" && request.user_id !== session.pid) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
-        const channels = Array.isArray(request.promotional_channels)
-            ? request.promotional_channels.map((ch: any) =>
-                `<tr><td style="padding:6px 12px;border:1px solid #e2e8f0;">${ch.channel || "-"}</td><td style="padding:6px 12px;border:1px solid #e2e8f0;">${ch.mediaAccountEmail || "-"}</td><td style="padding:6px 12px;border:1px solid #e2e8f0;">${ch.accessList || "-"}</td></tr>`
-            ).join("")
-            : "";
+        const allChannels = ["Facebook", "Youtube", "Google", "IG", "Line", "Tiktok", "WeChat"];
+        const activeChannels = Array.isArray(request.promotional_channels)
+            ? request.promotional_channels.map((ch: any) => ch.channel)
+            : [];
+
+        const channelCheckboxes = allChannels.map(ch => {
+            const checked = activeChannels.includes(ch);
+            const detail = Array.isArray(request.promotional_channels)
+                ? request.promotional_channels.find((c: any) => c.channel === ch)
+                : null;
+            return `<div style="display:inline-flex;align-items:center;gap:6px;min-width:140px;margin-bottom:4px;">
+                <div style="width:14px;height:14px;border:1.5px solid #94a3b8;display:flex;align-items:center;justify-content:center;font-size:10px;">
+                    ${checked ? "&#10003;" : "&nbsp;"}
+                </div>
+                <span style="font-size:12px;">${ch}</span>
+            </div>`;
+        }).join("");
+
+        const hasOther = activeChannels.some((ch: string) => !allChannels.includes(ch));
+        const otherVal = hasOther ? activeChannels.find((ch: string) => !allChannels.includes(ch)) : "";
+
+        const fmtDate = (d: string | null) => {
+            if (!d) return "____________________";
+            return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+        };
 
         const html = `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
 <title>Request ${request.event_id}</title>
 <style>
-    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display: none; } }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 32px; color: #1e293b; }
-    .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 24px 32px; border-radius: 12px; margin-bottom: 24px; }
-    .header h1 { margin: 0; font-size: 22px; } .header p { margin: 4px 0 0; opacity: 0.8; font-size: 13px; }
-    .section { margin-bottom: 20px; } .section h3 { font-size: 14px; color: #6366f1; margin-bottom: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .field { margin-bottom: 8px; } .field .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; } .field .value { font-size: 14px; font-weight: 500; }
-    .status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-    .status-PENDING { background: #fef3c7; color: #92400e; } .status-APPROVED { background: #d1fae5; color: #065f46; } .status-REJECTED { background: #fee2e2; color: #991b1b; } .status-COMPLETED { background: #dbeafe; color: #1e40af; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; } th { background: #f1f5f9; padding: 8px 12px; text-align: left; border: 1px solid #e2e8f0; font-size: 12px; }
-    .signature-area { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-    .sig-block { text-align: center; } .sig-line { border-top: 1px solid #94a3b8; margin-top: 60px; padding-top: 8px; font-size: 12px; color: #64748b; }
-    .print-btn { position: fixed; bottom: 24px; right: 24px; background: #6366f1; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display: none !important; } @page { margin: 15mm; } }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 720px; margin: 0 auto; padding: 30px 24px; color: #1e293b; font-size: 13px; line-height: 1.5; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .header h1 { font-size: 16px; font-weight: 700; text-align: center; flex: 1; }
+    .logo-area { width: 100px; text-align: right; font-size: 11px; font-weight: 700; color: #b45309; }
+    .section-title { font-size: 13px; font-weight: 700; color: #7c5c30; margin: 16px 0 8px 0; border-bottom: none; }
+    .form-row { display: flex; gap: 12px; margin-bottom: 6px; align-items: baseline; }
+    .form-label { font-size: 12px; font-weight: 600; color: #475569; white-space: nowrap; min-width: 140px; }
+    .form-value { flex: 1; border-bottom: 1px dotted #94a3b8; padding-bottom: 2px; font-size: 13px; min-height: 18px; }
+    .card-no { text-align: center; margin-bottom: 14px; }
+    .card-no span { font-size: 14px; font-weight: 700; }
+    .card-no .val { display: inline-block; border-bottom: 2px solid #1e293b; min-width: 200px; padding: 2px 8px; font-family: monospace; font-size: 15px; }
+    .channels-grid { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0; }
+    .dates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .sig-section { margin-top: 28px; }
+    .sig-row { display: flex; gap: 24px; margin-bottom: 24px; }
+    .sig-block { flex: 1; }
+    .sig-block .sig-title { font-size: 13px; font-weight: 700; color: #7c5c30; margin-bottom: 4px; }
+    .sig-line { display: flex; align-items: baseline; gap: 8px; margin-top: 36px; }
+    .sig-line .label { font-size: 12px; white-space: nowrap; }
+    .sig-line .line { flex: 1; border-bottom: 1px dotted #64748b; }
+    .fa-section { margin-top: 20px; padding-top: 12px; border-top: 2px solid #1e293b; }
+    .fa-section .sig-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+    .print-btn { position: fixed; bottom: 20px; right: 20px; background: #6366f1; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 16px rgba(99,102,241,0.4); z-index: 100; }
     .print-btn:hover { background: #4f46e5; }
+    .small-note { font-size: 10px; color: #94a3b8; font-style: italic; }
 </style>
 </head><body>
-    <button class="print-btn no-print" onclick="window.print()">Print / Save as PDF</button>
-    <div class="header">
-        <h1>Corporate Card Request</h1>
-        <p>${request.event_id} &bull; Created ${new Date(request.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}</p>
-    </div>
 
-    <div class="section">
-        <h3>Request Information</h3>
-        <div class="grid">
-            <div class="field"><div class="label">Event ID</div><div class="value">${request.event_id}</div></div>
-            <div class="field"><div class="label">Status</div><div class="value"><span class="status status-${request.status}">${request.status}</span></div></div>
-            <div class="field"><div class="label">Requester</div><div class="value">${request.profiles?.name || "N/A"}</div></div>
-            <div class="field"><div class="label">Email</div><div class="value">${request.email || "N/A"}</div></div>
-            <div class="field"><div class="label">Contact</div><div class="value">${request.contact_no || "N/A"}</div></div>
-            <div class="field"><div class="label">Department</div><div class="value">${request.profiles?.department || "N/A"}</div></div>
+<button class="print-btn no-print" onclick="window.print()">Print / Save as PDF</button>
+
+<!-- Header -->
+<div class="header">
+    <div style="width:100px;"></div>
+    <div style="flex:1;text-align:center;">
+        <p style="font-size:14px;font-weight:700;margin-bottom:2px;">&#xe01;&#xe41;&#xe1a;&#xe1a;&#xe1f;&#xe2d;&#xe23;&#xe4c;&#xe21;&#xe02;&#xe2d;&#xe43;&#xe0a;&#xe49; CORPORATE EXECUTIVE CARD</p>
+    </div>
+    <div class="logo-area">IMPACT</div>
+</div>
+
+<!-- Card No -->
+<div class="card-no">
+    <span>CARD NO.</span> <span class="val">${request.event_id}</span>
+</div>
+
+<!-- Requester Staff Section -->
+<div class="section-title">REQUESTER STAFF / &#xe1e;&#xe19;&#xe31;&#xe01;&#xe07;&#xe32;&#xe19;&#xe1c;&#xe39;&#xe49;&#xe02;&#xe2d;&#xe43;&#xe0a;&#xe49;</div>
+<div class="form-row">
+    <span class="form-label">Full Name / &#xe0a;&#xe37;&#xe48;&#xe2d; :</span>
+    <span class="form-value">${request.profiles?.name || ""}</span>
+</div>
+<div class="form-row">
+    <span class="form-label">Department / &#xe41;&#xe1c;&#xe19;&#xe01; :</span>
+    <span class="form-value">${request.profiles?.department || ""}</span>
+</div>
+<div class="form-row">
+    <span class="form-label">Contact No. / &#xe40;&#xe1a;&#xe2d;&#xe23;&#xe4c;&#xe15;&#xe34;&#xe14;&#xe15;&#xe48;&#xe2d; :</span>
+    <span class="form-value" style="max-width:200px;">${request.contact_no || ""}</span>
+    <span class="form-label" style="min-width:60px;">E-Mail :</span>
+    <span class="form-value">${request.email || ""}</span>
+</div>
+
+<!-- Request Details -->
+<div class="section-title">REQUEST DETAILS / &#xe23;&#xe32;&#xe22;&#xe25;&#xe30;&#xe40;&#xe2d;&#xe35;&#xe22;&#xe14;&#xe01;&#xe32;&#xe23;&#xe02;&#xe2d;&#xe43;&#xe0a;&#xe49;</div>
+<div class="form-row">
+    <span class="form-label">Objective / &#xe27;&#xe31;&#xe15;&#xe16;&#xe38;&#xe1b;&#xe23;&#xe30;&#xe2a;&#xe07;&#xe04;&#xe4c; :</span>
+    <span class="form-value">${request.objective || ""}</span>
+</div>
+<div style="margin-top:2px;margin-bottom:4px;">
+    <span class="form-value" style="display:block;border-bottom:1px dotted #94a3b8;min-height:18px;">${request.project_name || ""}</span>
+</div>
+
+<!-- Promotional Channels -->
+<div style="margin-top:12px;">
+    <span style="font-size:12px;font-weight:600;">Promotional Channels / &#xe0a;&#xe48;&#xe2d;&#xe07;&#xe17;&#xe32;&#xe07;&#xe43;&#xe19;&#xe01;&#xe32;&#xe23;&#xe42;&#xe06;&#xe29;&#xe13;&#xe32;</span>
+    <p class="small-note">*Choose your type of Promotional Channels</p>
+    <div class="channels-grid" style="margin-top:6px;">
+        ${channelCheckboxes}
+        <div style="display:inline-flex;align-items:center;gap:6px;min-width:200px;">
+            <div style="width:14px;height:14px;border:1.5px solid #94a3b8;display:flex;align-items:center;justify-content:center;font-size:10px;">
+                ${hasOther ? "&#10003;" : "&nbsp;"}
+            </div>
+            <span style="font-size:12px;">Other : </span>
+            <span style="flex:1;border-bottom:1px dotted #94a3b8;font-size:12px;">${otherVal || ""}</span>
         </div>
     </div>
+</div>
 
-    <div class="section">
-        <h3>Project Details</h3>
-        <div class="grid">
-            <div class="field"><div class="label">Project</div><div class="value">${request.project_name || "N/A"}</div></div>
-            <div class="field"><div class="label">Billing Type</div><div class="value">${(request.billing_type || "").replace("_", " ")}</div></div>
-            <div class="field"><div class="label">Amount</div><div class="value" style="font-size:18px;color:#6366f1;">&#3647;${Number(request.amount || 0).toLocaleString()}</div></div>
-            <div class="field"><div class="label">Period</div><div class="value">${request.start_date ? new Date(request.start_date).toLocaleDateString("en-GB") : "N/A"} - ${request.end_date ? new Date(request.end_date).toLocaleDateString("en-GB") : "N/A"}</div></div>
+<!-- Dates -->
+<div style="margin-top:12px;">
+    <div class="form-row">
+        <span class="form-label">Booking Date / &#xe27;&#xe31;&#xe19;&#xe17;&#xe35;&#xe48;&#xe2a;&#xe31;&#xe48;&#xe07;&#xe0b;&#xe37;&#xe49;&#xe2d;&#xe42;&#xe06;&#xe29;&#xe13;&#xe32; :</span>
+        <span class="form-value">${fmtDate(request.booking_date)}</span>
+    </div>
+    <div class="form-row">
+        <span class="form-label">Effective Date / &#xe27;&#xe31;&#xe19;&#xe17;&#xe35;&#xe48;&#xe42;&#xe06;&#xe29;&#xe13;&#xe32;&#xe40;&#xe23;&#xe34;&#xe48;&#xe21;&#xe21;&#xe35;&#xe1c;&#xe25; :</span>
+        <span class="form-value">${fmtDate(request.effective_date)}</span>
+    </div>
+    <div class="dates-grid">
+        <div class="form-row">
+            <span class="form-label">Start Date / &#xe27;&#xe31;&#xe19;&#xe40;&#xe23;&#xe34;&#xe48;&#xe21; :</span>
+            <span class="form-value">${fmtDate(request.start_date)}</span>
+        </div>
+        <div class="form-row">
+            <span class="form-label">End Date / &#xe27;&#xe31;&#xe19;&#xe2a;&#xe34;&#xe49;&#xe19;&#xe2a;&#xe38;&#xe14; :</span>
+            <span class="form-value">${fmtDate(request.end_date)}</span>
         </div>
     </div>
-
-    <div class="section">
-        <h3>Objective</h3>
-        <p style="font-size:14px;line-height:1.6;">${request.objective || "N/A"}</p>
+    <div class="form-row">
+        <span class="form-label">Amount / &#xe08;&#xe33;&#xe19;&#xe27;&#xe19;&#xe40;&#xe07;&#xe34;&#xe19; :</span>
+        <span class="form-value" style="font-weight:600;">&#3647;${Number(request.amount || 0).toLocaleString()} (${(request.billing_type || "").replace("_", " ")})</span>
     </div>
+</div>
 
-    ${channels ? `<div class="section"><h3>Promotional Channels</h3><table><thead><tr><th>Channel</th><th>Media Account</th><th>Access List</th></tr></thead><tbody>${channels}</tbody></table></div>` : ""}
-
-    ${request.approval_notes ? `<div class="section"><h3>Approval Notes</h3><p style="font-size:14px;">${request.approval_notes}</p></div>` : ""}
-
-    <div class="signature-area">
-        <div class="sig-block"><div class="sig-line">Requester Signature</div></div>
-        <div class="sig-block"><div class="sig-line">Approver Signature</div></div>
+<!-- Signature Sections -->
+<div class="sig-section">
+    <div class="sig-row">
+        <div class="sig-block">
+            <div class="sig-title">REQUESTER SIGNATURE / &#xe25;&#xe07;&#xe0a;&#xe37;&#xe48;&#xe2d;&#xe1c;&#xe39;&#xe49;&#xe02;&#xe2d;&#xe43;&#xe0a;&#xe49;</div>
+            <div class="sig-line"><span class="label">Signature :</span><span class="line"></span></div>
+            <div class="sig-line" style="margin-top:12px;"><span class="label">Date :</span><span class="line"></span></div>
+        </div>
     </div>
+    <div class="sig-row">
+        <div class="sig-block">
+            <div class="sig-title" style="color:#7c5c30;">AUTHORIZER / &#xe25;&#xe07;&#xe0a;&#xe37;&#xe48;&#xe2d;&#xe1c;&#xe39;&#xe49;&#xe2d;&#xe19;&#xe38;&#xe21;&#xe31;&#xe15;&#xe34;</div>
+            <div class="sig-line"><span class="label">Signature :</span><span class="line"></span><span class="label" style="margin-left:20px;">Date :</span><span class="line"></span></div>
+        </div>
+    </div>
+    <div class="fa-section">
+        <div class="sig-title">FA DEPARTMENT USE ONLY</div>
+        <div class="sig-line"><span class="label">Verified By / &#xe15;&#xe23;&#xe27;&#xe08;&#xe2a;&#xe2d;&#xe1a;&#xe42;&#xe14;&#xe22; :</span><span class="line"></span><span class="label" style="margin-left:20px;">Date :</span><span class="line"></span></div>
+    </div>
+</div>
+
 </body></html>`;
 
         return new NextResponse(html, {
-            headers: {
-                "Content-Type": "text/html; charset=utf-8",
-            },
+            headers: { "Content-Type": "text/html; charset=utf-8" },
         });
     } catch (error: any) {
         console.error("PDF generation error:", error);
