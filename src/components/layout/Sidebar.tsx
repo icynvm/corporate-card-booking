@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 
 const navItems = [
     {
         label: "Dashboard",
         href: "/dashboard",
+        roles: ["admin", "user", "manager"],
         icon: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="7" height="7" />
@@ -21,6 +21,7 @@ const navItems = [
     {
         label: "New Request",
         href: "/request-form",
+        roles: ["admin", "user", "manager"],
         icon: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -33,6 +34,7 @@ const navItems = [
     {
         label: "My Requests",
         href: "/my-requests",
+        roles: ["admin", "user", "manager"],
         icon: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -45,6 +47,7 @@ const navItems = [
     {
         label: "Audit Logs",
         href: "/audit-logs",
+        roles: ["admin", "manager"],
         icon: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 20h9" />
@@ -55,6 +58,7 @@ const navItems = [
     {
         label: "Admin Panel",
         href: "/admin",
+        roles: ["admin"],
         icon: (
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -104,7 +108,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     return (
         <>
-            {/* Mobile Overlay */}
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
@@ -112,9 +115,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 />
             )}
 
-            {/* Sidebar element */}
             <aside className={`fixed left-0 top-0 h-full w-64 glass-card !rounded-none border-r border-white/20 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                {/* Logo & Close Button */}
                 <div className="p-6 border-b border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shadow-lg">
@@ -128,7 +129,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Booking System</p>
                         </div>
                     </div>
-                    {/* Mobile Close Button */}
                     <button onClick={onClose} className="lg:hidden p-1 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -137,11 +137,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </button>
                 </div>
 
-                {/* Navigation */}
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                     {navItems.map((item) => {
-                        // Hide admin panel for non-FA users
-                        if (item.label === "Admin Panel" && userRole !== "FA") return null;
+                        if (!item.roles.includes(userRole)) return null;
 
                         const isActive = pathname === item.href;
                         return (
@@ -162,7 +160,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     })}
                 </nav>
 
-                {/* User Info + Logout */}
                 <div className="p-4 border-t border-white/10">
                     <div className="flex items-center gap-3 px-3 py-2 mb-2">
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-200 to-purple-200 flex items-center justify-center flex-shrink-0">
@@ -172,7 +169,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-700 truncate">{userName}</p>
-                            <p className="text-[10px] text-gray-400 truncate">{userDepartment}</p>
+                            <p className="text-[10px] text-gray-400 truncate">{userDepartment} &middot; {userRole}</p>
                         </div>
                     </div>
                     <button
