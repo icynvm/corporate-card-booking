@@ -8,6 +8,7 @@ export default function RegisterPage() {
     const [step, setStep] = useState<"form" | "otp">("form");
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [department, setDepartment] = useState("");
     const [otpCode, setOtpCode] = useState("");
     const [error, setError] = useState("");
@@ -23,7 +24,7 @@ export default function RegisterPage() {
             const res = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, department }),
+                body: JSON.stringify({ name, email, password, department }),
             });
             const data = await res.json();
 
@@ -78,13 +79,13 @@ export default function RegisterPage() {
                         Create <span className="gradient-text">Account</span>
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        {step === "form" ? "Register to start using the system" : "Enter the verification code"}
+                        {step === "form" ? "Register to start using the system" : "Enter the verification code sent to your email"}
                     </p>
                 </div>
 
                 <div className="glass-card !p-8">
                     {step === "form" ? (
-                        <form onSubmit={handleRegister} className="space-y-5">
+                        <form onSubmit={handleRegister} className="space-y-4">
                             {error && (
                                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">{error}</div>
                             )}
@@ -97,6 +98,11 @@ export default function RegisterPage() {
                             <div>
                                 <label className="label-text">Email</label>
                                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" placeholder="you@company.com" required />
+                            </div>
+
+                            <div>
+                                <label className="label-text">Password</label>
+                                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field" placeholder="Min. 6 characters" required minLength={6} />
                             </div>
 
                             <div>
@@ -113,7 +119,7 @@ export default function RegisterPage() {
                                         </svg>
                                         Creating account...
                                     </>
-                                ) : "Create Account"}
+                                ) : "Create Account & Verify Email"}
                             </button>
                         </form>
                     ) : (
