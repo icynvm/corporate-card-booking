@@ -21,6 +21,11 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(new URL("/dashboard", request.url));
         }
 
+        // Email settings: admin only
+        if (request.nextUrl.pathname.startsWith("/email-settings") && payload.role !== "admin") {
+            return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
+
         // Audit logs: only admin and manager
         if (request.nextUrl.pathname.startsWith("/audit-logs") && payload.role === "user") {
             return NextResponse.redirect(new URL("/dashboard", request.url));
