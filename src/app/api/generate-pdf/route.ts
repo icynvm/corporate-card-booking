@@ -155,8 +155,8 @@ export async function POST(req: NextRequest) {
             for (const ch of formData.promotionalChannels) {
                 if (yPos < 100) {
                     // Add new page if running out of space
-                    const newPage = pdfDoc.addPage([595.28, 841.89]);
-                    yPos = newPage.getSize().height - 60;
+                    const extraPage = pdfDoc.addPage([595.28, 841.89]);
+                    yPos = extraPage.getSize().height - 60;
                 }
 
                 page.drawText(`● ${ch.channel}`, {
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Footer: Signature Lines ──
-        yPos = Math.min(yPos, 180);
+        void yPos; // consumed above
 
         page.drawLine({
             start: { x: 50, y: 120 },
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
         // Serialize to bytes
         const pdfBytes = await pdfDoc.save();
 
-        return new NextResponse(pdfBytes, {
+        return new NextResponse(Buffer.from(pdfBytes), {
             headers: {
                 "Content-Type": "application/pdf",
                 "Content-Disposition": `attachment; filename="card-request-${eventId}.pdf"`,
