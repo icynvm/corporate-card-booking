@@ -49,10 +49,31 @@ CREATE TABLE IF NOT EXISTS requests (
     status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'COMPLETED')),
     promotional_channels JSONB DEFAULT '[]',
     pdf_url TEXT,
+    approval_file_url TEXT,
+    approval_notes TEXT DEFAULT '',
     approval_token TEXT UNIQUE,
     approval_token_expiry TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3b. Hosting Allocations (for Web Hosting requests)
+CREATE TABLE IF NOT EXISTS hosting_allocations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    hosting_name TEXT NOT NULL,
+    provider TEXT DEFAULT '',
+    max_sites INT NOT NULL DEFAULT 3,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS hosting_sites (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    hosting_id UUID NOT NULL REFERENCES hosting_allocations(id) ON DELETE CASCADE,
+    request_id UUID REFERENCES requests(id) ON DELETE SET NULL,
+    domain_name TEXT NOT NULL,
+    is_subdomain BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 4. Request Payments
@@ -100,6 +121,8 @@ ALTER TABLE requests DISABLE ROW LEVEL SECURITY;
 ALTER TABLE request_payments DISABLE ROW LEVEL SECURITY;
 ALTER TABLE receipts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE hosting_allocations DISABLE ROW LEVEL SECURITY;
+ALTER TABLE hosting_sites DISABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- Updated_at trigger function

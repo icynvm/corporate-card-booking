@@ -37,6 +37,8 @@ export interface RequestRecord {
     status: "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED";
     promotional_channels: ChannelDetail[] | null;
     pdf_url: string | null;
+    approval_file_url: string | null;
+    approval_notes: string;
     approval_token: string | null;
     created_at: string;
     updated_at: string;
@@ -81,5 +83,23 @@ export interface AuditLog {
     user_id: string | null;
     user_name: string;
     changes: Record<string, unknown>;
+    created_at: string;
+}
+
+export interface HostingAllocation {
+    id: string;
+    hosting_name: string;
+    provider: string;
+    max_sites: number;
+    created_at: string;
+    sites?: HostingSite[];
+}
+
+export interface HostingSite {
+    id: string;
+    hosting_id: string;
+    request_id: string | null;
+    domain_name: string;
+    is_subdomain: boolean;
     created_at: string;
 }
