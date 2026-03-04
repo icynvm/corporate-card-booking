@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { generateOTP, sendOTPEmail } from "@/lib/session";
+import { hashPassword, generateOTP, sendOTPEmail } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
     try {
         const supabase = createServerSupabase();
-        const { name, email, department } = await req.json();
+        const { name, email, password, department } = await req.json();
 
-        if (!name || !email || !department) {
-            return NextResponse.json({ error: "Name, email, and department are required" }, { status: 400 });
+        if (!name || !email || !password || !department) {
+            return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+        }
+
+        if (password.length < 6) {
+            return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
         }
 
         // Check if email already exists
@@ -22,14 +26,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "An account with this email already exists. Please login instead." }, { status: 409 });
         }
 
-        // Create profile
+        // Hash password
+        const password_hash = await hashPassword(password);
+
+        // Create profile (not yet verified)
         const { data: profile, error: createError } = await supabase
             .from("profiles")
             .insert({
                 name,
                 email: email.toLowerCase(),
+                password_hash,
                 department,
-                role: "USER",
+                role: "user",
+                email_verified: false,
             })
             .select()
             .single();
