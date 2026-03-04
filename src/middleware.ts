@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Public routes that don't require auth
-    const publicRoutes = ["/login", "/register", "/api/approve", "/approval-result"];
+    const publicRoutes = ["/login", "/register", "/api/approve", "/approval-result", "/api/create-admin", "/auth/callback"];
     const isPublic = publicRoutes.some((route) => pathname.startsWith(route));
 
     if (isPublic) {
@@ -41,6 +41,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        "/((?!_next/static|_next/image|favicon.ico|api/approve|login|register|approval-result).*)",
+        "/((?!_next/static|_next/image|favicon.ico|api/approve|api/create-admin|auth/callback|login|register|approval-result).*)",
     ],
 };
