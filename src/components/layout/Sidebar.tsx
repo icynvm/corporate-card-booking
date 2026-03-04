@@ -71,6 +71,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             if (user) {
                 setUserName(user.user_metadata?.name || user.email || "User");
                 setUserDepartment(user.user_metadata?.department || "");
+            } else {
+                // Fallback for no-auth development mode
+                setUserName("Developer Admin");
+                setUserDepartment("Development");
             }
         };
         getUser();
