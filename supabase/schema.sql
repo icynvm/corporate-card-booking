@@ -1,11 +1,15 @@
 -- ============================================
--- Corporate Card Booking System - Supabase Schema
+-- Corporate Card Booking System - Standalone Schema (No Auth)
 -- Run this in Supabase SQL Editor (Dashboard → SQL Editor → New Query)
 -- ============================================
 
--- 1. Profiles table (extends auth.users)
+-- 0. Cleanup existing triggers
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user();
+
+-- 1. Profiles table (Standalone, no longer references auth.users)
 CREATE TABLE IF NOT EXISTS profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     department TEXT NOT NULL DEFAULT '',
@@ -51,7 +55,7 @@ CREATE TABLE IF NOT EXISTS requests (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Request Payments (for yearly subscriptions paid monthly)
+-- 4. Request Payments
 CREATE TABLE IF NOT EXISTS request_payments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     request_id UUID NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
@@ -87,68 +91,15 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- ============================================
--- Row Level Security (RLS) Policies
+-- DISABLE Row Level Security (RLS) for Dev Mode
 -- ============================================
 
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE request_payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE receipts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
-
--- Profiles: users can read all, update own
-CREATE POLICY "Anyone can view profiles" ON profiles FOR SELECT USING (true);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
-
--- Projects: all authenticated can read and create
-CREATE POLICY "Authenticated can view projects" ON projects FOR SELECT USING (true);
-CREATE POLICY "Authenticated can create projects" ON projects FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "Authenticated can update projects" ON projects FOR UPDATE USING (auth.uid() IS NOT NULL);
-
--- Requests: all authenticated can CRUD
-CREATE POLICY "Authenticated can view requests" ON requests FOR SELECT USING (true);
-CREATE POLICY "Authenticated can create requests" ON requests FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "Authenticated can update requests" ON requests FOR UPDATE USING (true);
-
--- Payments: all authenticated
-CREATE POLICY "Authenticated can view payments" ON request_payments FOR SELECT USING (true);
-CREATE POLICY "Authenticated can manage payments" ON request_payments FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "Authenticated can update payments" ON request_payments FOR UPDATE USING (auth.uid() IS NOT NULL);
-
--- Receipts
-CREATE POLICY "Authenticated can view receipts" ON receipts FOR SELECT USING (true);
-CREATE POLICY "Authenticated can manage receipts" ON receipts FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "Authenticated can update receipts" ON receipts FOR UPDATE USING (auth.uid() IS NOT NULL);
-
--- Audit logs: all authenticated can read, system can write
-CREATE POLICY "Authenticated can view audit logs" ON audit_logs FOR SELECT USING (true);
-CREATE POLICY "Authenticated can create audit logs" ON audit_logs FOR INSERT WITH CHECK (true);
-
--- ============================================
--- Auto-create profile on signup trigger
--- ============================================
-
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.profiles (id, name, email, department, role)
-    VALUES (
-        NEW.id,
-        COALESCE(NEW.raw_user_meta_data->>'name', ''),
-        NEW.email,
-        COALESCE(NEW.raw_user_meta_data->>'department', ''),
-        'USER'
-    );
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE projects DISABLE ROW LEVEL SECURITY;
+ALTER TABLE requests DISABLE ROW LEVEL SECURITY;
+ALTER TABLE request_payments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE receipts DISABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- Updated_at trigger function
@@ -162,7 +113,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS set_updated_at_profiles ON profiles;
 CREATE TRIGGER set_updated_at_profiles BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+DROP TRIGGER IF EXISTS set_updated_at_projects ON projects;
 CREATE TRIGGER set_updated_at_projects BEFORE UPDATE ON projects FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+DROP TRIGGER IF EXISTS set_updated_at_requests ON requests;
 CREATE TRIGGER set_updated_at_requests BEFORE UPDATE ON requests FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+DROP TRIGGER IF EXISTS set_updated_at_receipts ON receipts;
 CREATE TRIGGER set_updated_at_receipts BEFORE UPDATE ON receipts FOR EACH ROW EXECUTE FUNCTION update_updated_at();
