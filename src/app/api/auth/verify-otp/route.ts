@@ -28,10 +28,13 @@ export async function POST(req: NextRequest) {
         }
 
         // Mark OTP as used
+        await supabase.from("otp_codes").update({ used: true }).eq("id", otpRecord.id);
+
+        // Mark profile as verified
         await supabase
-            .from("otp_codes")
-            .update({ used: true })
-            .eq("id", otpRecord.id);
+            .from("profiles")
+            .update({ email_verified: true })
+            .eq("email", email.toLowerCase());
 
         // Get profile
         const { data: profile } = await supabase
@@ -53,7 +56,6 @@ export async function POST(req: NextRequest) {
             department: profile.department,
         });
 
-        // Set cookie
         const response = NextResponse.json({
             success: true,
             user: {
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest) {
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             path: "/",
-            maxAge: 7 * 24 * 60 * 60, // 7 days
+            maxAge: 7 * 24 * 60 * 60,
         });
 
         return response;
