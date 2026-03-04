@@ -2,53 +2,64 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 export default function RegisterPage() {
     const router = useRouter();
+    const [step, setStep] = useState<"form" | "otp">("form");
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [department, setDepartment] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
+    const [otpCode, setOtpCode] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [devCode, setDevCode] = useState("");
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
-
-        if (password !== confirmPassword) {
-            setError("Passwords do not match");
-            return;
-        }
-
-        if (password.length < 6) {
-            setError("Password must be at least 6 characters");
-            return;
-        }
-
         setLoading(true);
 
-        const { error: authError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    name,
-                    department,
-                },
-            },
-        });
+        try {
+            const res = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, department }),
+            });
+            const data = await res.json();
 
-        if (authError) {
-            setError(authError.message);
+            if (!res.ok) throw new Error(data.error);
+
+            if (data.devCode) setDevCode(data.devCode);
+            setStep("otp");
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
             setLoading(false);
-            return;
         }
+    };
 
-        router.push("/dashboard");
-        router.refresh();
+    const handleVerifyOTP = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+
+        try {
+            const res = await fetch("/api/auth/verify-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, code: otpCode }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error);
+
+            router.push("/dashboard");
+            router.refresh();
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -66,103 +77,97 @@ export default function RegisterPage() {
                     <h1 className="text-2xl font-bold text-gray-800">
                         Create <span className="gradient-text">Account</span>
                     </h1>
-                    <p className="text-sm text-gray-500 mt-1">Register to start using the system</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                        {step === "form" ? "Register to start using the system" : "Enter the verification code"}
+                    </p>
                 </div>
 
                 <div className="glass-card !p-8">
-                    <form onSubmit={handleRegister} className="space-y-5">
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
-                                {error}
-                            </div>
-                        )}
-
-                        <div>
-                            <label className="label-text">Full Name</label>
-                            <input
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="input-field"
-                                placeholder="Enter your full name"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="label-text">Email</label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="input-field"
-                                placeholder="you@company.com"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="label-text">Department</label>
-                            <input
-                                type="text"
-                                value={department}
-                                onChange={(e) => setDepartment(e.target.value)}
-                                className="input-field"
-                                placeholder="e.g. Digital Marketing"
-                                required
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="label-text">Password</label>
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="input-field"
-                                    placeholder="Min 6 chars"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="label-text">Confirm</label>
-                                <input
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="input-field"
-                                    placeholder="Confirm"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                            {loading ? (
-                                <>
-                                    <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                    </svg>
-                                    Creating account...
-                                </>
-                            ) : (
-                                "Create Account"
+                    {step === "form" ? (
+                        <form onSubmit={handleRegister} className="space-y-5">
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">{error}</div>
                             )}
-                        </button>
-                    </form>
+
+                            <div>
+                                <label className="label-text">Full Name</label>
+                                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-field" placeholder="Enter your full name" required />
+                            </div>
+
+                            <div>
+                                <label className="label-text">Email</label>
+                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" placeholder="you@company.com" required />
+                            </div>
+
+                            <div>
+                                <label className="label-text">Department</label>
+                                <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} className="input-field" placeholder="e.g. Digital Marketing" required />
+                            </div>
+
+                            <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
+                                {loading ? (
+                                    <>
+                                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                        </svg>
+                                        Creating account...
+                                    </>
+                                ) : "Create Account"}
+                            </button>
+                        </form>
+                    ) : (
+                        <form onSubmit={handleVerifyOTP} className="space-y-5">
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">{error}</div>
+                            )}
+
+                            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm">
+                                A 6-digit code was sent to <strong>{email}</strong>
+                            </div>
+
+                            {devCode && (
+                                <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl text-sm">
+                                    <strong>Dev Mode:</strong> Your code is <span className="font-mono font-bold text-lg">{devCode}</span>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="label-text">Verification Code</label>
+                                <input
+                                    type="text"
+                                    value={otpCode}
+                                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                    className="input-field text-center text-2xl tracking-[0.5em] font-mono"
+                                    placeholder="000000"
+                                    maxLength={6}
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+
+                            <button type="submit" disabled={loading || otpCode.length !== 6} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
+                                {loading ? (
+                                    <>
+                                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                        </svg>
+                                        Verifying...
+                                    </>
+                                ) : "Verify & Continue"}
+                            </button>
+
+                            <button type="button" onClick={() => { setStep("form"); setError(""); setDevCode(""); }} className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors">
+                                โ Back to form
+                            </button>
+                        </form>
+                    )}
 
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-400">
                             Already have an account?{" "}
-                            <a href="/login" className="text-brand-500 hover:text-brand-700 font-medium transition-colors">
-                                Sign In
-                            </a>
+                            <a href="/login" className="text-brand-500 hover:text-brand-700 font-medium transition-colors">Sign In</a>
                         </p>
                     </div>
                 </div>
