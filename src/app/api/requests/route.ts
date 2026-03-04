@@ -9,8 +9,7 @@ export async function GET(req: NextRequest) {
         const projectId = searchParams.get("projectId");
         const billingType = searchParams.get("billingType");
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const where: any = {};
+        const where: Record<string, string> = {};
         if (status) where.status = status;
         if (projectId) where.projectId = projectId;
         if (billingType) where.billingType = billingType;
