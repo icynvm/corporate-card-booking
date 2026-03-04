@@ -71,26 +71,33 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const [userName, setUserName] = useState("");
+    const [userName, setUserName] = useState("Loading...");
     const [userDepartment, setUserDepartment] = useState("");
+    const [userRole, setUserRole] = useState("");
 
     useEffect(() => {
         const getUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                setUserName(user.user_metadata?.name || user.email || "User");
-                setUserDepartment(user.user_metadata?.department || "");
-            } else {
-                // Fallback for no-auth development mode
-                setUserName("Developer Admin");
-                setUserDepartment("Development");
+            try {
+                const res = await fetch("/api/auth/me");
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.user) {
+                        setUserName(data.user.name);
+                        setUserDepartment(data.user.department);
+                        setUserRole(data.user.role);
+                        return;
+                    }
+                }
+                router.push("/login");
+            } catch {
+                setUserName("Offline");
             }
         };
         getUser();
-    }, []);
+    }, [router]);
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        await fetch("/api/auth/logout", { method: "POST" });
         router.push("/login");
         router.refresh();
     };
@@ -133,6 +140,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {/* Navigation */}
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                     {navItems.map((item) => {
+                        // Hide admin panel for non-FA users
+                        if (item.label === "Admin Panel" && userRole !== "FA") return null;
+
                         const isActive = pathname === item.href;
                         return (
                             <Link
