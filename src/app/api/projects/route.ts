@@ -30,25 +30,42 @@ export async function GET(req: NextRequest) {
 // POST: Create a new project
 export async function POST(req: NextRequest) {
     try {
-        const supabase = createServerSupabase();
         const body = await req.json();
+        const supabase = createServerSupabase();
 
         let userId = body.userId;
         if (!userId) {
+            // Find or create the dev profile
             const { data: profile } = await supabase
                 .from("profiles")
                 .select("id")
                 .eq("email", "dev@company.com")
-                .single();
-            userId = profile?.id;
+                .maybeSingle();
+
+            if (profile) {
+                userId = profile.id;
+            } else {
+                const { data: newProfile, error: createError } = await supabase
+                    .from("profiles")
+                    .insert({
+                        name: "Developer Admin",
+                        email: "dev@company.com",
+                        department: "Development",
+                        role: "FA"
+                    })
+                    .select("id")
+                    .single();
+
+                if (createError) throw new Error(`Failed to create dev profile: ${createError.message}`);
+                userId = newProfile.id;
+            }
         }
 
-        const { data: project, error } = await supabase
+        const { data, error } = await supabase
             .from("projects")
             .insert({
                 project_name: body.projectName,
-                total_budget: parseFloat(body.totalBudget || "0"),
-                remaining_budget: parseFloat(body.totalBudget || "0"),
+                description: body.description || "",
                 created_by: userId,
             })
             .select()
@@ -59,18 +76,18 @@ export async function POST(req: NextRequest) {
         // Audit log
         await supabase.from("audit_logs").insert({
             entity_type: "PROJECT",
-            entity_id: project?.id || "",
+            entity_id: data.id,
             action: "CREATE",
             user_id: userId,
-            user_name: body.userName || "Developer Admin",
-            changes: { project_name: body.projectName, total_budget: body.totalBudget },
+            user_name: "Developer Admin",
+            changes: { project_name: body.projectName },
         });
 
-        return NextResponse.json(project, { status: 201 });
-    } catch (error) {
+        return NextResponse.json(data, { status: 201 });
+    } catch (error: any) {
         console.error("Failed to create project:", error);
         return NextResponse.json(
-            { error: "Failed to create project" },
+            { error: error.message || "Failed to create project" },
             { status: 500 }
         );
     }

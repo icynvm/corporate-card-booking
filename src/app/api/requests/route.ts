@@ -47,16 +47,35 @@ export async function POST(req: NextRequest) {
 
         let userId = body.userId;
         if (!userId) {
-            const { data: profile } = await supabase
+            // Find or create the dev profile
+            const { data: profile, error: profileError } = await supabase
                 .from("profiles")
                 .select("id")
                 .eq("email", "dev@company.com")
-                .single();
-            userId = profile?.id;
+                .maybeSingle();
+
+            if (profile) {
+                userId = profile.id;
+            } else {
+                // Auto-create dev profile if missing
+                const { data: newProfile, error: createError } = await supabase
+                    .from("profiles")
+                    .insert({
+                        name: "Developer Admin",
+                        email: "dev@company.com",
+                        department: "Development",
+                        role: "FA"
+                    })
+                    .select("id")
+                    .single();
+
+                if (createError) throw new Error(`Failed to create dev profile: ${createError.message}`);
+                userId = newProfile.id;
+            }
         }
 
         // Create the request
-        const { data: request, error } = await supabase
+        const { data: request, error: insertError } = await supabase
             .from("requests")
             .insert({
                 event_id: eventId,
@@ -78,30 +97,35 @@ export async function POST(req: NextRequest) {
             .select()
             .single();
 
-        if (error) throw error;
+        if (insertError) throw new Error(`Database insert failed: ${insertError.message}`);
 
         // If YEARLY_MONTHLY, create monthly payment entries
         if (body.billingType === "YEARLY_MONTHLY" && request) {
-            const startDate = new Date(body.startDate);
-            const endDate = new Date(body.endDate);
-            const totalAmount = parseFloat(body.amount);
-            const months: string[] = [];
-            const current = new Date(startDate);
-            while (current <= endDate) {
-                months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`);
-                current.setMonth(current.getMonth() + 1);
+            try {
+                const startDate = new Date(body.startDate);
+                const endDate = new Date(body.endDate);
+                const totalAmount = parseFloat(body.amount);
+                const months: string[] = [];
+                const current = new Date(startDate);
+                while (current <= endDate) {
+                    months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`);
+                    current.setMonth(current.getMonth() + 1);
+                }
+                const monthlyAmount = totalAmount / (months.length || 1);
+
+                const payments = months.map((my) => ({
+                    request_id: request.id,
+                    month_year: my,
+                    amount_due: Math.round(monthlyAmount * 100) / 100,
+                    amount_paid: 0,
+                    status: "PENDING",
+                }));
+
+                await supabase.from("request_payments").insert(payments);
+            } catch (paymentError) {
+                console.error("Failed to create payments:", paymentError);
+                // Don't fail the whole request for payments
             }
-            const monthlyAmount = totalAmount / (months.length || 1);
-
-            const payments = months.map((my) => ({
-                request_id: request.id,
-                month_year: my,
-                amount_due: Math.round(monthlyAmount * 100) / 100,
-                amount_paid: 0,
-                status: "PENDING",
-            }));
-
-            await supabase.from("request_payments").insert(payments);
         }
 
         // Audit log
@@ -115,10 +139,10 @@ export async function POST(req: NextRequest) {
         });
 
         return NextResponse.json(request, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to create request:", error);
         return NextResponse.json(
-            { error: "Failed to create request" },
+            { error: error.message || "Failed to create request" },
             { status: 500 }
         );
     }

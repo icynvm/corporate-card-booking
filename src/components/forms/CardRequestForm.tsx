@@ -25,6 +25,7 @@ export function CardRequestForm() {
     const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
     const [showProjectDropdown, setShowProjectDropdown] = useState(false);
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const projectRef = useRef<HTMLDivElement>(null);
 
     const {
@@ -97,24 +98,13 @@ export function CardRequestForm() {
     };
 
     const onSubmit = async (data: RequestFormData) => {
-        // Get current user or use standalone fallback
-        const { data: { user } } = await supabase.auth.getUser();
-        let userId = user?.id;
+        setSubmitError(null);
 
-        if (!userId) {
-            // Standalone mode: fetch the Developer profile
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("id")
-                .eq("email", "dev@company.com")
-                .single();
-            userId = profile?.id;
-        }
-
+        // Standalone mode: bypass auth and use dev profile
         const requestBody = {
             ...data,
-            userId: userId || null,
-            email: user?.email || "dev@company.com",
+            userId: null, // API will handle finding/creating the dev user
+            email: "dev@company.com",
             projectId: selectedProjectId,
             projectName: projectSearch,
         };
@@ -129,9 +119,12 @@ export function CardRequestForm() {
             if (res.ok) {
                 setSubmittedData(data);
                 setIsSubmitted(true);
+            } else {
+                const errorData = await res.json();
+                setSubmitError(errorData.error || "Failed to submit request (Server Error)");
             }
-        } catch {
-            // Handle error
+        } catch (err) {
+            setSubmitError("Failed to connect to the server. Please check your connection.");
         }
     };
 
@@ -151,6 +144,16 @@ export function CardRequestForm() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {submitError && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-center gap-3 animate-shake">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        {submitError}
+                    </div>
+                )}
                 {/* Personal Information */}
                 <GlassCard>
                     <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-5 flex items-center gap-2">
