@@ -28,8 +28,6 @@ export function CardRequestForm() {
         handleSubmit,
         control,
         formState: { errors, isSubmitting },
-        setValue,
-        watch,
     } = useForm<RequestFormData>({
         resolver: zodResolver(requestFormSchema),
         defaultValues: {
