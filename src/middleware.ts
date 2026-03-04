@@ -4,12 +4,10 @@ import type { NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
     const sessionCookie = request.cookies.get("cc_session")?.value;
 
-    // If no session, redirect to login
     if (!sessionCookie) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // Basic token validation (check it's a valid base64url JSON with non-expired exp)
     try {
         const payload = JSON.parse(Buffer.from(sessionCookie, "base64url").toString());
         if (!payload.pid || !payload.exp || payload.exp < Date.now()) {
@@ -19,7 +17,12 @@ export async function middleware(request: NextRequest) {
         }
 
         // Admin-only route protection
-        if (request.nextUrl.pathname.startsWith("/admin") && payload.role !== "FA") {
+        if (request.nextUrl.pathname.startsWith("/admin") && payload.role !== "admin") {
+            return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
+
+        // Audit logs: only admin and manager
+        if (request.nextUrl.pathname.startsWith("/audit-logs") && payload.role === "user") {
             return NextResponse.redirect(new URL("/dashboard", request.url));
         }
     } catch {
