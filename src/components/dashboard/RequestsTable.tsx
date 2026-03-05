@@ -125,10 +125,10 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                                         }`}
                                 >
                                     {latestReceipt?.status === "VERIFIED"
-                                        ? "Verified"
+                                        ? "โ“ Verified"
                                         : latestReceipt
-                                            ? "Pending"
-                                            : "Upload Receipt"}
+                                            ? "โณ Pending"
+                                            : "๐“ Upload Receipt"}
                                 </button>
                             )}
                         </div>
@@ -241,4 +241,3 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
         </div>
     );
 }
-
