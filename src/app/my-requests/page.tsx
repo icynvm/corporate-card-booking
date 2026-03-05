@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
+import SubProjectAllocation from "@/components/dashboard/SubProjectAllocation";
 import { RequestRecord, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
 export default function MyRequestsPage() {
     const [requests, setRequests] = useState<RequestRecord[]>([]);
@@ -208,6 +209,13 @@ export default function MyRequestsPage() {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Sub-Project Allocation for approved requests */}
+                            <SubProjectAllocation
+                                requestId={request.id}
+                                totalAmount={request.amount}
+                                isApproved={request.status === 'APPROVED'}
+                            />
                         </GlassCard>
                     ))}
                 </div>
