@@ -40,30 +40,25 @@ export function ApprovalUploadModal({ isOpen, onClose, requestId, eventId, onSuc
         setError(null);
 
         try {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-                const res = await fetch(`/api/requests/${requestId}/upload-approval`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        fileData: reader.result,
-                        fileName: file.name,
-                        notes,
-                    }),
-                });
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("notes", notes);
 
-                if (res.ok) {
-                    onSuccess();
-                    handleClose();
-                } else {
-                    const data = await res.json();
-                    setError(data.error || "Upload failed");
-                }
-                setUploading(false);
-            };
+            const res = await fetch(`/api/requests/${requestId}/upload-approval`, {
+                method: "POST",
+                body: formData,
+            });
+
+            if (res.ok) {
+                onSuccess();
+                handleClose();
+            } else {
+                const data = await res.json();
+                setError(data.error || "Upload failed");
+            }
         } catch {
             setError("Failed to upload file");
+        } finally {
             setUploading(false);
         }
     };
@@ -77,7 +72,7 @@ export function ApprovalUploadModal({ isOpen, onClose, requestId, eventId, onSuc
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={handleClose} title={`Upload Approval — ${eventId}`}>
+        <Modal isOpen={isOpen} onClose={handleClose} title={`Upload Approval โ€” ${eventId}`}>
             <div className="space-y-5">
                 {error && (
                     <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
