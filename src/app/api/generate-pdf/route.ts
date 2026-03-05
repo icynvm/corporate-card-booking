@@ -26,14 +26,13 @@ export async function POST(req: NextRequest) {
             page.drawLine({ start: { x, y: yPos - 18 }, end: { x: x + fieldWidth, y: yPos - 18 }, thickness: 0.5, color: lightGray });
         };
 
-        // ═══════════════════════════════════════════════════════════════
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
         // HEADER
-        // ═══════════════════════════════════════════════════════════════
-        page.drawText("IMPACT", { x: width - 120, y: height - 40, size: 16, font: helveticaBold, color: rgb(0.0, 0.32, 0.65) });
-        page.drawText("MUANG THONG THANI", { x: width - 120, y: height - 52, size: 6, font: helvetica, color: rgb(0.5, 0.5, 0.5) });
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
+        page.drawText("CORPORATE CARD", { x: width - 150, y: height - 40, size: 16, font: helveticaBold, color: rgb(0.15, 0.15, 0.15) });
 
-        // Title (Thai + English)
-        page.drawText("แบบฟอร์มขอใช้ CORPORATE EXECUTIVE CARD", {
+        // Title
+        page.drawText("CORPORATE EXECUTIVE CARD REQUEST FORM", {
             x: 100, y: y, size: 14, font: helveticaBold, color: textColor,
         });
         y -= 30;
@@ -46,29 +45,29 @@ export async function POST(req: NextRequest) {
         page.drawText(eventId, { x: 275, y, size: 10, font: helvetica, color: textColor });
         y -= 35;
 
-        // ═══════════════════════════════════════════════════════════════
-        // SECTION 1: REQUESTER STAFF / พนักงานผู้ขอใช้
-        // ═══════════════════════════════════════════════════════════════
-        page.drawText("REQUESTER STAFF / พนักงานผู้ขอใช้", {
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
+        // SECTION 1: REQUESTER STAFF
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
+        page.drawText("REQUESTER STAFF", {
             x: 50, y, size: 10, font: helveticaBold, color: brownColor,
         });
         page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 1, color: brownColor });
         y -= 25;
 
         // Full Name
-        page.drawText("Full Name/ ชื่อ  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText("Full Name :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
         page.drawText(formData.fullName || "", { x: 140, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 138, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
         // Department
-        page.drawText("Department / แผนก  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText("Department :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
         page.drawText(formData.department || "", { x: 165, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 163, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
         // Contact No. + E-Mail
-        page.drawText("Contact No. / เบอร์ติดต่อ  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText("Contact No. :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
         page.drawText(formData.contactNo || "", { x: 185, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 183, y: y - 4 }, end: { x: 320, y: y - 4 }, thickness: 0.5, color: lightGray });
 
@@ -77,17 +76,17 @@ export async function POST(req: NextRequest) {
         page.drawLine({ start: { x: 373, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 35;
 
-        // ═══════════════════════════════════════════════════════════════
-        // SECTION 2: REQUEST DETAILS / รายละเอียดการขอใช้
-        // ═══════════════════════════════════════════════════════════════
-        page.drawText("REQUEST DETAILS / รายละเอียดการขอใช้", {
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
+        // SECTION 2: REQUEST DETAILS
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
+        page.drawText("REQUEST DETAILS", {
             x: 50, y, size: 10, font: helveticaBold, color: brownColor,
         });
         page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 1, color: brownColor });
         y -= 25;
 
         // Objective
-        page.drawText("Objective / วัตถุประสงค์  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText("Objective :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
         const objectiveText = formData.objective || "";
         page.drawText(objectiveText.substring(0, 70), { x: 180, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 178, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
@@ -98,10 +97,10 @@ export async function POST(req: NextRequest) {
         page.drawLine({ start: { x: 98, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 30;
 
-        // ═══════════════════════════════════════════════════════════════
-        // SECTION 3: Promotional Channels / ช่องทางในการโฆษณา
-        // ═══════════════════════════════════════════════════════════════
-        page.drawText("Promotional Channels / ช่องทางในการโฆษณา", {
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
+        // SECTION 3: Promotional Channels
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
+        page.drawText("Promotional Channels", {
             x: 50, y, size: 9, font: helveticaBold, color: labelColor,
         });
         page.drawText("*Choose your type of Promotional Channels", {
@@ -124,49 +123,49 @@ export async function POST(req: NextRequest) {
             // Checkbox
             page.drawRectangle({ x: cx, y: cy - 3, width: 10, height: 10, borderColor: lineColor, borderWidth: 0.5 });
             if (isChecked) {
-                page.drawText("✓", { x: cx + 1.5, y: cy - 1.5, size: 9, font: helveticaBold, color: textColor });
+                page.drawText("โ“", { x: cx + 1.5, y: cy - 1.5, size: 9, font: helveticaBold, color: textColor });
             }
             page.drawText(ch, { x: cx + 15, y: cy, size: 8.5, font: helvetica, color: textColor });
         });
 
         y -= 65;
 
-        // ═══════════════════════════════════════════════════════════════
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
         // DATES
-        // ═══════════════════════════════════════════════════════════════
-        page.drawText("Booking Date / วันที่ส่งซื้อโฆษณา  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
+        page.drawText("Booking Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
         page.drawText(formData.bookingDate || "", { x: 230, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 228, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
-        page.drawText("Effective Date / วันที่โฆษณาเริ่มมีผล", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText("Effective Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
         page.drawText(formData.effectiveDate || "", { x: 230, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 228, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
         // Start + End
-        page.drawText("Start Date / วันเริ่ม  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText("Start Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
         page.drawText(formData.startDate || "", { x: 160, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 158, y: y - 4 }, end: { x: 280, y: y - 4 }, thickness: 0.5, color: lightGray });
 
-        page.drawText("End Date / วันสิ้นสุด  :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText("End Date :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
         page.drawText(formData.endDate || "", { x: 400, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 398, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
         // Amount
-        page.drawText("Amount / จำนวนเงิน  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-        const amountStr = formData.amount ? `฿${parseFloat(formData.amount).toLocaleString()}` : "";
+        page.drawText("Amount :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        const amountStr = formData.amount ? `เธฟ${parseFloat(formData.amount).toLocaleString()}` : "";
         page.drawText(amountStr, { x: 175, y, size: 9, font: helveticaBold, color: textColor });
         page.drawLine({ start: { x: 173, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 40;
 
-        // ═══════════════════════════════════════════════════════════════
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
         // SIGNATURES
-        // ═══════════════════════════════════════════════════════════════
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
 
         // Requester Signature
-        page.drawText("REQUESTER SIGNATURE / ลงชื่อผู้ขอใช้", {
+        page.drawText("REQUESTER SIGNATURE", {
             x: 50, y, size: 10, font: helveticaBold, color: brownColor,
         });
         page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 0.5, color: brownColor });
@@ -179,7 +178,7 @@ export async function POST(req: NextRequest) {
         y -= 40;
 
         // Authorizer Signature
-        page.drawText("AUTHORIZER / ลงชื่อผู้อนุมัติ", {
+        page.drawText("AUTHORIZER", {
             x: 50, y, size: 10, font: helveticaBold, color: brownColor,
         });
         page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 0.5, color: brownColor });
@@ -197,7 +196,7 @@ export async function POST(req: NextRequest) {
         });
         y -= 25;
 
-        page.drawText("Verified By / ตรวจสอบโดย  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText("Verified By :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
         page.drawLine({ start: { x: 190, y: y - 4 }, end: { x: 310, y: y - 4 }, thickness: 0.5, color: lightGray });
         page.drawText("Date  :", { x: 340, y, size: 8.5, font: helvetica, color: labelColor });
         page.drawLine({ start: { x: 370, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
