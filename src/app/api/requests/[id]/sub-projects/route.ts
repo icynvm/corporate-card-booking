@@ -1,18 +1,25 @@
-import { NextResponse } from "next/server";
-import { getServiceSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/session";
+import { NextRequest, NextResponse } from "next/server";
+import { createServerSupabase } from "@/lib/supabase";
+import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+
+// Helper to get session from cookie
+function getSession(req: NextRequest) {
+    const token = req.cookies.get(getSessionCookieName())?.value;
+    if (!token) return null;
+    return parseSessionToken(token);
+}
 
 export async function GET(
-    request: Request,
+    request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = await getSession();
+        const session = getSession(request);
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const supabase = getServiceSupabase();
+        const supabase = createServerSupabase();
 
         const { data, error } = await supabase
             .from("sub_projects")
@@ -39,11 +46,11 @@ export async function PUSH(
 }
 
 export async function POST(
-    request: Request,
+    request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = await getSession();
+        const session = getSession(request);
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
@@ -58,7 +65,7 @@ export async function POST(
             return NextResponse.json({ error: "Total amount is required and must be a number" }, { status: 400 });
         }
 
-        const supabase = getServiceSupabase();
+        const supabase = createServerSupabase();
 
         // Calculate the divided amount per sub-project
         const count = names.length;
@@ -95,16 +102,16 @@ export async function POST(
 }
 
 export async function DELETE(
-    request: Request,
+    request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = await getSession();
+        const session = getSession(request);
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const supabase = getServiceSupabase();
+        const supabase = createServerSupabase();
 
         const { error } = await supabase
             .from("sub_projects")
