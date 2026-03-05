@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -65,7 +66,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {/* Logo Header */}
                 <div className="p-4 border-b border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <span className="text-xl font-bold gradient-text tracking-tight">Corporate Card</span>
+                        <Image src="/images/impact-logo.png" alt="IMPACT" width={120} height={40} className="w-auto h-8 object-contain" />
                     </div>
                     <button onClick={onClose} className="lg:hidden p-1 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
