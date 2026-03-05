@@ -66,7 +66,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {/* Logo Header */}
                 <div className="p-4 border-b border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Image src="/images/impact-logo.png" alt="IMPACT" width={120} height={40} className="w-auto h-8 object-contain" />
+                        <Image src="https://wxxaazwykroptrnuaotk.supabase.co/storage/v1/object/public/Image/Impact_Muang_Thong_Thani_Logo.svg.png" alt="IMPACT" width={120} height={40} className="w-auto h-8 object-contain" />
                     </div>
                     <button onClick={onClose} className="lg:hidden p-1 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
