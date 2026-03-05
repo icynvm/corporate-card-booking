@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS requests (
     end_date DATE,
     booking_date DATE,
     effective_date DATE,
-    status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'COMPLETED')),
+    status TEXT NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'ACTIVE', 'COMPLETED', 'CANCELLED')),
     promotional_channels JSONB DEFAULT '[]',
     pdf_url TEXT,
     approval_file_url TEXT,
