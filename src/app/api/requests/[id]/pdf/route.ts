@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
 import { parseSessionToken, getSessionCookieName } from "@/lib/session";
-import { IMPACT_LOGO_BASE64 } from "@/lib/logo-base64";
 
 export async function GET(
     req: NextRequest,
@@ -96,9 +95,9 @@ export async function GET(
 <div class="header">
     <div style="width:100px;"></div>
     <div style="flex:1;text-align:center;">
-        <p style="font-size:14px;font-weight:700;margin-bottom:2px;">&#xe01;&#xe41;&#xe1a;&#xe1a;&#xe1f;&#xe2d;&#xe23;&#xe4c;&#xe21;&#xe02;&#xe2d;&#xe43;&#xe0a;&#xe49; CORPORATE EXECUTIVE CARD</p>
+        <p style="font-size:14px;font-weight:700;margin-bottom:2px;">CORPORATE EXECUTIVE CARD REQUEST FORM</p>
     </div>
-    <div class="logo-area"><img src="${IMPACT_LOGO_BASE64}" style="height:40px;object-fit:contain;" alt="IMPACT" /></div>
+    <div class="logo-area" style="font-weight:bold;font-size:18px;">CORPORATE CARD</div>
 </div>
 
 <!-- Card No -->
@@ -107,26 +106,26 @@ export async function GET(
 </div>
 
 <!-- Requester Staff Section -->
-<div class="section-title">REQUESTER STAFF / &#xe1e;&#xe19;&#xe31;&#xe01;&#xe07;&#xe32;&#xe19;&#xe1c;&#xe39;&#xe49;&#xe02;&#xe2d;&#xe43;&#xe0a;&#xe49;</div>
+<div class="section-title">REQUESTER STAFF</div>
 <div class="form-row">
-    <span class="form-label">Full Name / &#xe0a;&#xe37;&#xe48;&#xe2d; :</span>
+    <span class="form-label">Full Name :</span>
     <span class="form-value">${request.profiles?.name || ""}</span>
 </div>
 <div class="form-row">
-    <span class="form-label">Department / &#xe41;&#xe1c;&#xe19;&#xe01; :</span>
+    <span class="form-label">Department :</span>
     <span class="form-value">${request.profiles?.department || ""}</span>
 </div>
 <div class="form-row">
-    <span class="form-label">Contact No. / &#xe40;&#xe1a;&#xe2d;&#xe23;&#xe4c;&#xe15;&#xe34;&#xe14;&#xe15;&#xe48;&#xe2d; :</span>
+    <span class="form-label">Contact No. :</span>
     <span class="form-value" style="max-width:200px;">${request.contact_no || ""}</span>
     <span class="form-label" style="min-width:60px;">E-Mail :</span>
     <span class="form-value">${request.email || ""}</span>
 </div>
 
 <!-- Request Details -->
-<div class="section-title">REQUEST DETAILS / &#xe23;&#xe32;&#xe22;&#xe25;&#xe30;&#xe40;&#xe2d;&#xe35;&#xe22;&#xe14;&#xe01;&#xe32;&#xe23;&#xe02;&#xe2d;&#xe43;&#xe0a;&#xe49;</div>
+<div class="section-title">REQUEST DETAILS</div>
 <div class="form-row">
-    <span class="form-label">Objective / &#xe27;&#xe31;&#xe15;&#xe16;&#xe38;&#xe1b;&#xe23;&#xe30;&#xe2a;&#xe07;&#xe04;&#xe4c; :</span>
+    <span class="form-label">Objective :</span>
     <span class="form-value">${request.objective || ""}</span>
 </div>
 <div style="margin-top:2px;margin-bottom:4px;">
@@ -135,7 +134,7 @@ export async function GET(
 
 <!-- Promotional Channels -->
 <div style="margin-top:12px;">
-    <span style="font-size:12px;font-weight:600;">Promotional Channels / &#xe0a;&#xe48;&#xe2d;&#xe07;&#xe17;&#xe32;&#xe07;&#xe43;&#xe19;&#xe01;&#xe32;&#xe23;&#xe42;&#xe06;&#xe29;&#xe13;&#xe32;</span>
+    <span style="font-size:12px;font-weight:600;">Promotional Channels</span>
     <p class="small-note">*Choose your type of Promotional Channels</p>
     <div class="channels-grid" style="margin-top:6px;">
         ${channelCheckboxes}
@@ -152,25 +151,25 @@ export async function GET(
 <!-- Dates -->
 <div style="margin-top:12px;">
     <div class="form-row">
-        <span class="form-label">Booking Date / &#xe27;&#xe31;&#xe19;&#xe17;&#xe35;&#xe48;&#xe2a;&#xe31;&#xe48;&#xe07;&#xe0b;&#xe37;&#xe49;&#xe2d;&#xe42;&#xe06;&#xe29;&#xe13;&#xe32; :</span>
+        <span class="form-label">Booking Date :</span>
         <span class="form-value">${fmtDate(request.booking_date)}</span>
     </div>
     <div class="form-row">
-        <span class="form-label">Effective Date / &#xe27;&#xe31;&#xe19;&#xe17;&#xe35;&#xe48;&#xe42;&#xe06;&#xe29;&#xe13;&#xe32;&#xe40;&#xe23;&#xe34;&#xe48;&#xe21;&#xe21;&#xe35;&#xe1c;&#xe25; :</span>
+        <span class="form-label">Effective Date :</span>
         <span class="form-value">${fmtDate(request.effective_date)}</span>
     </div>
     <div class="dates-grid">
         <div class="form-row">
-            <span class="form-label">Start Date / &#xe27;&#xe31;&#xe19;&#xe40;&#xe23;&#xe34;&#xe48;&#xe21; :</span>
+            <span class="form-label">Start Date :</span>
             <span class="form-value">${fmtDate(request.start_date)}</span>
         </div>
         <div class="form-row">
-            <span class="form-label">End Date / &#xe27;&#xe31;&#xe19;&#xe2a;&#xe34;&#xe49;&#xe19;&#xe2a;&#xe38;&#xe14; :</span>
+            <span class="form-label">End Date :</span>
             <span class="form-value">${fmtDate(request.end_date)}</span>
         </div>
     </div>
     <div class="form-row">
-        <span class="form-label">Amount / &#xe08;&#xe33;&#xe19;&#xe27;&#xe19;&#xe40;&#xe07;&#xe34;&#xe19; :</span>
+        <span class="form-label">Amount :</span>
         <span class="form-value" style="font-weight:600;">&#3647;${Number(request.amount || 0).toLocaleString()} (${(request.billing_type || "").replace("_", " ")})</span>
     </div>
 </div>
@@ -179,20 +178,20 @@ export async function GET(
 <div class="sig-section">
     <div class="sig-row">
         <div class="sig-block">
-            <div class="sig-title">REQUESTER SIGNATURE / &#xe25;&#xe07;&#xe0a;&#xe37;&#xe48;&#xe2d;&#xe1c;&#xe39;&#xe49;&#xe02;&#xe2d;&#xe43;&#xe0a;&#xe49;</div>
+            <div class="sig-title">REQUESTER SIGNATURE</div>
             <div class="sig-line"><span class="label">Signature :</span><span class="line"></span></div>
             <div class="sig-line" style="margin-top:12px;"><span class="label">Date :</span><span class="line"></span></div>
         </div>
     </div>
     <div class="sig-row">
         <div class="sig-block">
-            <div class="sig-title" style="color:#7c5c30;">AUTHORIZER / &#xe25;&#xe07;&#xe0a;&#xe37;&#xe48;&#xe2d;&#xe1c;&#xe39;&#xe49;&#xe2d;&#xe19;&#xe38;&#xe21;&#xe31;&#xe15;&#xe34;</div>
+            <div class="sig-title" style="color:#7c5c30;">AUTHORIZER</div>
             <div class="sig-line"><span class="label">Signature :</span><span class="line"></span><span class="label" style="margin-left:20px;">Date :</span><span class="line"></span></div>
         </div>
     </div>
     <div class="fa-section">
         <div class="sig-title">FA DEPARTMENT USE ONLY</div>
-        <div class="sig-line"><span class="label">Verified By / &#xe15;&#xe23;&#xe27;&#xe08;&#xe2a;&#xe2d;&#xe1a;&#xe42;&#xe14;&#xe22; :</span><span class="line"></span><span class="label" style="margin-left:20px;">Date :</span><span class="line"></span></div>
+        <div class="sig-line"><span class="label">Verified By :</span><span class="line"></span><span class="label" style="margin-left:20px;">Date :</span><span class="line"></span></div>
     </div>
 </div>
 
