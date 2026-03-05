@@ -65,13 +65,13 @@ export async function POST(req: NextRequest) {
               <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                 <tr><td style="padding: 10px 0; color: #94a3b8; width: 140px;">Requester</td><td style="padding: 10px 0; color: #1e293b;">${body.fullName} (${body.department})</td></tr>
                 <tr><td style="padding: 10px 0; color: #94a3b8;">Project</td><td style="padding: 10px 0; color: #1e293b;">${body.projectName || "N/A"}</td></tr>
-                <tr><td style="padding: 10px 0; color: #94a3b8;">Amount</td><td style="padding: 10px 0; font-weight: 600; color: #1e293b;">฿${parseFloat(body.amount).toLocaleString()}</td></tr>
+                <tr><td style="padding: 10px 0; color: #94a3b8;">Amount</td><td style="padding: 10px 0; font-weight: 600; color: #1e293b;">THB ${parseFloat(body.amount).toLocaleString()}</td></tr>
                 <tr><td style="padding: 10px 0; color: #94a3b8;">Billing Type</td><td style="padding: 10px 0; color: #1e293b;">${billingLabel}</td></tr>
                 <tr><td style="padding: 10px 0; color: #94a3b8;">Objective</td><td style="padding: 10px 0; color: #1e293b;">${body.objective}</td></tr>
               </table>
               <div style="margin-top: 32px; text-align: center;">
-                <a href="${approveUrl}" style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #10b981, #14b8a6); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px; margin-right: 12px;">✓ Approve</a>
-                <a href="${rejectUrl}" style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #ef4444, #f43f5e); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px;">✕ Reject</a>
+                <a href="${approveUrl}" style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #10b981, #14b8a6); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px; margin-right: 12px;">โ“ Approve</a>
+                <a href="${rejectUrl}" style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #ef4444, #f43f5e); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px;">โ• Reject</a>
               </div>
               <p style="margin-top: 24px; font-size: 11px; color: #94a3b8; text-align: center;">This link expires in 7 days.</p>
             </div>
