@@ -144,7 +144,7 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                                         : "bg-white text-gray-600 border-gray-200 hover:border-brand-200 hover:text-brand-600"
                                         }`}
                                 >
-                                    {latestReceipt ? "๐งพ Manage Receipts" : "๐“ค Upload Receipt"}
+                                    {latestReceipt ? " Manage Receipts" : " Upload Receipt"}
                                 </button>
                             )}
                         </div>
