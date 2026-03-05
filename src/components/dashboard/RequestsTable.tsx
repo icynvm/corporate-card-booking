@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
     useReactTable,
     getCoreRowModel,
@@ -11,8 +11,10 @@ import {
     createColumnHelper,
     SortingState,
     ColumnFiltersState,
+    ExpandedState,
 } from "@tanstack/react-table";
 import { RequestRecord } from "@/lib/types";
+import SubProjectAllocation from "./SubProjectAllocation";
 
 const columnHelper = createColumnHelper<RequestRecord>();
 
@@ -24,15 +26,35 @@ interface RequestsTableProps {
 export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [expanded, setExpanded] = useState<ExpandedState>({});
 
     const columns = useMemo(
         () => [
             columnHelper.accessor("event_id", {
                 header: "Event ID",
                 cell: (info) => (
-                    <span className="font-mono text-xs font-semibold text-brand-600">
-                        {info.getValue()}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => info.row.toggleExpanded()}
+                            className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 transition-colors"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className={`w-3 h-3 text-gray-400 transition-transform ${info.row.getIsExpanded() ? "rotate-180" : "rotate-90"}`}
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <polyline points="18 15 12 9 6 15" />
+                            </svg>
+                        </button>
+                        <span className="font-mono text-xs font-semibold text-brand-600">
+                            {info.getValue()}
+                        </span>
+                    </div>
                 ),
             }),
             columnHelper.accessor("project_name", {
@@ -142,13 +164,15 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
     const table = useReactTable({
         data,
         columns,
-        state: { sorting, columnFilters },
+        state: { sorting, columnFilters, expanded },
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
+        onExpandedChange: setExpanded,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        getRowCanExpand: () => true,
         initialState: {
             pagination: { pageSize: 10 },
         },
@@ -196,16 +220,43 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                             </tr>
                         ) : (
                             table.getRowModel().rows.map((row) => (
-                                <tr
-                                    key={row.id}
-                                    className="border-b border-gray-50 hover:bg-brand-50/30 transition-colors"
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <td key={cell.id} className="px-5 py-4">
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </td>
-                                    ))}
-                                </tr>
+                                <React.Fragment key={row.id}>
+                                    <tr
+                                        className="border-b border-gray-50 hover:bg-brand-50/30 transition-colors"
+                                    >
+                                        {row.getVisibleCells().map((cell) => (
+                                            <td key={cell.id} className="px-5 py-4">
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                    {row.getIsExpanded() && (
+                                        <tr>
+                                            <td colSpan={columns.length} className="px-5 py-6 bg-gray-50/50">
+                                                <div className="max-w-4xl">
+                                                    <div className="flex gap-8 mb-6">
+                                                        <div>
+                                                            <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Objective</span>
+                                                            <p className="text-sm text-gray-700 font-medium">{row.original.objective}</p>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Dates</span>
+                                                            <p className="text-sm text-gray-700">
+                                                                {new Date(row.original.start_date).toLocaleDateString()} - {new Date(row.original.end_date).toLocaleDateString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <SubProjectAllocation
+                                                        requestId={row.original.id}
+                                                        totalAmount={row.original.amount}
+                                                        isApproved={row.original.status === "APPROVED"}
+                                                    />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
                             ))
                         )}
                     </tbody>
