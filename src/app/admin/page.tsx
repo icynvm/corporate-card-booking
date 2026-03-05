@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import ApprovalUploadModal from "@/components/dashboard/ApprovalUploadModal";
+import { ApprovalUploadModal } from "@/components/dashboard/ApprovalUploadModal";
 import SubProjectAllocation from "@/components/dashboard/SubProjectAllocation";
 import { RequestRecord, AuditLog, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
 export default function AdminPage() {
