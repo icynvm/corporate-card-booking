@@ -4,10 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { RequestRecord, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
-import { useLanguage } from "@/lib/i18n";
-
 export default function MyRequestsPage() {
-    const { t } = useLanguage();
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -114,9 +111,9 @@ export default function MyRequestsPage() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                    {t("myReq.title").split(" ")[0]} <span className="gradient-text">{t("myReq.title").split(" ").slice(1).join(" ") || ""}</span>
+                    My <span className="gradient-text">Requests</span>
                 </h1>
-                <p className="text-sm text-gray-500">{t("myReq.subtitle")}</p>
+                <p className="text-sm text-gray-500">View and manage your submitted requests</p>
             </div>
 
             {loading ? (
@@ -125,7 +122,7 @@ export default function MyRequestsPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    <p className="text-gray-400 text-sm">{t("common.loading")}</p>
+                    <p className="text-gray-400 text-sm">Loading...</p>
                 </GlassCard>
             ) : requests.length === 0 ? (
                 <GlassCard className="text-center py-16">
@@ -133,9 +130,9 @@ export default function MyRequestsPage() {
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <polyline points="14,2 14,8 20,8" />
                     </svg>
-                    <p className="text-gray-400 mb-4">{t("myReq.noRequests")}</p>
+                    <p className="text-gray-400 mb-4">No requests yet</p>
                     <Link href="/request-form" className="btn-primary inline-flex items-center gap-2">
-                        {t("myReq.createNew")}
+                        Create New Request
                     </Link>
                 </GlassCard>
             ) : (
@@ -157,7 +154,7 @@ export default function MyRequestsPage() {
                                         <span>Type: {getBillingLabel(request.billing_type)}</span>
                                     </div>
                                     {request.status === "CANCELLED" && (
-                                        <p className="text-xs text-gray-400 mt-2 italic">{t("myReq.cancelled")}</p>
+                                        <p className="text-xs text-gray-400 mt-2 italic">This request has been cancelled</p>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -172,7 +169,7 @@ export default function MyRequestsPage() {
                                                 <polyline points="17 8 12 3 7 8" />
                                                 <line x1="12" y1="3" x2="12" y2="15" />
                                             </svg>
-                                            {t("myReq.uploadSigned")}
+                                            Upload Signed PDF
                                         </button>
                                     )}
                                     {/* Download PDF */}
@@ -187,7 +184,7 @@ export default function MyRequestsPage() {
                                                 <line x1="16" y1="13" x2="8" y2="13" />
                                                 <line x1="16" y1="17" x2="8" y2="17" />
                                             </svg>
-                                            {t("myReq.downloadPdf")}
+                                            Download PDF
                                         </button>
                                     )}
                                     {/* Cancel Button */}
@@ -201,7 +198,7 @@ export default function MyRequestsPage() {
                                                 <line x1="15" y1="9" x2="9" y2="15" />
                                                 <line x1="9" y1="9" x2="15" y2="15" />
                                             </svg>
-                                            {t("myReq.cancel")}
+                                            Cancel
                                         </button>
                                     )}
                                     <div className="text-right text-xs text-gray-400">
