@@ -14,6 +14,9 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
+            <head>
+                <link rel="icon" href="/images/impact-logo.png" />
+            </head>
             <body className="bg-[#f0f4f8] text-gray-800 font-sans min-h-screen view-height-fix selection:bg-brand-500/30">
                 <div className="fixed inset-0 -z-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]"></div>
 
