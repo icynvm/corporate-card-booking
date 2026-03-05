@@ -80,8 +80,8 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                             </div>
                             <div className="flex justify-between items-center text-sm mt-1">
                                 <span className="text-gray-400">Amount</span>
-                                <span className="font-semibold text-gray-700">
-                                    ฿{request.amount?.toLocaleString()}
+                                <span className="text-gray-900 font-medium">
+                                    THB {request.amount?.toLocaleString()}
                                 </span>
                             </div>
                         </div>
