@@ -4,9 +4,11 @@ import { useState, useEffect, useMemo } from "react";
 import { KPICard } from "@/components/ui/KPICard";
 import { RequestsTable } from "@/components/dashboard/RequestsTable";
 import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
-import { RequestRecord } from "@/lib/types";
+import { RequestRecord, STATUS_LABELS } from "@/lib/types";
+import { useLanguage } from "@/lib/i18n";
 
 export default function DashboardPage() {
+    const { t } = useLanguage();
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [filterStatus, setFilterStatus] = useState("");
     const [filterBilling, setFilterBilling] = useState("");
@@ -47,7 +49,7 @@ export default function DashboardPage() {
         const totalSpent = requests
             .filter((r) => r.status === "APPROVED" || r.status === "COMPLETED")
             .reduce((sum, r) => sum + r.amount, 0);
-        const pendingCount = requests.filter((r) => r.status === "PENDING").length;
+        const pendingCount = requests.filter((r) => r.status === "PENDING_APPROVAL" || r.status === "DRAFT").length;
         const monthlyCommitments = requests
             .filter((r) => (r.billing_type === "MONTHLY" || r.billing_type === "YEARLY_MONTHLY") && (r.status === "APPROVED" || r.status === "COMPLETED"))
             .reduce((sum, r) => sum + r.amount, 0);
@@ -74,10 +76,10 @@ export default function DashboardPage() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                    Tracking <span className="gradient-text">Dashboard</span>
+                    {t("dash.title")} <span className="gradient-text">๐“</span>
                 </h1>
                 <p className="text-sm text-gray-500">
-                    Monitor requests, approvals, and monthly expenses.
+                    {t("dash.subtitle")}
                 </p>
             </div>
 
@@ -85,7 +87,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 <KPICard
                     title="Total Spent"
-                    value={`฿${kpis.totalSpent.toLocaleString()}`}
+                    value={`เธฟ${kpis.totalSpent.toLocaleString()}`}
                     subtitle="Approved & Completed"
                     gradient="bg-gradient-to-br from-brand-500 to-purple-600"
                     icon={
@@ -96,7 +98,7 @@ export default function DashboardPage() {
                     }
                 />
                 <KPICard
-                    title="Pending Approvals"
+                    title={t("dash.pendingApproval")}
                     value={kpis.pendingCount}
                     subtitle="Awaiting review"
                     gradient="bg-gradient-to-br from-amber-400 to-orange-500"
@@ -109,7 +111,7 @@ export default function DashboardPage() {
                 />
                 <KPICard
                     title="Monthly Commitments"
-                    value={`฿${kpis.monthlyCommitments.toLocaleString()}`}
+                    value={`เธฟ${kpis.monthlyCommitments.toLocaleString()}`}
                     subtitle="Active recurring"
                     gradient="bg-gradient-to-br from-emerald-500 to-teal-500"
                     icon={
@@ -158,11 +160,10 @@ export default function DashboardPage() {
                         onChange={(e) => setFilterStatus(e.target.value)}
                         className="select-field w-auto min-w-[150px]"
                     >
-                        <option value="">All Statuses</option>
-                        <option value="PENDING">Pending</option>
-                        <option value="APPROVED">Approved</option>
-                        <option value="REJECTED">Rejected</option>
-                        <option value="COMPLETED">Completed</option>
+                        <option value="">{t("dash.all")} Statuses</option>
+                        {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                        ))}
                     </select>
 
                     <select
@@ -186,7 +187,7 @@ export default function DashboardPage() {
                             }}
                             className="text-xs text-brand-500 hover:text-brand-700 font-medium transition-colors"
                         >
-                            Clear All ✕
+                            Clear All โ•
                         </button>
                     )}
                 </div>
