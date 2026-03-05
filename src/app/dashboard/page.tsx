@@ -5,10 +5,7 @@ import { KPICard } from "@/components/ui/KPICard";
 import { RequestsTable } from "@/components/dashboard/RequestsTable";
 import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
 import { RequestRecord, STATUS_LABELS } from "@/lib/types";
-import { useLanguage } from "@/lib/i18n";
-
 export default function DashboardPage() {
-    const { t } = useLanguage();
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [filterStatus, setFilterStatus] = useState("");
     const [filterBilling, setFilterBilling] = useState("");
@@ -76,10 +73,10 @@ export default function DashboardPage() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                    {t("dash.title")} <span className="gradient-text">๐“</span>
+                    Dashboard <span className="gradient-text">๐“</span>
                 </h1>
                 <p className="text-sm text-gray-500">
-                    {t("dash.subtitle")}
+                    Overview of your requests and spending
                 </p>
             </div>
 
@@ -98,7 +95,7 @@ export default function DashboardPage() {
                     }
                 />
                 <KPICard
-                    title={t("dash.pendingApproval")}
+                    title="Pending Approval"
                     value={kpis.pendingCount}
                     subtitle="Awaiting review"
                     gradient="bg-gradient-to-br from-amber-400 to-orange-500"
@@ -160,7 +157,7 @@ export default function DashboardPage() {
                         onChange={(e) => setFilterStatus(e.target.value)}
                         className="select-field w-auto min-w-[150px]"
                     >
-                        <option value="">{t("dash.all")} Statuses</option>
+                        <option value="">All Statuses</option>
                         {Object.entries(STATUS_LABELS).map(([key, label]) => (
                             <option key={key} value={key}>{label}</option>
                         ))}
