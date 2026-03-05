@@ -8,20 +8,20 @@ export async function POST(
 ) {
     try {
         const supabase = createServerSupabase();
-        const body = await req.json();
-        const { fileData, fileName, notes } = body;
+        const formData = await req.formData();
+        const file = formData.get("file") as File;
+        const notes = formData.get("notes") as string | null;
         const requestId = params.id;
 
-        if (!fileData || !fileName) {
+        if (!file) {
             return NextResponse.json(
-                { error: "fileData and fileName are required" },
+                { error: "File is required" },
                 { status: 400 }
             );
         }
 
-        // Decode base64
-        const base64Data = fileData.replace(/^data:[^;]+;base64,/, "");
-        const buffer = Buffer.from(base64Data, "base64");
+        const fileName = file.name;
+        const buffer = Buffer.from(await file.arrayBuffer());
 
         // Upload to Supabase Storage
         const filePath = `approvals/${requestId}/${Date.now()}-${fileName}`;
