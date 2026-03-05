@@ -104,7 +104,7 @@ export default function MyRequestsPage() {
     };
 
     const canUploadSigned = (status: string) => {
-        return ["DRAFT", "PENDING_APPROVAL"].includes(status);
+        return status === "PENDING_APPROVAL";
     };
 
     return (
@@ -150,7 +150,7 @@ export default function MyRequestsPage() {
                                     <h3 className="font-semibold text-gray-700 text-sm mb-1">{request.objective}</h3>
                                     <div className="flex flex-wrap gap-4 text-xs text-gray-400">
                                         <span>Project: {request.project_name || "N/A"}</span>
-                                        <span>Amount: &#3647;{request.amount.toLocaleString()}</span>
+                                        <span>Amount: THB {request.amount.toLocaleString()}</span>
                                         <span>Type: {getBillingLabel(request.billing_type)}</span>
                                     </div>
                                     {request.status === "CANCELLED" && (
