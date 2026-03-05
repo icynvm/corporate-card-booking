@@ -25,12 +25,12 @@ function ApprovalResultContent() {
                     {/* Icon */}
                     <div
                         className={`w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center ${isError
-                                ? "bg-red-100"
-                                : isInfo
-                                    ? "bg-blue-100"
-                                    : isApproved
-                                        ? "bg-emerald-100"
-                                        : "bg-red-100"
+                            ? "bg-red-100"
+                            : isInfo
+                                ? "bg-blue-100"
+                                : isApproved
+                                    ? "bg-emerald-100"
+                                    : "bg-red-100"
                             }`}
                     >
                         {isError ? (
@@ -87,7 +87,7 @@ function ApprovalResultContent() {
                             <div className="flex justify-between mt-2">
                                 <span className="text-gray-400">Amount</span>
                                 <span className="font-semibold text-gray-700">
-                                    ฿{parseFloat(amount).toLocaleString()}
+                                    THB {parseFloat(amount).toLocaleString()}
                                 </span>
                             </div>
                         </div>
