@@ -32,7 +32,7 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
         () => [
             columnHelper.accessor("event_id", {
                 header: "Event ID",
-                cell: (info) => (
+                cell: (info: any) => (
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => info.row.toggleExpanded()}
@@ -138,19 +138,13 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                         <div className="flex gap-2">
                             {canUploadReceipt && (
                                 <button
-                                    onClick={() => onUploadReceipt(row)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${latestReceipt?.status === "VERIFIED"
-                                        ? "bg-emerald-100 text-emerald-700"
-                                        : latestReceipt
-                                            ? "bg-amber-100 text-amber-700"
-                                            : "bg-red-100 text-red-700 hover:bg-red-200"
+                                    onClick={() => onUploadReceipt(info.row.original)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${latestReceipt
+                                        ? "bg-brand-50 text-brand-600 border-brand-200"
+                                        : "bg-white text-gray-600 border-gray-200 hover:border-brand-200 hover:text-brand-600"
                                         }`}
                                 >
-                                    {latestReceipt?.status === "VERIFIED"
-                                        ? "โ“ Verified"
-                                        : latestReceipt
-                                            ? " Pending"
-                                            : " Upload Receipt"}
+                                    {latestReceipt ? "๐งพ Manage Receipts" : "๐“ค Upload Receipt"}
                                 </button>
                             )}
                         </div>
