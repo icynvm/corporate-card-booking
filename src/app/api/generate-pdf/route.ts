@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { IMPACT_LOGO_BASE64 } from "@/lib/logo-base64";
 
 export async function POST(req: NextRequest) {
     try {
@@ -29,7 +30,15 @@ export async function POST(req: NextRequest) {
         // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
         // HEADER
         // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
-        page.drawText("CORPORATE CARD", { x: width - 150, y: height - 40, size: 16, font: helveticaBold, color: rgb(0.15, 0.15, 0.15) });
+        const logoBytes = Buffer.from(IMPACT_LOGO_BASE64.split(",")[1], "base64");
+        const logoImage = await pdfDoc.embedPng(logoBytes);
+        const logoDims = logoImage.scale(0.4);
+        page.drawImage(logoImage, {
+            x: width - logoDims.width - 50,
+            y: height - logoDims.height - 30,
+            width: logoDims.width,
+            height: logoDims.height,
+        });
 
         // Title
         page.drawText("CORPORATE EXECUTIVE CARD REQUEST FORM", {
@@ -155,7 +164,7 @@ export async function POST(req: NextRequest) {
 
         // Amount
         page.drawText("Amount :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-        const amountStr = formData.amount ? `เธฟ${parseFloat(formData.amount).toLocaleString()}` : "";
+        const amountStr = formData.amount ? `THB ${parseFloat(formData.amount).toLocaleString()}` : "";
         page.drawText(amountStr, { x: 175, y, size: 9, font: helveticaBold, color: textColor });
         page.drawLine({ start: { x: 173, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 40;
