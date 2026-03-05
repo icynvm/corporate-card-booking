@@ -6,7 +6,7 @@ export interface Profile {
     email: string;
     department: string;
     contact_no: string;
-    role: "USER" | "MANAGER" | "FA";
+    role: "admin" | "user" | "manager";
     created_at: string;
 }
 
@@ -18,6 +18,8 @@ export interface Project {
     created_by: string | null;
     created_at: string;
 }
+
+export type RequestStatus = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 
 export interface RequestRecord {
     id: string;
@@ -34,7 +36,7 @@ export interface RequestRecord {
     end_date: string;
     booking_date: string | null;
     effective_date: string | null;
-    status: "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED";
+    status: RequestStatus;
     promotional_channels: ChannelDetail[] | null;
     pdf_url: string | null;
     approval_file_url: string | null;
@@ -103,3 +105,24 @@ export interface HostingSite {
     is_subdomain: boolean;
     created_at: string;
 }
+
+// Status display helpers
+export const STATUS_LABELS: Record<RequestStatus, string> = {
+    DRAFT: "Draft",
+    PENDING_APPROVAL: "Pending Approval",
+    APPROVED: "Approved",
+    REJECTED: "Rejected",
+    ACTIVE: "Active",
+    COMPLETED: "Completed",
+    CANCELLED: "Cancelled",
+};
+
+export const STATUS_COLORS: Record<RequestStatus, string> = {
+    DRAFT: "bg-gray-100 text-gray-700",
+    PENDING_APPROVAL: "bg-amber-100 text-amber-700",
+    APPROVED: "bg-green-100 text-green-700",
+    REJECTED: "bg-red-100 text-red-700",
+    ACTIVE: "bg-blue-100 text-blue-700",
+    COMPLETED: "bg-emerald-100 text-emerald-800",
+    CANCELLED: "bg-gray-200 text-gray-500",
+};
