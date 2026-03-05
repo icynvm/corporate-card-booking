@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { ApprovalUploadModal } from "@/components/dashboard/ApprovalUploadModal";
+import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
 import SubProjectAllocation from "@/components/dashboard/SubProjectAllocation";
 import { RequestRecord, AuditLog, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
 export default function AdminPage() {
@@ -12,6 +13,7 @@ export default function AdminPage() {
     const [filterStatus, setFilterStatus] = useState("");
     const [selectedRequest, setSelectedRequest] = useState<RequestRecord | null>(null);
     const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+    const [receiptModalOpen, setReceiptModalOpen] = useState(false);
     const [expandedRequest, setExpandedRequest] = useState<string | null>(null);
     const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
     const [actionFeedback, setActionFeedback] = useState<{ id: string; message: string; type: "success" | "error" } | null>(null);
@@ -129,7 +131,7 @@ export default function AdminPage() {
                         <p className="text-gray-400">No requests found</p>
                     </GlassCard>
                 ) : (
-                    filteredRequests.map(req => {
+                    filteredRequests.map((req: RequestRecord) => {
                         const isExpanded = expandedRequest === req.id;
                         const reqLogs = getRequestLogs(req.id);
 
@@ -180,12 +182,20 @@ export default function AdminPage() {
                                             </button>
                                         )}
 
+                                        {/* Manage Receipts (Admin View) */}
+                                        <button
+                                            onClick={() => { setSelectedRequest(req); setReceiptModalOpen(true); }}
+                                            className="px-3 py-2 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                                        >
+                                            ๐งพ Receipts
+                                        </button>
+
                                         {/* Expand/Collapse */}
                                         <button
                                             onClick={() => setExpandedRequest(isExpanded ? null : req.id)}
                                             className="px-3 py-2 rounded-lg text-xs font-medium bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-200 transition-colors"
                                         >
-                                            {isExpanded ? "โ–ฒ Close" : "โ–ผ Details"}
+                                            {isExpanded ? " Close" : " Details"}
                                         </button>
                                     </div>
                                 </div>
@@ -306,6 +316,12 @@ export default function AdminPage() {
                 requestId={selectedRequest?.id || null}
                 eventId={selectedRequest?.event_id || ""}
                 onSuccess={fetchData}
+            />
+            {/* Receipt Upload Modal (Admins can also view/manage) */}
+            <ReceiptUploadModal
+                isOpen={receiptModalOpen}
+                onClose={() => { setReceiptModalOpen(false); setSelectedRequest(null); fetchData(); }}
+                request={selectedRequest}
             />
         </div >
     );
