@@ -178,7 +178,7 @@ export default function AdminPage() {
                                                 onClick={() => { setSelectedRequest(req); setApprovalModalOpen(true); }}
                                                 className="px-3 py-2 rounded-lg text-xs font-medium bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200 transition-colors"
                                             >
-                                                ๐“ {req.approval_file_url ? "Replace File" : "Attach File"}
+                                                {req.approval_file_url ? "Replace File" : "Attach File"}
                                             </button>
                                         )}
 
@@ -187,7 +187,7 @@ export default function AdminPage() {
                                             onClick={() => { setSelectedRequest(req); setReceiptModalOpen(true); }}
                                             className="px-3 py-2 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-colors"
                                         >
-                                            ๐งพ Receipts
+                                            Receipts
                                         </button>
 
                                         {/* Expand/Collapse */}
