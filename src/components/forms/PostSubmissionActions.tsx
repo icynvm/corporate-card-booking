@@ -93,7 +93,7 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
                     <div>
                         <span className="text-gray-400">Amount</span>
                         <p className="font-medium text-gray-700">
-                            ฿{formData.amount.toLocaleString()}
+                            THB {formData.amount.toLocaleString()}
                         </p>
                     </div>
                     <div>
