@@ -170,12 +170,14 @@ export default function AdminPage() {
                                         </select>
 
                                         {/* Upload Approval File */}
-                                        <button
-                                            onClick={() => { setSelectedRequest(req); setApprovalModalOpen(true); }}
-                                            className="px-3 py-2 rounded-lg text-xs font-medium bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200 transition-colors"
-                                        >
-                                            ๐“ {req.approval_file_url ? "Replace File" : "Attach File"}
-                                        </button>
+                                        {req.status === "PENDING_APPROVAL" && (
+                                            <button
+                                                onClick={() => { setSelectedRequest(req); setApprovalModalOpen(true); }}
+                                                className="px-3 py-2 rounded-lg text-xs font-medium bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200 transition-colors"
+                                            >
+                                                ๐“ {req.approval_file_url ? "Replace File" : "Attach File"}
+                                            </button>
+                                        )}
 
                                         {/* Expand/Collapse */}
                                         <button
