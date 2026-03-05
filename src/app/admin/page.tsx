@@ -151,7 +151,7 @@ export default function AdminPage() {
                                         </div>
                                         <p className="text-sm text-gray-600 truncate">{req.project_name || "No project"}</p>
                                         <p className="text-xs text-gray-400 mt-0.5">
-                                            เธฟ{req.amount?.toLocaleString()} ยท {req.billing_type?.replace("_", " ")} ยท {new Date(req.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                                            THB {req.amount?.toLocaleString()} ยท {req.billing_type?.replace("_", " ")} ยท {new Date(req.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                                         </p>
                                     </div>
 
