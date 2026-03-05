@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { ApprovalUploadModal } from "@/components/dashboard/ApprovalUploadModal";
+import ApprovalUploadModal from "@/components/dashboard/ApprovalUploadModal";
+import SubProjectAllocation from "@/components/dashboard/SubProjectAllocation";
 import { RequestRecord, AuditLog, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
 export default function AdminPage() {
     const [requests, setRequests] = useState<RequestRecord[]>([]);
@@ -151,7 +152,7 @@ export default function AdminPage() {
                                         </div>
                                         <p className="text-sm text-gray-600 truncate">{req.project_name || "No project"}</p>
                                         <p className="text-xs text-gray-400 mt-0.5">
-                                            THB {req.amount?.toLocaleString()} ยท {req.billing_type?.replace("_", " ")} ยท {new Date(req.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                                            THB {req.amount?.toLocaleString()} - {req.billing_type?.replace("_", " ")} - {new Date(req.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                                         </p>
                                     </div>
 
@@ -269,7 +270,7 @@ export default function AdminPage() {
                                                                         <span className="font-medium">{log.user_name || "System"}</span>
                                                                         {log.changes && typeof log.changes === "object" && (
                                                                             <span className="text-gray-400 ml-1">
-                                                                                โ€” {Object.entries(log.changes).map(([k, v]) => `${k}: ${v}`).join(", ")}
+                                                                                - {Object.entries(log.changes).map(([k, v]) => `${k}: ${v}`).join(", ")}
                                                                             </span>
                                                                         )}
                                                                     </p>
@@ -282,6 +283,13 @@ export default function AdminPage() {
                                                     </div>
                                                 )}
                                             </div>
+
+                                            {/* Sub-Project Allocation */}
+                                            <SubProjectAllocation
+                                                requestId={req.id}
+                                                totalAmount={req.amount}
+                                                isApproved={req.status === 'APPROVED'}
+                                            />
                                         </div>
                                     )
                                 }
