@@ -163,11 +163,11 @@ export async function POST(req: NextRequest) {
         y -= 22;
 
         // Amount
-        page.drawText("Amount :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-        const amountStr = formData.amount ? `THB ${parseFloat(formData.amount).toLocaleString()}` : "";
-        page.drawText(amountStr, { x: 175, y, size: 9, font: helveticaBold, color: textColor });
+        page.drawText("Amount :", { x: 50, y: y, size: 8.5, font: helvetica, color: labelColor });
+        const amountStr = formData.amount ? `${parseFloat(formData.amount).toLocaleString()} THB` : "";
+        page.drawText(amountStr, { x: 175, y: y, size: 9, font: helveticaBold, color: textColor });
         page.drawLine({ start: { x: 173, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-        y -= 40;
+        y -= 35;
 
         // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
         // SIGNATURES
