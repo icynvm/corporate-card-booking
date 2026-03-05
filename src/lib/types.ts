@@ -49,6 +49,7 @@ export interface RequestRecord {
     projects?: Project;
     receipts?: ReceiptRecord[];
     request_payments?: RequestPayment[];
+    sub_projects?: SubProject[];
 }
 
 export interface ChannelDetail {
@@ -74,6 +75,14 @@ export interface RequestPayment {
     amount_paid: number;
     status: "PENDING" | "PAID" | "OVERDUE";
     payment_date: string | null;
+    created_at: string;
+}
+
+export interface SubProject {
+    id: string;
+    request_id: string;
+    name: string;
+    amount: number;
     created_at: string;
 }
 
