@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
 import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+import { IMPACT_LOGO_BASE64 } from "@/lib/logo-base64";
 
 export async function GET(
     req: NextRequest,
@@ -97,7 +98,7 @@ export async function GET(
     <div style="flex:1;text-align:center;">
         <p style="font-size:14px;font-weight:700;margin-bottom:2px;">CORPORATE EXECUTIVE CARD REQUEST FORM</p>
     </div>
-    <div class="logo-area" style="font-weight:bold;font-size:18px;">CORPORATE CARD</div>
+    <div class="logo-area"><img src="${IMPACT_LOGO_BASE64}" alt="IMPACT" style="max-height: 40px; width: auto;" /></div>
 </div>
 
 <!-- Card No -->
@@ -170,7 +171,7 @@ export async function GET(
     </div>
     <div class="form-row">
         <span class="form-label">Amount :</span>
-        <span class="form-value" style="font-weight:600;">&#3647;${Number(request.amount || 0).toLocaleString()} (${(request.billing_type || "").replace("_", " ")})</span>
+        <span class="form-value" style="font-weight:600;">THB ${Number(request.amount || 0).toLocaleString()} (${(request.billing_type || "").replace("_", " ")})</span>
     </div>
 </div>
 
