@@ -47,7 +47,7 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                 header: "Amount",
                 cell: (info) => (
                     <span className="font-semibold text-sm text-gray-700">
-                        ฿{info.getValue()?.toLocaleString()}
+                        THB {info.getValue()?.toLocaleString()}
                     </span>
                 ),
             }),
@@ -107,15 +107,14 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                 header: "Actions",
                 cell: (info) => {
                     const row = info.row.original;
-                    const isRecurring = row.billing_type === "MONTHLY" || row.billing_type === "YEARLY_MONTHLY";
+                    const canUploadReceipt = (row.billing_type === "MONTHLY" || row.billing_type === "YEARLY_MONTHLY") &&
+                        ["APPROVED", "ACTIVE", "COMPLETED"].includes(row.status);
                     const hasReceipt = row.receipts && row.receipts.length > 0;
-                    const latestReceipt = hasReceipt
-                        ? row.receipts![row.receipts!.length - 1]
-                        : null;
+                    const latestReceipt = hasReceipt ? row.receipts![row.receipts!.length - 1] : null;
 
                     return (
                         <div className="flex gap-2">
-                            {isRecurring && (
+                            {canUploadReceipt && (
                                 <button
                                     onClick={() => onUploadReceipt(row)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${latestReceipt?.status === "VERIFIED"
@@ -126,10 +125,10 @@ export function RequestsTable({ data, onUploadReceipt }: RequestsTableProps) {
                                         }`}
                                 >
                                     {latestReceipt?.status === "VERIFIED"
-                                        ? "✓ Verified"
+                                        ? "โ“ Verified"
                                         : latestReceipt
-                                            ? "⏳ Pending"
-                                            : "📎 Upload Receipt"}
+                                            ? "โณ Pending"
+                                            : "๐“ Upload Receipt"}
                                 </button>
                             )}
                         </div>
