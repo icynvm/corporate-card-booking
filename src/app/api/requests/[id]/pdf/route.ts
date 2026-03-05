@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
 import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+import { IMPACT_LOGO_BASE64 } from "@/lib/logo-base64";
 
 export async function GET(
     req: NextRequest,
@@ -64,7 +65,7 @@ export async function GET(
     body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 720px; margin: 0 auto; padding: 30px 24px; color: #1e293b; font-size: 13px; line-height: 1.5; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
     .header h1 { font-size: 16px; font-weight: 700; text-align: center; flex: 1; }
-    .logo-area { width: 100px; text-align: right; font-size: 11px; font-weight: 700; color: #b45309; }
+    .logo-area { width: 140px; text-align: right; }
     .section-title { font-size: 13px; font-weight: 700; color: #7c5c30; margin: 16px 0 8px 0; border-bottom: none; }
     .form-row { display: flex; gap: 12px; margin-bottom: 6px; align-items: baseline; }
     .form-label { font-size: 12px; font-weight: 600; color: #475569; white-space: nowrap; min-width: 140px; }
@@ -97,12 +98,12 @@ export async function GET(
     <div style="flex:1;text-align:center;">
         <p style="font-size:14px;font-weight:700;margin-bottom:2px;">&#xe01;&#xe41;&#xe1a;&#xe1a;&#xe1f;&#xe2d;&#xe23;&#xe4c;&#xe21;&#xe02;&#xe2d;&#xe43;&#xe0a;&#xe49; CORPORATE EXECUTIVE CARD</p>
     </div>
-    <div class="logo-area">IMPACT</div>
+    <div class="logo-area"><img src="${IMPACT_LOGO_BASE64}" style="height:40px;object-fit:contain;" alt="IMPACT" /></div>
 </div>
 
 <!-- Card No -->
 <div class="card-no">
-    <span>CARD NO.</span> <span class="val">${request.event_id}</span>
+    <span>CARD NO.</span> <span class="val">&nbsp;</span>
 </div>
 
 <!-- Requester Staff Section -->
