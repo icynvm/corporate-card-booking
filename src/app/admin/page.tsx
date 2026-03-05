@@ -4,10 +4,7 @@ import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { ApprovalUploadModal } from "@/components/dashboard/ApprovalUploadModal";
 import { RequestRecord, AuditLog, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
-import { useLanguage } from "@/lib/i18n";
-
 export default function AdminPage() {
-    const { t } = useLanguage();
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
@@ -98,10 +95,10 @@ export default function AdminPage() {
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                    {t("admin.title")} <span className="gradient-text">{t("admin.titleHighlight")}</span>
+                    Admin <span className="gradient-text">Panel</span>
                 </h1>
                 <p className="text-sm text-gray-500">
-                    {t("admin.subtitle")}
+                    Manage all requests and review submissions
                 </p>
             </div>
 
