@@ -3,15 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { useLanguage } from "@/lib/i18n";
 
 const navItems = [
-    { labelKey: "nav.dashboard", href: "/dashboard", roles: ["admin", "user", "manager"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>) },
-    { labelKey: "nav.newRequest", href: "/request-form", roles: ["admin", "user", "manager"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>) },
-    { labelKey: "nav.myRequests", href: "/my-requests", roles: ["admin", "user", "manager"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>) },
-    { labelKey: "nav.auditLogs", href: "/audit-logs", roles: ["admin", "manager"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>) },
-    { labelKey: "nav.emailSettings", href: "/email-settings", roles: ["admin"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>) },
-    { labelKey: "nav.adminPanel", href: "/admin", roles: ["admin"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>) },
+    { label: "Dashboard", href: "/dashboard", roles: ["admin", "user", "manager"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>) },
+    { label: "New Request", href: "/request-form", roles: ["admin", "user", "manager"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>) },
+    { label: "My Requests", href: "/my-requests", roles: ["admin", "user", "manager"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>) },
+    { label: "Audit Logs", href: "/audit-logs", roles: ["admin", "manager"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>) },
+    { label: "Email Settings", href: "/email-settings", roles: ["admin"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>) },
+    { label: "Admin Panel", href: "/admin", roles: ["admin"], icon: (<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>) },
 ];
 
 interface SidebarProps {
@@ -22,7 +21,6 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const { lang, setLang, t } = useLanguage();
     const [userName, setUserName] = useState("Loading...");
     const [userDepartment, setUserDepartment] = useState("");
     const [userRole, setUserRole] = useState("");
@@ -67,7 +65,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {/* Logo Header */}
                 <div className="p-4 border-b border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <img src="/images/impact-logo.png" alt="IMPACT" className="h-10 object-contain" />
+                        <span className="text-xl font-bold gradient-text tracking-tight">Corporate Card</span>
                     </div>
                     <button onClick={onClose} className="lg:hidden p-1 text-gray-400 hover:text-gray-600 hover:bg-white/50 rounded-lg transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -77,21 +75,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </button>
                 </div>
 
-                {/* Language Toggle */}
-                <div className="px-4 pt-3 pb-1 flex gap-1">
-                    <button
-                        onClick={() => setLang("en")}
-                        className={`flex-1 text-xs py-1.5 rounded-lg font-medium transition-all ${lang === "en" ? "bg-brand-500 text-white shadow-sm" : "text-gray-400 hover:text-gray-600 hover:bg-white/50"}`}
-                    >
-                        ๐ฌ๐ง EN
-                    </button>
-                    <button
-                        onClick={() => setLang("th")}
-                        className={`flex-1 text-xs py-1.5 rounded-lg font-medium transition-all ${lang === "th" ? "bg-brand-500 text-white shadow-sm" : "text-gray-400 hover:text-gray-600 hover:bg-white/50"}`}
-                    >
-                        ๐น๐ญ TH
-                    </button>
-                </div>
+
 
                 {/* Navigation */}
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -110,7 +94,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                     }`}
                             >
                                 {item.icon}
-                                {t(item.labelKey)}
+                                {item.label}
                             </Link>
                         );
                     })}
@@ -138,7 +122,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             <polyline points="16 17 21 12 16 7" />
                             <line x1="21" y1="12" x2="9" y2="12" />
                         </svg>
-                        {t("nav.logout")}
+                        Logout
                     </button>
                 </div>
             </aside>
