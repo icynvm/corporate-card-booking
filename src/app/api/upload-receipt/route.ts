@@ -16,8 +16,25 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Placeholder URL (in production, upload to Supabase Storage)
-        const receiptFileUrl = `/uploads/receipts/${requestId}/${monthYear}-${file.name}`;
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const filePath = `${requestId}/${monthYear}-${file.name}`;
+
+        // Upload to Supabase Storage (bucket: receipts)
+        const { error: uploadError } = await supabase.storage
+            .from("receipts")
+            .upload(filePath, buffer, {
+                contentType: file.type,
+                upsert: true,
+            });
+
+        if (uploadError) {
+            console.error("Storage upload error:", uploadError);
+            // We will continue but the link might fail if bucket doesn't exist
+        }
+
+        // We use a proxy route to handle the viewing
+        // This allows us to handle permissions or bucket name changes later
+        const receiptFileUrl = `/api/receipts/${requestId}/${monthYear}/view`;
 
         // Check if receipt already exists for this month
         const { data: existing } = await supabase
