@@ -73,7 +73,7 @@ export default function DashboardPage() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                    Dashboard <span className="gradient-text">๐“</span>
+                    Dashboard
                 </h1>
                 <p className="text-sm text-gray-500">
                     Overview of your requests and spending
@@ -84,7 +84,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 <KPICard
                     title="Total Spent"
-                    value={`เธฟ${kpis.totalSpent.toLocaleString()}`}
+                    value={`THB ${kpis.totalSpent.toLocaleString()}`}
                     subtitle="Approved & Completed"
                     gradient="bg-gradient-to-br from-brand-500 to-purple-600"
                     icon={
@@ -108,7 +108,7 @@ export default function DashboardPage() {
                 />
                 <KPICard
                     title="Monthly Commitments"
-                    value={`เธฟ${kpis.monthlyCommitments.toLocaleString()}`}
+                    value={`THB ${kpis.monthlyCommitments.toLocaleString()}`}
                     subtitle="Active recurring"
                     gradient="bg-gradient-to-br from-emerald-500 to-teal-500"
                     icon={
