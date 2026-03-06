@@ -6,11 +6,11 @@ export async function GET(
     { params }: { params: { id: string; fileName: string } }
 ) {
     try {
-        const { id: requestId, fileName } = params;
+        const { id, fileName } = params;
         const supabase = createServerSupabase();
 
-        // The storage path is [requestId]/[fileName] in the 'receipts' bucket
-        const filePath = `${requestId}/${fileName}`;
+        // The storage path is [id]/[fileName] in the 'receipts' bucket
+        const filePath = `${id}/${fileName}`;
 
         const { data, error: downloadError } = await supabase.storage
             .from("receipts")
