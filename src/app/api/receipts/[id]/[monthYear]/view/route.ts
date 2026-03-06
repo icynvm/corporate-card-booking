@@ -6,14 +6,14 @@ export async function GET(
     { params }: { params: { id: string; monthYear: string } }
 ) {
     try {
-        const { id: requestId, monthYear } = params;
+        const { id, monthYear } = params;
         const supabase = createServerSupabase();
 
         // 1. Find the receipt record to get the file name/path
         const { data: receipt, error: fetchError } = await supabase
             .from("receipts")
             .select("*")
-            .eq("request_id", requestId)
+            .eq("request_id", id)
             .eq("month_year", monthYear)
             .single();
 
@@ -23,7 +23,7 @@ export async function GET(
 
         const { data: files } = await supabase.storage
             .from("receipts")
-            .list(requestId);
+            .list(id);
 
         const file = files?.find(f => f.name.startsWith(monthYear));
 
@@ -31,7 +31,7 @@ export async function GET(
             return new NextResponse("File not found in storage", { status: 404 });
         }
 
-        const filePath = `${requestId}/${file.name}`;
+        const filePath = `${id}/${file.name}`;
         const { data, error: downloadError } = await supabase.storage
             .from("receipts")
             .download(filePath);
