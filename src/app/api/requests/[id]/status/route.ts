@@ -22,7 +22,7 @@ export async function PUT(
         const supabase = createServerSupabase();
         const body = await req.json();
         const { status, notes } = body;
-        const requestId = params.id;
+        const id = params.id;
 
         if (!status || !ALL_STATUSES.includes(status)) {
             return NextResponse.json(
@@ -35,7 +35,7 @@ export async function PUT(
         const { data: currentRequest, error: fetchError } = await supabase
             .from("requests")
             .select("*")
-            .eq("id", requestId)
+            .eq("id", id)
             .single();
 
         if (fetchError || !currentRequest) {
@@ -75,7 +75,7 @@ export async function PUT(
         const { data, error } = await supabase
             .from("requests")
             .update(updateData)
-            .eq("id", requestId)
+            .eq("id", id)
             .select()
             .single();
 
@@ -89,7 +89,7 @@ export async function PUT(
 
         await supabase.from("audit_logs").insert({
             entity_type: "REQUEST",
-            entity_id: requestId,
+            entity_id: id,
             action,
             user_id: session.pid,
             user_name: session.email || "System",
