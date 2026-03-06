@@ -23,14 +23,14 @@ export async function GET(
         // 2. Extract the storage path from the month_year and request_id 
         // Logic should match what's in upload-receipt/route.ts
         // Since we don't store the full storage path in the table yet, 
-        // we list files in the requestId folder and find the one for the month.
+        // we list files in the id folder and find the one for the month.
 
-        const requestId = receipt.request_id;
+        const requestIdForStorage = receipt.request_id;
         const monthYear = receipt.month_year;
 
         const { data: files } = await supabase.storage
             .from("receipts")
-            .list(requestId);
+            .list(requestIdForStorage);
 
         const file = files?.find(f => f.name.startsWith(monthYear));
 
@@ -38,7 +38,7 @@ export async function GET(
             return new NextResponse("File not found in storage", { status: 404 });
         }
 
-        const filePath = `${requestId}/${file.name}`;
+        const filePath = `${requestIdForStorage}/${file.name}`;
         const { data, error: downloadError } = await supabase.storage
             .from("receipts")
             .download(filePath);
