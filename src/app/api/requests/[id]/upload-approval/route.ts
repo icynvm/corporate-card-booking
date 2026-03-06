@@ -11,7 +11,7 @@ export async function POST(
         const formData = await req.formData();
         const file = formData.get("file") as File;
         const notes = formData.get("notes") as string | null;
-        const requestId = params.id;
+        const id = params.id;
 
         if (!file) {
             return NextResponse.json(
@@ -24,7 +24,7 @@ export async function POST(
         const buffer = Buffer.from(await file.arrayBuffer());
 
         // Upload to Supabase Storage
-        const filePath = `approvals/${requestId}/${Date.now()}-${fileName}`;
+        const filePath = `approvals/${id}/${Date.now()}-${fileName}`;
         const { error: uploadError } = await supabase.storage
             .from("approval-docs")
             .upload(filePath, buffer, {
@@ -43,7 +43,7 @@ export async function POST(
                     approval_file_url: `data-ref:${fileName}`,
                     approval_notes: notes || "",
                 })
-                .eq("id", requestId)
+                .eq("id", id)
                 .select()
                 .single();
 
@@ -52,7 +52,7 @@ export async function POST(
             // Audit log
             await supabase.from("audit_logs").insert({
                 entity_type: "REQUEST",
-                entity_id: requestId,
+                entity_id: id,
                 action: "UPLOAD_APPROVAL",
                 user_name: "User",
                 changes: { file_name: fileName, notes: notes || "" },
@@ -73,7 +73,7 @@ export async function POST(
                 approval_file_url: publicUrl,
                 approval_notes: notes || "",
             })
-            .eq("id", requestId)
+            .eq("id", id)
             .select()
             .single();
 
@@ -82,7 +82,7 @@ export async function POST(
         // Audit log
         await supabase.from("audit_logs").insert({
             entity_type: "REQUEST",
-            entity_id: requestId,
+            entity_id: id,
             action: "UPLOAD_APPROVAL",
             user_name: "User",
             changes: { file_name: fileName, file_url: publicUrl, notes: notes || "" },
