@@ -15,9 +15,9 @@ export async function POST(req: NextRequest) {
     const approvalToken = uuidv4();
     const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    // If we have a requestId, update it; otherwise find latest pending
-    let requestId = body.requestId;
-    if (!requestId) {
+    // If we have an id, update it; otherwise find latest pending
+    let id = body.id || body.requestId;
+    if (!id) {
       const { data: latestReq } = await supabase
         .from("requests")
         .select("id")
@@ -25,17 +25,17 @@ export async function POST(req: NextRequest) {
         .order("created_at", { ascending: false })
         .limit(1)
         .single();
-      requestId = latestReq?.id;
+      id = latestReq?.id;
     }
 
-    if (requestId) {
+    if (id) {
       await supabase
         .from("requests")
         .update({
           approval_token: approvalToken,
           approval_token_expiry: tokenExpiry.toISOString(),
         })
-        .eq("id", requestId);
+        .eq("id", id);
     }
 
     const approveUrl = `${appUrl}/api/approve?token=${approvalToken}&action=approve`;
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     // Audit log
     await supabase.from("audit_logs").insert({
       entity_type: "REQUEST",
-      entity_id: requestId || "",
+      entity_id: id || "",
       action: "SEND_APPROVAL",
       user_id: body.userId || null,
       user_name: body.fullName || "",
