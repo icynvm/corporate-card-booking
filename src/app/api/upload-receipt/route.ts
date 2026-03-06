@@ -5,11 +5,11 @@ export async function POST(req: NextRequest) {
     try {
         const supabase = createServerSupabase();
         const formData = await req.formData();
-        const requestId = formData.get("requestId") as string;
+        const id = (formData.get("id") || formData.get("requestId")) as string;
         const monthYear = formData.get("monthYear") as string;
         const file = formData.get("file") as File;
 
-        if (!requestId || !monthYear || !file) {
+        if (!id || !monthYear || !file) {
             return NextResponse.json(
                 { error: "Missing required fields" },
                 { status: 400 }
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
-        const filePath = `${requestId}/${monthYear}-${file.name}`;
+        const filePath = `${id}/${monthYear}-${file.name}`;
 
         // Upload to Supabase Storage (bucket: receipts)
         const { error: uploadError } = await supabase.storage
@@ -34,13 +34,13 @@ export async function POST(req: NextRequest) {
 
         // We use a proxy route to handle the viewing
         // This allows us to handle permissions or bucket name changes later
-        const receiptFileUrl = `/api/receipts/${requestId}/${monthYear}/view`;
+        const receiptFileUrl = `/api/receipts/${id}/${monthYear}/view`;
 
         // Check if receipt already exists for this month
         const { data: existing } = await supabase
             .from("receipts")
             .select("id")
-            .eq("request_id", requestId)
+            .eq("request_id", id)
             .eq("month_year", monthYear)
             .single();
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
             const { data } = await supabase
                 .from("receipts")
                 .insert({
-                    request_id: requestId,
+                    request_id: id,
                     month_year: monthYear,
                     receipt_file_url: receiptFileUrl,
                     status: "UPLOADED",
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
         // Audit log
         await supabase.from("audit_logs").insert({
             entity_type: "RECEIPT",
-            entity_id: receipt?.id || requestId,
+            entity_id: receipt?.id || id,
             action: "UPLOAD",
             changes: { month_year: monthYear, file_name: file.name },
         });
