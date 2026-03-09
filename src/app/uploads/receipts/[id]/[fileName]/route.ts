@@ -9,21 +9,43 @@ export async function GET(
         const { id, fileName } = params;
         const supabase = createServerSupabase();
 
-        // The storage path is [id]/[fileName] in the 'receipts' bucket
-        const filePath = `${id}/${fileName}`;
-
-        const { data, error: downloadError } = await supabase.storage
+        // 1. Try direct download first (assumes id is requestId)
+        let filePath = `${id}/${fileName}`;
+        let { data, error: downloadError } = await supabase.storage
             .from("receipts")
             .download(filePath);
 
+        // 2. If it fails, try to find a receipt record where id is the receipt UUID
         if (downloadError) {
-            console.error("Download error:", downloadError);
+            console.log(`Direct download failed for ${filePath}, searching database...`);
+
+            const { data: receipt } = await supabase
+                .from("receipts")
+                .select("request_id")
+                .eq("id", id)
+                .single();
+
+            if (receipt) {
+                filePath = `${receipt.request_id}/${fileName}`;
+                const { data: data2, error: error2 } = await supabase.storage
+                    .from("receipts")
+                    .download(filePath);
+
+                if (!error2) {
+                    data = data2;
+                    downloadError = null;
+                }
+            }
+        }
+
+        if (downloadError) {
+            console.error("Final download error:", downloadError);
             return new NextResponse("File not found in storage", { status: 404 });
         }
 
         return new NextResponse(data, {
             headers: {
-                "Content-Type": data.type || "application/octet-stream",
+                "Content-Type": data!.type || "application/octet-stream",
                 "Content-Disposition": `inline; filename="${fileName}"`,
             },
         });
