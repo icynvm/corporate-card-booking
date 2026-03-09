@@ -37,6 +37,7 @@ export default function MyRequestsPage() {
     };
 
     const [downloadingPDFs, setDownloadingPDFs] = useState<Record<string, boolean>>({});
+    const [sendingEmails, setSendingEmails] = useState<Record<string, boolean>>({});
 
     const handleDownloadPDF = async (requestId: string) => {
         setDownloadingPDFs(prev => ({ ...prev, [requestId]: true }));
@@ -117,6 +118,23 @@ export default function MyRequestsPage() {
         input.click();
     };
 
+    const handleSendEmail = async (requestId: string) => {
+        setSendingEmails((prev) => ({ ...prev, [requestId]: true }));
+        try {
+            const res = await fetch("/api/send-approval", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: requestId }),
+            });
+            if (!res.ok) throw new Error("Failed to send email");
+            alert("Email sent to Manager successfully!");
+        } catch {
+            alert("Failed to send email. Please try again.");
+        } finally {
+            setSendingEmails((prev) => ({ ...prev, [requestId]: false }));
+        }
+    };
+
     const canCancel = (status: string) => {
         return ["DRAFT", "PENDING_APPROVAL"].includes(status);
     };
@@ -126,6 +144,10 @@ export default function MyRequestsPage() {
     };
 
     const canUploadSigned = (status: string) => {
+        return status === "PENDING_APPROVAL";
+    };
+
+    const canSendEmail = (status: string) => {
         return status === "PENDING_APPROVAL";
     };
 
@@ -220,6 +242,27 @@ export default function MyRequestsPage() {
                                                 <line x1="12" y1="3" x2="12" y2="15" />
                                             </svg>
                                             Upload Signed PDF
+                                        </button>
+                                    )}
+                                    {/* Send Email */}
+                                    {canSendEmail(request.status) && (
+                                        <button
+                                            onClick={() => handleSendEmail(request.id)}
+                                            disabled={sendingEmails[request.id]}
+                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors disabled:opacity-50"
+                                        >
+                                            {sendingEmails[request.id] ? (
+                                                <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                </svg>
+                                            ) : (
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                                    <polyline points="22,6 12,13 2,6" />
+                                                </svg>
+                                            )}
+                                            {sendingEmails[request.id] ? "Sending..." : "Send Email"}
                                         </button>
                                     )}
                                     {/* Download PDF */}
