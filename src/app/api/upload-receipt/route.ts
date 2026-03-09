@@ -17,7 +17,10 @@ export async function POST(req: NextRequest) {
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
-        const filePath = `${id}/${monthYear}-${file.name}`;
+        // Sanitize filename: remove spaces and special characters
+        const safeName = file.name.replace(/[^a-z0-9._-]/gi, "_");
+        const storagePath = `${id}/${monthYear}-${safeName}`;
+        const filePath = storagePath;
 
         // Validation: 2MB limit
         if (file.size > 2 * 1024 * 1024) {
@@ -60,7 +63,11 @@ export async function POST(req: NextRequest) {
         if (existing) {
             const { data } = await supabase
                 .from("receipts")
-                .update({ receipt_file_url: receiptFileUrl, status: "UPLOADED" })
+                .update({
+                    receipt_file_url: receiptFileUrl,
+                    storage_path: storagePath,
+                    status: "UPLOADED"
+                })
                 .eq("id", existing.id)
                 .select()
                 .single();
@@ -72,6 +79,7 @@ export async function POST(req: NextRequest) {
                     request_id: id,
                     month_year: monthYear,
                     receipt_file_url: receiptFileUrl,
+                    storage_path: storagePath,
                     status: "UPLOADED",
                 })
                 .select()

@@ -55,8 +55,10 @@ export async function POST(req: NextRequest) {
         });
 
         // Title
-        page.drawText("CORPORATE EXECUTIVE CARD REQUEST FORM", {
-            x: 50, y: height - 50, size: 14, font: helveticaBold, color: textColor,
+        const title = "CORPORATE EXECUTIVE CARD REQUEST FORM";
+        const titleWidth = helveticaBold.widthOfTextAtSize(title, 14);
+        page.drawText(title, {
+            x: (width - titleWidth) / 2, y: height - 50, size: 14, font: helveticaBold, color: textColor,
         });
         y = height - 80;
 
@@ -64,8 +66,9 @@ export async function POST(req: NextRequest) {
         page.drawText("CARD NO.", { x: 200, y, size: 10, font: helveticaBold, color: textColor });
         page.drawLine({ start: { x: 270, y: y - 4 }, end: { x: 430, y: y - 4 }, thickness: 0.5, color: lightGray });
 
+        // Hidden from page content as requested, but used for filename
         const eventId = formData.eventId || `REQ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`;
-        page.drawText(eventId, { x: 275, y, size: 10, font: helvetica, color: textColor });
+        // page.drawText(eventId, { x: 275, y, size: 10, font: helvetica, color: textColor });
         y -= 35;
 
         // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•

@@ -21,20 +21,31 @@ export async function GET(
             return new NextResponse("Receipt not found", { status: 404 });
         }
 
-        const { data: files } = await supabase.storage
-            .from("receipt")
-            .list(id);
+        let filePath = (receipt as any).storage_path;
+        let fileName = "";
 
-        const file = files?.find(f => f.name.startsWith(monthYear));
+        if (filePath) {
+            // Direct download using stored path
+            fileName = filePath.split("/").pop() || `${monthYear}-receipt`;
+        } else {
+            // Fallback for legacy files: search by prefix
+            const { data: files } = await supabase.storage
+                .from("receipt")
+                .list(id);
 
-        if (!file) {
-            return new NextResponse("File not found in storage", { status: 404 });
+            const file = files?.find(f => f.name.startsWith(monthYear));
+
+            if (!file) {
+                return new NextResponse("File not found in storage", { status: 404 });
+            }
+            filePath = `${id}/${file.name}`;
+            fileName = file.name;
         }
 
-        const filePath = `${id}/${file.name}`;
         const { data, error: downloadError } = await supabase.storage
             .from("receipt")
             .download(filePath);
+        const file = { name: fileName }; // For filename reference below
 
         if (downloadError) {
             console.error("Download error:", downloadError);

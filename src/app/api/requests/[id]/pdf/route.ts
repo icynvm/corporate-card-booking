@@ -171,7 +171,7 @@ export async function GET(
     </div>
     <div class="form-row">
         <span class="form-label">Amount :</span>
-        <span class="form-value" style="font-weight:600;">THB ${Number(request.amount || 0).toLocaleString()} (${(request.billing_type || "").replace("_", " ")})</span>
+        <span class="form-value" style="font-weight:600;">${Number(request.amount || 0).toLocaleString()} THB</span>
     </div>
 </div>
 

@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS receipts (
     request_id UUID NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
     month_year TEXT NOT NULL,
     receipt_file_url TEXT NOT NULL,
+    storage_path TEXT,
     status TEXT NOT NULL DEFAULT 'UPLOADED' CHECK (status IN ('UPLOADED', 'VERIFIED')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
