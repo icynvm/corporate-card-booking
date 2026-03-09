@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
                 booking_date: body.bookingDate || null,
                 effective_date: body.effectiveDate || null,
                 promotional_channels: body.promotionalChannels || [],
-                status: "DRAFT", // Note: The UI label for DRAFT is updated to 'Pending' via types.ts
+                status: "PENDING_APPROVAL",
             })
             .select()
             .single();
