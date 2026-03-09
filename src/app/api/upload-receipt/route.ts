@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
         // We use a proxy route to handle the viewing
         // This allows us to handle permissions or bucket name changes later
-        const receiptFileUrl = `/api/receipts/${id}/${monthYear}/view`;
+        const receiptFileUrl = `/api/receipts/${id}/${encodeURIComponent(`${monthYear}-${safeName}`)}/view`;
 
         // Check if receipt already exists for this month
         const { data: existing } = await supabase

@@ -10,11 +10,14 @@ export async function GET(
         const supabase = createServerSupabase();
 
         // 1. Find the receipt record to get the file name/path
+        // Parse the actual monthYear since the URL might contain the full filename now
+        const queryMonthYear = monthYear.substring(0, 7);
+
         const { data: receipt, error: fetchError } = await supabase
             .from("receipts")
             .select("*")
             .eq("request_id", id)
-            .eq("month_year", monthYear)
+            .eq("month_year", queryMonthYear)
             .single();
 
         if (fetchError || !receipt) {
@@ -26,6 +29,7 @@ export async function GET(
         let fileName = "";
 
         if (storagePath) {
+            filePath = storagePath;
             // Extract original filename, which comes after monthYear.
             // Format is: [id]/[YYYY-MM]-[safeName]
             const parts = storagePath.split("-");
