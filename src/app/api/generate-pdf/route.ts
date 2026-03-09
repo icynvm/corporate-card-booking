@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
         const logoBytes = Buffer.from(IMPACT_LOGO_BASE64.split(",")[1], "base64");
         const logoImage = await pdfDoc.embedPng(logoBytes);
-        const logoDims = logoImage.scale(0.15); // Smaller logo
+        const logoDims = logoImage.scale(0.10); // Even smaller logo as requested
         page.drawImage(logoImage, {
             x: width - logoDims.width - 25, // Extreme top right
             y: height - logoDims.height - 20,
