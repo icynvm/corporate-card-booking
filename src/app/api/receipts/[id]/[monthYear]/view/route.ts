@@ -26,9 +26,15 @@ export async function GET(
         let fileName = "";
 
         if (storagePath) {
-            // Include full path in filename, replacing slashes with dashes for a safe file name
-            filePath = storagePath;
-            fileName = storagePath.replace(/\//g, "-");
+            // Extract original filename, which comes after monthYear.
+            // Format is: [id]/[YYYY-MM]-[safeName]
+            const parts = storagePath.split("-");
+            if (parts.length >= 3) {
+                // Remove ID and month year (first two dashes), keep the rest
+                fileName = parts.slice(2).join("-");
+            } else {
+                fileName = storagePath.split("/").pop() || "receipt";
+            }
         } else {
             // Fallback for legacy files: search by prefix
             const { data: files } = await supabase.storage

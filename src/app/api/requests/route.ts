@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
                 booking_date: body.bookingDate || null,
                 effective_date: body.effectiveDate || null,
                 promotional_channels: body.promotionalChannels || [],
-                status: "DRAFT",
+                status: "PENDING",
             })
             .select()
             .single();

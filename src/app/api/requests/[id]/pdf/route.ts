@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
 import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { IMPACT_LOGO_BASE64 } from "@/lib/logo-base64";
 
 export async function GET(
@@ -29,177 +30,228 @@ export async function GET(
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
-        const allChannels = ["Facebook", "Youtube", "Google", "IG", "Line", "Tiktok", "WeChat"];
-        const activeChannels = Array.isArray(request.promotional_channels)
-            ? request.promotional_channels.map((ch: any) => ch.channel)
-            : [];
-
-        const channelCheckboxes = allChannels.map(ch => {
-            const checked = activeChannels.includes(ch);
-            const detail = Array.isArray(request.promotional_channels)
-                ? request.promotional_channels.find((c: any) => c.channel === ch)
-                : null;
-            return `<div style="display:inline-flex;align-items:center;gap:6px;min-width:140px;margin-bottom:4px;">
-                <div style="width:14px;height:14px;border:1.5px solid #94a3b8;display:flex;align-items:center;justify-content:center;font-size:10px;">
-                    ${checked ? "&#10003;" : "&nbsp;"}
-                </div>
-                <span style="font-size:12px;">${ch}</span>
-            </div>`;
-        }).join("");
-
-        const hasOther = activeChannels.some((ch: string) => !allChannels.includes(ch));
-        const otherVal = hasOther ? activeChannels.find((ch: string) => !allChannels.includes(ch)) : "";
-
-        const fmtDate = (d: string | null) => {
-            if (!d) return "____________________";
-            return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+        // Map database data to form data structure for the PDF generator
+        const formData = {
+            eventId: request.event_id,
+            fullName: request.profiles?.name || "",
+            department: request.profiles?.department || "",
+            contactNo: request.contact_no || "",
+            email: request.email || "",
+            objective: request.objective || "",
+            projectName: request.project_name || "",
+            promotionalChannels: request.promotional_channels || [],
+            bookingDate: request.booking_date,
+            effectiveDate: request.effective_date,
+            startDate: request.start_date,
+            endDate: request.end_date,
+            amount: request.amount,
         };
 
-        const html = `<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<title>Request ${request.event_id}</title>
-<style>
-    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display: none !important; } @page { margin: 15mm; } }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 720px; margin: 0 auto; padding: 30px 24px; color: #1e293b; font-size: 13px; line-height: 1.5; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-    .header h1 { font-size: 16px; font-weight: 700; text-align: center; flex: 1; }
-    .logo-area { width: 140px; text-align: right; }
-    .section-title { font-size: 13px; font-weight: 700; color: #7c5c30; margin: 16px 0 8px 0; border-bottom: none; }
-    .form-row { display: flex; gap: 12px; margin-bottom: 6px; align-items: baseline; }
-    .form-label { font-size: 12px; font-weight: 600; color: #475569; white-space: nowrap; min-width: 140px; }
-    .form-value { flex: 1; border-bottom: 1px dotted #94a3b8; padding-bottom: 2px; font-size: 13px; min-height: 18px; }
-    .card-no { text-align: center; margin-bottom: 14px; }
-    .card-no span { font-size: 14px; font-weight: 700; }
-    .card-no .val { display: inline-block; border-bottom: 2px solid #1e293b; min-width: 200px; padding: 2px 8px; font-family: monospace; font-size: 15px; }
-    .channels-grid { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0; }
-    .dates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .sig-section { margin-top: 28px; }
-    .sig-row { display: flex; gap: 24px; margin-bottom: 24px; }
-    .sig-block { flex: 1; }
-    .sig-block .sig-title { font-size: 13px; font-weight: 700; color: #7c5c30; margin-bottom: 4px; }
-    .sig-line { display: flex; align-items: baseline; gap: 8px; margin-top: 36px; }
-    .sig-line .label { font-size: 12px; white-space: nowrap; }
-    .sig-line .line { flex: 1; border-bottom: 1px dotted #64748b; }
-    .fa-section { margin-top: 20px; padding-top: 12px; border-top: 2px solid #1e293b; }
-    .fa-section .sig-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
-    .print-btn { position: fixed; bottom: 20px; right: 20px; background: #6366f1; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 16px rgba(99,102,241,0.4); z-index: 100; }
-    .print-btn:hover { background: #4f46e5; }
-    .small-note { font-size: 10px; color: #94a3b8; font-style: italic; }
-</style>
-</head><body>
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
+        // PDF GENERATION LOGIC (Mirrors api/generate-pdf)
+        // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([595.28, 841.89]); // A4
 
-<button class="print-btn no-print" onclick="window.print()">Print / Save as PDF</button>
+        const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-<!-- Header -->
-<div class="header">
-    <div style="width:100px;"></div>
-    <div style="flex:1;text-align:center;">
-        <p style="font-size:14px;font-weight:700;margin-bottom:2px;">CORPORATE EXECUTIVE CARD REQUEST FORM</p>
-    </div>
-    <div class="logo-area" style="position: absolute; top: 20px; right: 24px;"><img src="${IMPACT_LOGO_BASE64}" alt="IMPACT" style="max-height: 25px; width: auto;" /></div>
-</div>
+        const { width, height } = page.getSize();
+        const textColor = rgb(0.15, 0.15, 0.15);
+        const labelColor = rgb(0.35, 0.35, 0.35);
+        const brownColor = rgb(0.55, 0.32, 0.15);
+        const lineColor = rgb(0.7, 0.7, 0.7);
+        const lightGray = rgb(0.85, 0.85, 0.85);
 
-<!-- Card No -->
-<div class="card-no">
-    <span>CARD NO.</span> <span class="val">&nbsp;</span>
-</div>
+        let y = height - 50;
 
-<!-- Requester Staff Section -->
-<div class="section-title">REQUESTER STAFF</div>
-<div class="form-row">
-    <span class="form-label">Full Name :</span>
-    <span class="form-value">${request.profiles?.name || ""}</span>
-</div>
-<div class="form-row">
-    <span class="form-label">Department :</span>
-    <span class="form-value">${request.profiles?.department || ""}</span>
-</div>
-<div class="form-row">
-    <span class="form-label">Contact No. :</span>
-    <span class="form-value" style="max-width:200px;">${request.contact_no || ""}</span>
-    <span class="form-label" style="min-width:60px;">E-Mail :</span>
-    <span class="form-value">${request.email || ""}</span>
-</div>
+        // Helper: format date
+        const fmtDate = (d: string | null | undefined) => {
+            if (!d) return "";
+            try {
+                return new Date(d).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric"
+                });
+            } catch {
+                return d || "";
+            }
+        };
 
-<!-- Request Details -->
-<div class="section-title">REQUEST DETAILS</div>
-<div class="form-row">
-    <span class="form-label">Objective :</span>
-    <span class="form-value">${request.objective || ""}</span>
-</div>
-<div style="margin-top:2px;margin-bottom:4px;">
-    <span class="form-value" style="display:block;border-bottom:1px dotted #94a3b8;min-height:18px;">${request.project_name || ""}</span>
-</div>
+        // Header Logo
+        const logoBytes = Buffer.from(IMPACT_LOGO_BASE64.split(",")[1], "base64");
+        const logoImage = await pdfDoc.embedPng(logoBytes);
+        const logoDims = logoImage.scale(0.10); // Matches the new smaller size
+        page.drawImage(logoImage, {
+            x: width - logoDims.width - 25,
+            y: height - logoDims.height - 20,
+            width: logoDims.width,
+            height: logoDims.height,
+        });
 
-<!-- Promotional Channels -->
-<div style="margin-top:12px;">
-    <span style="font-size:12px;font-weight:600;">Promotional Channels</span>
-    <p class="small-note">*Choose your type of Promotional Channels</p>
-    <div class="channels-grid" style="margin-top:6px;">
-        ${channelCheckboxes}
-        <div style="display:inline-flex;align-items:center;gap:6px;min-width:200px;">
-            <div style="width:14px;height:14px;border:1.5px solid #94a3b8;display:flex;align-items:center;justify-content:center;font-size:10px;">
-                ${hasOther ? "&#10003;" : "&nbsp;"}
-            </div>
-            <span style="font-size:12px;">Other : </span>
-            <span style="flex:1;border-bottom:1px dotted #94a3b8;font-size:12px;">${otherVal || ""}</span>
-        </div>
-    </div>
-</div>
+        // Title
+        const title = "CORPORATE EXECUTIVE CARD REQUEST FORM";
+        const titleWidth = helveticaBold.widthOfTextAtSize(title, 14);
+        page.drawText(title, {
+            x: (width - titleWidth) / 2, y: height - 50, size: 14, font: helveticaBold, color: textColor,
+        });
+        y = height - 80;
 
-<!-- Dates -->
-<div style="margin-top:12px;">
-    <div class="form-row">
-        <span class="form-label">Booking Date :</span>
-        <span class="form-value">${fmtDate(request.booking_date)}</span>
-    </div>
-    <div class="form-row">
-        <span class="form-label">Effective Date :</span>
-        <span class="form-value">${fmtDate(request.effective_date)}</span>
-    </div>
-    <div class="dates-grid">
-        <div class="form-row">
-            <span class="form-label">Start Date :</span>
-            <span class="form-value">${fmtDate(request.start_date)}</span>
-        </div>
-        <div class="form-row">
-            <span class="form-label">End Date :</span>
-            <span class="form-value">${fmtDate(request.end_date)}</span>
-        </div>
-    </div>
-    <div class="form-row">
-        <span class="form-label">Amount :</span>
-        <span class="form-value" style="font-weight:600;">${Number(request.amount || 0).toLocaleString()} THB</span>
-    </div>
-</div>
+        // CARD NO.
+        page.drawText("CARD NO.", { x: 200, y, size: 10, font: helveticaBold, color: textColor });
+        page.drawLine({ start: { x: 270, y: y - 4 }, end: { x: 430, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 35;
 
-<!-- Signature Sections -->
-<div class="sig-section">
-    <div class="sig-row">
-        <div class="sig-block">
-            <div class="sig-title">REQUESTER SIGNATURE</div>
-            <div class="sig-line"><span class="label">Signature :</span><span class="line"></span></div>
-            <div class="sig-line" style="margin-top:12px;"><span class="label">Date :</span><span class="line"></span></div>
-        </div>
-    </div>
-    <div class="sig-row">
-        <div class="sig-block">
-            <div class="sig-title" style="color:#7c5c30;">AUTHORIZER</div>
-            <div class="sig-line"><span class="label">Signature :</span><span class="line"></span><span class="label" style="margin-left:20px;">Date :</span><span class="line"></span></div>
-        </div>
-    </div>
-    <div class="fa-section">
-        <div class="sig-title">FA DEPARTMENT USE ONLY</div>
-        <div class="sig-line"><span class="label">Verified By :</span><span class="line"></span><span class="label" style="margin-left:20px;">Date :</span><span class="line"></span></div>
-    </div>
-</div>
+        // SECTION 1: REQUESTER STAFF
+        page.drawText("REQUESTER STAFF", {
+            x: 50, y, size: 10, font: helveticaBold, color: brownColor,
+        });
+        page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 1, color: brownColor });
+        y -= 25;
 
-</body></html>`;
+        page.drawText("Full Name :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.fullName, { x: 140, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 138, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 22;
 
-        return new NextResponse(html, {
-            headers: { "Content-Type": "text/html; charset=utf-8" },
+        page.drawText("Department :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.department, { x: 165, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 163, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 22;
+
+        page.drawText("Contact No. :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.contactNo, { x: 185, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 183, y: y - 4 }, end: { x: 320, y: y - 4 }, thickness: 0.5, color: lightGray });
+
+        page.drawText("E-Mail  :", { x: 330, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.email, { x: 375, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 373, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 35;
+
+        // SECTION 2: REQUEST DETAILS
+        page.drawText("REQUEST DETAILS", {
+            x: 50, y, size: 10, font: helveticaBold, color: brownColor,
+        });
+        page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 1, color: brownColor });
+        y -= 25;
+
+        page.drawText("Objective :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        const objectiveText = formData.objective || "";
+        page.drawText(objectiveText.substring(0, 70), { x: 180, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 178, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 18;
+
+        let secondaryObjText = objectiveText.length > 70 ? objectiveText.substring(70, 140) : "";
+        if (formData.projectName) {
+            secondaryObjText += (secondaryObjText ? " - " : "") + `Project: ${formData.projectName}`;
+        }
+
+        if (secondaryObjText) {
+            page.drawText(secondaryObjText.substring(0, 80), { x: 100, y, size: 9, font: helvetica, color: textColor });
+        }
+        page.drawLine({ start: { x: 98, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 30;
+
+        // SECTION 3: Promotional Channels
+        page.drawText("Promotional Channels", {
+            x: 50, y, size: 9, font: helveticaBold, color: labelColor,
+        });
+        page.drawText("*Choose your type of Promotional Channels", {
+            x: 55, y: y - 12, size: 6.5, font: helvetica, color: rgb(0.6, 0.6, 0.6),
+        });
+        y -= 30;
+
+        const channels = ["Facebook", "Youtube", "Google", "IG", "Line", "Other", "Tiktok", "WeChat"];
+        const selectedChannels = Array.isArray(formData.promotionalChannels) ? formData.promotionalChannels.map((c: any) => c.channel) : [];
+        const colWidth = (width - 100) / 3;
+
+        channels.forEach((ch, i) => {
+            const col = i % 3;
+            const row = Math.floor(i / 3);
+            const cx = 55 + col * colWidth;
+            const cy = y - row * 20;
+
+            const isChecked = selectedChannels.includes(ch);
+
+            page.drawRectangle({ x: cx, y: cy - 3, width: 10, height: 10, borderColor: lineColor, borderWidth: 0.5 });
+            if (isChecked) {
+                page.drawText("โ“", { x: cx + 1.5, y: cy - 1.5, size: 9, font: helveticaBold, color: textColor });
+            }
+            page.drawText(ch, { x: cx + 15, y: cy, size: 8.5, font: helvetica, color: textColor });
+        });
+
+        y -= 65;
+
+        // DATES
+        page.drawText("Booking Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(fmtDate(formData.bookingDate), { x: 230, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 228, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 22;
+
+        page.drawText("Effective Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(fmtDate(formData.effectiveDate), { x: 230, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 228, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 22;
+
+        page.drawText("Start Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(fmtDate(formData.startDate), { x: 160, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 158, y: y - 4 }, end: { x: 280, y: y - 4 }, thickness: 0.5, color: lightGray });
+
+        page.drawText("End Date :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(fmtDate(formData.endDate), { x: 400, y, size: 9, font: helvetica, color: textColor });
+        page.drawLine({ start: { x: 398, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 22;
+
+        page.drawText("Amount :", { x: 50, y: y, size: 8.5, font: helvetica, color: labelColor });
+        const amountStr = formData.amount ? `${parseFloat(formData.amount).toLocaleString()} THB` : "";
+        page.drawText(amountStr, { x: 175, y: y, size: 9, font: helveticaBold, color: textColor });
+        page.drawLine({ start: { x: 173, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 35;
+
+        // SIGNATURES
+        page.drawText("REQUESTER SIGNATURE", {
+            x: 50, y, size: 10, font: helveticaBold, color: brownColor,
+        });
+        page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 0.5, color: brownColor });
+        y -= 30;
+
+        page.drawText("Signature  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 110, y: y - 4 }, end: { x: 280, y: y - 4 }, thickness: 0.5, color: lightGray });
+        page.drawText("Date  :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 335, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 40;
+
+        page.drawText("AUTHORIZER", {
+            x: 50, y, size: 10, font: helveticaBold, color: brownColor,
+        });
+        page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 0.5, color: brownColor });
+        y -= 30;
+
+        page.drawText("Signature  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 110, y: y - 4 }, end: { x: 280, y: y - 4 }, thickness: 0.5, color: lightGray });
+        page.drawText("Date  :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 335, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+        y -= 40;
+
+        page.drawText("FA  DEPARTMENT USE ONLY", {
+            x: 50, y, size: 10, font: helveticaBold, color: textColor,
+        });
+        y -= 25;
+
+        page.drawText("Verified By :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 190, y: y - 4 }, end: { x: 310, y: y - 4 }, thickness: 0.5, color: lightGray });
+        page.drawText("Date  :", { x: 340, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawLine({ start: { x: 370, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+
+        void y;
+
+        const pdfBytes = await pdfDoc.save();
+        return new NextResponse(Buffer.from(pdfBytes), {
+            headers: {
+                "Content-Type": "application/pdf",
+                "Content-Disposition": `attachment; filename="card-request-${formData.eventId}.pdf"`,
+            },
         });
     } catch (error: any) {
         console.error("PDF generation error:", error);
