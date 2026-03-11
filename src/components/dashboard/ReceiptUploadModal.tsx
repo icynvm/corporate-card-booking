@@ -22,6 +22,12 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
     const [uploaded, setUploaded] = useState(false);
 
     const currentYear = new Date().getFullYear();
+    const isYearlyMonthly = request?.billing_type === "YEARLY_MONTHLY";
+
+    // Initialize selectedMonth to "SINGLE" if not yearly-monthly so the upload area shows automatically
+    if (request && !isYearlyMonthly && selectedMonth === "") {
+        setSelectedMonth(`SINGLE-${request.id}`);
+    }
 
     const handleUpload = async () => {
         if (!selectedMonth || !file || !request) return;
@@ -56,7 +62,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Upload Monthly Receipt">
+        <Modal isOpen={isOpen} onClose={onClose} title={isYearlyMonthly ? "Upload Monthly Receipt" : "Upload Receipt"}>
             {uploaded ? (
                 <div className="text-center py-8 animate-slide-up">
                     <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
@@ -87,52 +93,56 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                         </div>
                     )}
 
-                    {/* Monthly Tracking Grid */}
-                    <div>
-                        <label className="label-text mb-3 block">Monthly Tracking ({currentYear})</label>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                            {MONTHS.map((month, idx) => {
-                                const mKey = `${currentYear}-${String(idx + 1).padStart(2, "0")}`;
-                                const existing = request?.receipts?.find(r => r.month_year === mKey);
-                                const isSelected = selectedMonth === mKey;
+                    {/* Monthly Tracking Grid ONLY for YEARLY_MONTHLY */}
+                    {isYearlyMonthly && (
+                        <div>
+                            <label className="label-text mb-3 block">Monthly Tracking ({currentYear})</label>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                {MONTHS.map((month, idx) => {
+                                    const mKey = `${currentYear}-${String(idx + 1).padStart(2, "0")}`;
+                                    const existing = request?.receipts?.find(r => r.month_year === mKey);
+                                    const isSelected = selectedMonth === mKey;
 
-                                return (
-                                    <button
-                                        key={month}
-                                        onClick={() => setSelectedMonth(mKey)}
-                                        className={`flex flex-col items-center p-2 rounded-xl border transition-all ${isSelected
-                                            ? "border-brand-500 bg-brand-50 shadow-sm"
-                                            : existing
-                                                ? "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50"
-                                                : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
-                                            }`}
-                                    >
-                                        <span className={`text-[10px] uppercase font-bold tracking-wider ${isSelected ? "text-brand-600" : "text-gray-400"}`}>
-                                            {month.slice(0, 3)}
-                                        </span>
-                                        <div className="mt-1">
-                                            {existing ? (
-                                                <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                        <polyline points="20 6 9 17 4 12" />
-                                                    </svg>
-                                                </div>
-                                            ) : (
-                                                <div className={`w-5 h-5 rounded-full border-2 border-dashed ${isSelected ? "border-brand-300" : "border-gray-200"}`} />
-                                            )}
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                                    return (
+                                        <button
+                                            key={month}
+                                            onClick={() => setSelectedMonth(mKey)}
+                                            className={`flex flex-col items-center p-2 rounded-xl border transition-all ${isSelected
+                                                ? "border-brand-500 bg-brand-50 shadow-sm"
+                                                : existing
+                                                    ? "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50"
+                                                    : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                                                }`}
+                                        >
+                                            <span className={`text-[10px] uppercase font-bold tracking-wider ${isSelected ? "text-brand-600" : "text-gray-400"}`}>
+                                                {month.slice(0, 3)}
+                                            </span>
+                                            <div className="mt-1">
+                                                {existing ? (
+                                                    <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                                            <polyline points="20 6 9 17 4 12" />
+                                                        </svg>
+                                                    </div>
+                                                ) : (
+                                                    <div className={`w-5 h-5 rounded-full border-2 border-dashed ${isSelected ? "border-brand-300" : "border-gray-200"}`} />
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Selection Detail & Upload */}
                     {selectedMonth && (
                         <div className="bg-brand-50/30 rounded-2xl p-5 border border-brand-100 animate-slide-up">
                             <div className="flex justify-between items-center mb-4">
                                 <h4 className="font-semibold text-gray-800 text-sm">
-                                    {MONTHS[parseInt(selectedMonth.split("-")[1]) - 1]} {currentYear}
+                                    {isYearlyMonthly
+                                        ? `${MONTHS[parseInt(selectedMonth.split("-")[1]) - 1]} ${currentYear}`
+                                        : "Attached File"}
                                 </h4>
                                 {request?.receipts?.find(r => r.month_year === selectedMonth) && (
                                     <a
