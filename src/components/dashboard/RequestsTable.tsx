@@ -130,7 +130,7 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                 header: "Actions",
                 cell: (info) => {
                     const row = info.row.original;
-                    const canUploadReceipt = ["APPROVED", "ACTIVE", "COMPLETED", "PENDING_APPROVAL"].includes(row.status);
+                    const canUploadReceipt = ["APPROVED", "ACTIVE", "COMPLETED"].includes(row.status);
                     const canUploadSigned = row.status === "PENDING_APPROVAL";
                     const hasReceipt = row.receipts && row.receipts.length > 0;
                     const latestReceipt = hasReceipt ? row.receipts![row.receipts!.length - 1] : null;
