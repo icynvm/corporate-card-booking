@@ -164,3 +164,34 @@ CREATE TRIGGER set_updated_at_requests BEFORE UPDATE ON requests FOR EACH ROW EX
 
 DROP TRIGGER IF EXISTS set_updated_at_receipts ON receipts;
 CREATE TRIGGER set_updated_at_receipts BEFORE UPDATE ON receipts FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- App Settings (Global Application Settings)
+CREATE TABLE IF NOT EXISTS public.app_settings (
+    key text PRIMARY KEY,
+    value text NOT NULL,
+    description text,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable RLS for app_settings
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
+
+-- Everyone can read settings
+CREATE POLICY "Public read access for app_settings" ON public.app_settings
+    FOR SELECT USING (true);
+
+-- Only admins/managers can update settings if needed (you can restrict this further)
+CREATE POLICY "Public update access for app_settings" ON public.app_settings
+    FOR UPDATE USING (true);
+
+CREATE POLICY "Public insert access for app_settings" ON public.app_settings
+    FOR INSERT WITH CHECK (true);
+
+-- Base Data
+INSERT INTO public.app_settings (key, value, description)
+VALUES ('MANAGER_EMAIL', 'manager@company.com', 'The default email address for manager approval notifications')
+ON CONFLICT (key) DO NOTHING;
+
+DROP TRIGGER IF EXISTS set_updated_at_app_settings ON app_settings;
+CREATE TRIGGER set_updated_at_app_settings BEFORE UPDATE ON app_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at();
