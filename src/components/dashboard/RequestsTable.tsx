@@ -137,7 +137,7 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
 
                     return (
                         <div className="flex gap-2">
-                            {canUploadSigned && onUploadSigned && (
+                            {canUploadSigned && (
                                 <button
                                     onClick={() => onUploadSigned(row)}
                                     className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-50 text-purple-600 border border-purple-200 hover:bg-purple-100 transition-all flex items-center gap-1.5"
