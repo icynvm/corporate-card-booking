@@ -42,6 +42,7 @@ export async function POST(
                 .update({
                     approval_file_url: `data-ref:${fileName}`,
                     approval_notes: notes || "",
+                    status: "APPROVED",
                 })
                 .eq("id", id)
                 .select()
@@ -72,6 +73,7 @@ export async function POST(
             .update({
                 approval_file_url: publicUrl,
                 approval_notes: notes || "",
+                status: "APPROVED",
             })
             .eq("id", id)
             .select()
