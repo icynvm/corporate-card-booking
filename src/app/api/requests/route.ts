@@ -65,13 +65,44 @@ export async function POST(req: NextRequest) {
         const eventId = `REQ-${year}-${String((count || 0) + 1).padStart(4, "0")}`;
         const userId = session.pid;
 
+        // Automatic Project Matching/Creation
+        let projectId = body.projectId;
+        if (!projectId && body.projectName) {
+            // Check if project already exists with this name (case-insensitive-ish)
+            const { data: existingProject } = await supabase
+                .from("projects")
+                .select("id")
+                .ilike("project_name", body.projectName)
+                .maybeSingle();
+
+            if (existingProject) {
+                projectId = existingProject.id;
+            } else {
+                // Create new project
+                const { data: newProject, error: projectError } = await supabase
+                    .from("projects")
+                    .insert({
+                        project_name: body.projectName,
+                        created_by: userId,
+                        total_budget: 0,
+                        remaining_budget: 0
+                    })
+                    .select()
+                    .single();
+                
+                if (!projectError && newProject) {
+                    projectId = newProject.id;
+                }
+            }
+        }
+
         // Create the request
         const { data: request, error: insertError } = await supabase
             .from("requests")
             .insert({
                 event_id: eventId,
                 user_id: userId,
-                project_id: body.projectId || null,
+                project_id: projectId || null,
                 project_name: body.projectName || "",
                 amount: parseFloat(body.amount),
                 objective: body.objective,
