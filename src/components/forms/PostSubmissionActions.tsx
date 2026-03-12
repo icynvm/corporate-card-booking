@@ -84,18 +84,18 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <span className="text-gray-400">Team</span>
-                        <p className="font-medium text-gray-700">{formData.team}</p>
+                        <p className="font-medium text-gray-700">{formData.team || formData.profiles?.team || "N/A"}</p>
                     </div>
                     <div>
                         <span className="text-gray-400">Amount</span>
                         <p className="font-medium text-gray-700">
-                            THB {formData.amount.toLocaleString()}
+                            THB {parseFloat(formData.amount?.toString() || "0").toLocaleString()}
                         </p>
                     </div>
                     <div>
                         <span className="text-gray-400">Billing Type</span>
                         <p className="font-medium text-gray-700">
-                            {formData.billingType.replace("_", " ")}
+                            {(formData.billingType || formData.billing_type || "").replace("_", " ")}
                         </p>
                     </div>
                     <div className="col-span-2">
