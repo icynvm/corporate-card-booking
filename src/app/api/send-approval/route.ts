@@ -136,8 +136,13 @@ export async function POST(req: NextRequest) {
       });
 
       if (resendResponse.error) {
-        console.error("Resend API Error:", resendResponse.error);
-        throw new Error(resendResponse.error.message || "Failed to send email via Resend");
+        console.error("Resend API Error details:", {
+          error: resendResponse.error,
+          to: managerEmail,
+          from: senderEmail,
+          apiKeyUsed: activeResendKey ? `${activeResendKey.slice(0, 7)}...` : "none"
+        });
+        throw new Error(resendResponse.error.message ? `Resend API Error: ${resendResponse.error.message}` : "Failed to send email via Resend");
       }
     }
 
