@@ -239,6 +239,8 @@ export default function MyRequestsPage() {
                                     {request.status === "CANCELLED" && (
                                         <p className="text-xs text-gray-400 mt-2 italic">This request has been cancelled</p>
                                     )}
+                                </div>
+                                
                                 <div className="flex items-center gap-2 flex-wrap">
                                     {request.status === "APPROVED" && !request.approval_file_url && (
                                         <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200">
