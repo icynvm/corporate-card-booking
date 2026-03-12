@@ -88,21 +88,24 @@ export async function POST(req: NextRequest) {
       .replace("YEARLY_MONTHLY", "Yearly (Monthly payments)")
       .replace("YEARLY", "Yearly");
 
-    // Fetch dynamic manager email from app_settings
-    let managerEmail = requestData.managerEmail;
-    if (!managerEmail) {
-      const { data: settingData } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'MANAGER_EMAIL')
-        .single();
-      managerEmail = settingData?.value || "manager@company.com";
-    }
+    // Fetch dynamic manager and sender email from app_settings
+    const { data: settingsData } = await supabase
+      .from('app_settings')
+      .select('key, value')
+      .in('key', ['MANAGER_EMAIL', 'SENDER_EMAIL']);
+    
+    const settings = (settingsData || []).reduce((acc: Record<string, string>, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {});
+
+    const managerEmail = requestData.managerEmail || settings.MANAGER_EMAIL || "manager@company.com";
+    const senderEmail = settings.SENDER_EMAIL || "Card Booking System <onboarding@resend.dev>";
 
     // Send approval email via Resend
     if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_xxxxxxxxxxxx" && process.env.RESEND_API_KEY !== "re_dummy_key_for_build") {
       const resendResponse = await resend.emails.send({
-        from: "Card Booking System <onboarding@resend.dev>",
+        from: senderEmail,
         to: managerEmail,
         subject: `[Action Required] Card Request: ${requestData.eventId || "New Request"}`,
         html: `

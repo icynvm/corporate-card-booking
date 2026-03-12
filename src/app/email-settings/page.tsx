@@ -5,7 +5,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 
 export default function EmailSettingsPage() {
     const [emailTo, setEmailTo] = useState("");
-    const [emailCc, setEmailCc] = useState("");
+    const [emailFrom, setEmailFrom] = useState("");
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -17,6 +17,7 @@ export default function EmailSettingsPage() {
                 if (res.ok) {
                     const data = await res.json();
                     setEmailTo(data.managerEmail || "");
+                    setEmailFrom(data.senderEmail || "");
                 }
             } catch {
                 // ignore
@@ -33,17 +34,24 @@ export default function EmailSettingsPage() {
         setMessage(null);
 
         try {
-            const res = await fetch("/api/settings", {
+            // Save Manager Email
+            const res1 = await fetch("/api/settings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ key: "MANAGER_EMAIL", value: emailTo }),
             });
 
-            if (res.ok) {
+            // Save Sender Email
+            const res2 = await fetch("/api/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ key: "SENDER_EMAIL", value: emailFrom }),
+            });
+
+            if (res1.ok && res2.ok) {
                 setMessage({ text: "Email settings saved successfully!", type: "success" });
             } else {
-                const data = await res.json();
-                setMessage({ text: data.error || "Failed to save", type: "error" });
+                setMessage({ text: "Failed to save some settings", type: "error" });
             }
         } catch {
             setMessage({ text: "Failed to connect to server", type: "error" });
@@ -105,23 +113,24 @@ export default function EmailSettingsPage() {
 
                         <div>
                             <label className="label-text flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                    <circle cx="9" cy="7" r="4" />
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M22 2L11 13" />
+                                    <path d="M22 2L15 22L11 13L2 9L22 2Z" />
                                 </svg>
-                                CC (Carbon Copy)
+                                From (Sender Email)
                             </label>
                             <input
                                 type="text"
-                                value={emailCc}
-                                onChange={(e) => setEmailCc(e.target.value)}
+                                value={emailFrom}
+                                onChange={(e) => setEmailFrom(e.target.value)}
                                 className="input-field"
-                                placeholder="cc1@company.com, cc2@company.com"
+                                placeholder="Corporate Card <noreply@yourdomain.com>"
                             />
                             <p className="text-xs text-gray-400 mt-1">
-                                Additional email(s) to CC on request notifications. Separate multiple with commas.
+                                The email address used to send notifications and OTPs. This <strong>must</strong> use a domain verified on your Resend account.
+                            </p>
+                            <p className="text-[10px] text-brand-400 mt-0.5">
+                                Leave blank to use testing address: Card Booking System &lt;onboarding@resend.dev&gt;
                             </p>
                         </div>
 
