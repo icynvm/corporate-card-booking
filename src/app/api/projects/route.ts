@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
                     .insert({
                         name: "Developer Admin",
                         email: "dev@company.com",
-                        department: "Development",
+                        team: "Development",
                         role: "FA"
                     })
                     .select("id")

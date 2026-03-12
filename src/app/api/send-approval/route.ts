@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     if (!id) {
       const { data: latestReq } = await supabase
         .from("requests")
-        .select("*, projects(project_name), profiles(name, department)")
+        .select("*, projects(project_name), profiles(name, team)")
         .eq("status", "PENDING_APPROVAL")
         .order("created_at", { ascending: false })
         .limit(1)
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
           ...latestReq,
           projectName: latestReq.projects?.project_name || "N/A",
           fullName: latestReq.profiles?.name || "Unknown User",
-          department: latestReq.profiles?.department || "N/A",
+          team: latestReq.profiles?.team || "N/A",
           amount: latestReq.amount,
           billingType: latestReq.billing_type,
           objective: latestReq.objective,
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       // Fetch full details with join to profiles for requester name
       const { data: dbReq } = await supabase
         .from("requests")
-        .select("*, projects(project_name), profiles(name, department)")
+        .select("*, projects(project_name), profiles(name, team)")
         .eq("id", id)
         .single();
       
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
           ...dbReq,
           projectName: dbReq.projects?.project_name || "N/A",
           fullName: dbReq.profiles?.name || "Unknown User",
-          department: dbReq.profiles?.department || "N/A",
+          team: dbReq.profiles?.team || "N/A",
           amount: dbReq.amount,
           billingType: dbReq.billing_type,
           objective: dbReq.objective,
@@ -120,8 +120,8 @@ export async function POST(req: NextRequest) {
                                     <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 600;">${requestData.fullName}</td>
                                   </tr>
                                   <tr>
-                                    <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Department</td>
-                                    <td style="padding: 8px 0; color: #1e293b; font-size: 14px;">${requestData.department}</td>
+                                    <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Team</td>
+                                    <td style="padding: 8px 0; color: #1e293b; font-size: 14px;">${requestData.team || 'N/A'}</td>
                                   </tr>
                                   <tr>
                                     <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Project</td>

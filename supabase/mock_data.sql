@@ -18,9 +18,9 @@ DECLARE
     v_req_5 UUID := gen_random_uuid();
 BEGIN
     -- 1. Create a Standalone Dev Profile
-    INSERT INTO public.profiles (id, name, email, department, role)
+    INSERT INTO public.profiles (id, name, email, team, role)
     VALUES (v_user_id, 'Developer Admin', 'dev@company.com', 'Development', 'FA')
-    ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, department = EXCLUDED.department;
+    ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, team = EXCLUDED.team;
 
     -- Get the actual ID if it existed
     SELECT id INTO v_user_id FROM public.profiles WHERE email = 'dev@company.com';

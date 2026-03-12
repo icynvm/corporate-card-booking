@@ -19,7 +19,7 @@ export async function POST() {
                 email_confirm: true,
                 user_metadata: {
                     name: "System Admin",
-                    department: "Administration"
+                    team: "Administration"
                 }
             });
 
@@ -30,7 +30,7 @@ export async function POST() {
                 await supabase.from("profiles").upsert({
                     id: authData.user.id,
                     name: "System Admin",
-                    department: "Administration",
+                    team: "Administration",
                     role: "ADMIN"
                 });
             }

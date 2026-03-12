@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  MANAGER
+  FA
+}
+
+enum BillingType {
+  ONE_TIME
+  MONTHLY
+  YEARLY
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum ReceiptStatus {
+  UPLOADED
+  VERIFIED
+}
+
+model User {
+  id         String    @id @default(cuid())
+  name       String
+  email      String    @unique
+  team       String
+  role       Role      @default(USER)
+  requests   Request[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Project {
+  id              String    @id @default(cuid())
+  projectName     String
+  totalBudget     Float
+  remainingBudget Float
+  requests        Request[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("projects")
+}
+
+model Request {
+  id                   String        @id @default(cuid())
+  eventId              String        @unique
+  user                 User          @relation(fields: [userId], references: [id])
+  userId               String
+  project              Project       @relation(fields: [projectId], references: [id])
+  projectId            String
+  amount               Float
+  objective            String
+  contactNo            String
+  billingType          BillingType
+  startDate            DateTime
+  endDate              DateTime
+  status               RequestStatus @default(PENDING)
+  promotionalChannels  Json?
+  pdfUrl               String?
+  approvalToken        String?       @unique
+  approvalTokenExpiry  DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  receipts             Receipt[]
+
+  @@map("requests")
+}
+
+model Receipt {
+  id             String        @id @default(cuid())
+  request        Request       @relation(fields: [requestId], references: [id])
+  requestId      String
+  monthYear      String
+  receiptFileUrl String
+  status         ReceiptStatus @default(UPLOADED)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@map("receipts")
+}

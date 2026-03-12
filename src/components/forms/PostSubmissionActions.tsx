@@ -83,12 +83,8 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
                 <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-4">Request Summary</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                        <span className="text-gray-400">Requester</span>
-                        <p className="font-medium text-gray-700">{formData.fullName}</p>
-                    </div>
-                    <div>
-                        <span className="text-gray-400">Department</span>
-                        <p className="font-medium text-gray-700">{formData.department}</p>
+                        <span className="text-gray-400">Team</span>
+                        <p className="font-medium text-gray-700">{formData.team}</p>
                     </div>
                     <div>
                         <span className="text-gray-400">Amount</span>
@@ -124,11 +120,11 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
             {/* Action Buttons */}
             <GlassCard>
                 <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-4">Next Steps</h3>
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col gap-3">
                     <button
                         onClick={handleDownloadPdf}
                         disabled={isDownloading}
-                        className="btn-secondary flex-1 inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="btn-primary w-full inline-flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {isDownloading ? (
                             <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -145,37 +141,10 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
                         {isDownloading ? "Generating..." : "Download PDF"}
                     </button>
 
-                    <button
-                        onClick={handleSendToManager}
-                        disabled={isSending || sent}
-                        className={`flex-1 inline-flex items-center justify-center gap-2 disabled:opacity-50 ${sent ? "btn-success" : "btn-primary"
-                            }`}
-                    >
-                        {sent ? (
-                            <>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                                Sent to Manager
-                            </>
-                        ) : isSending ? (
-                            <>
-                                <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                </svg>
-                                Sending...
-                            </>
-                        ) : (
-                            <>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="22" y1="2" x2="11" y2="13" />
-                                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                                </svg>
-                                Send to Manager for Approval
-                            </>
-                        )}
-                    </button>
+                    <p className="text-xs text-center text-gray-400 mt-2">
+                        You can track your request and send it to your manager for approval from the 
+                        <a href="/my-requests" className="text-brand-600 font-semibold ml-1 hover:underline">My Requests</a> page.
+                    </p>
                 </div>
             </GlassCard>
         </div>

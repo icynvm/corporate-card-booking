@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL DEFAULT '',
-    department TEXT NOT NULL DEFAULT '',
+    team TEXT NOT NULL DEFAULT '',
     contact_no TEXT DEFAULT '',
     role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user', 'manager')),
     email_verified BOOLEAN DEFAULT FALSE,

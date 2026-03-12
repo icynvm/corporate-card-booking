@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
             email: session.email,
             role: session.role,
             name: session.name,
-            department: session.department,
+            team: session.team,
         },
     });
 }

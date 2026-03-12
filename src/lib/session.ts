@@ -6,14 +6,14 @@ export function createSessionToken(profile: {
     email: string;
     role: string;
     name: string;
-    department: string;
+    team: string;
 }): string {
     const payload = {
         pid: profile.id,
         email: profile.email,
         role: profile.role,
         name: profile.name,
-        department: profile.department,
+        team: profile.team,
         exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
         sig: SESSION_SECRET.slice(0, 8),
     };
@@ -25,7 +25,7 @@ export function parseSessionToken(token: string): {
     email: string;
     role: string;
     name: string;
-    department: string;
+    team: string;
 } | null {
     try {
         const payload = JSON.parse(Buffer.from(token, "base64url").toString());
@@ -36,7 +36,7 @@ export function parseSessionToken(token: string): {
             email: payload.email,
             role: payload.role,
             name: payload.name,
-            department: payload.department,
+            team: payload.team,
         };
     } catch {
         return null;

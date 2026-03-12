@@ -5,9 +5,9 @@ import { hashPassword, generateOTP, sendOTPEmail } from "@/lib/session";
 export async function POST(req: NextRequest) {
     try {
         const supabase = createServerSupabase();
-        const { name, email, password, department } = await req.json();
+        const { name, email, password, team } = await req.json();
 
-        if (!name || !email || !password || !department) {
+        if (!name || !email || !password || !team) {
             return NextResponse.json({ error: "All fields are required" }, { status: 400 });
         }
 
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
                 .update({
                     name,
                     password_hash,
-                    department,
+                    team,
                 })
                 .eq("id", existing.id)
                 .select()
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
                     name,
                     email: email.toLowerCase(),
                     password_hash,
-                    department,
+                    team,
                     role: "user",
                     email_verified: false,
                 })

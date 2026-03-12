@@ -4,7 +4,7 @@ export interface Profile {
     id: string;
     name: string;
     email: string;
-    department: string;
+    team: string;
     contact_no: string;
     role: "admin" | "user" | "manager";
     created_at: string;

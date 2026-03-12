@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
             email: profile.email,
             role: profile.role,
             name: profile.name,
-            department: profile.department,
+            team: profile.team,
         });
 
         const response = NextResponse.json({
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
                 name: profile.name,
                 email: profile.email,
                 role: profile.role,
-                department: profile.department,
+                team: profile.team,
             },
         });
 

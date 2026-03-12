@@ -20,17 +20,17 @@ DECLARE
     v_req_3 UUID := gen_random_uuid();
 BEGIN
     -- 1. Create Test Profiles (password: password123)
-    INSERT INTO public.profiles (id, name, email, password_hash, department, role, email_verified)
+    INSERT INTO public.profiles (id, name, email, password_hash, team, role, email_verified)
     VALUES (v_admin_id, 'Admin User', 'admin@company.com', v_pw_hash, 'Finance Admin', 'admin', TRUE)
-    ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, department = EXCLUDED.department, role = EXCLUDED.role, password_hash = EXCLUDED.password_hash, email_verified = TRUE;
+    ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, team = EXCLUDED.team, role = EXCLUDED.role, password_hash = EXCLUDED.password_hash, email_verified = TRUE;
 
-    INSERT INTO public.profiles (id, name, email, password_hash, department, role, email_verified)
+    INSERT INTO public.profiles (id, name, email, password_hash, team, role, email_verified)
     VALUES (v_user_id, 'Somchai K.', 'somchai@company.com', v_pw_hash, 'Marketing', 'user', TRUE)
-    ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, department = EXCLUDED.department, role = EXCLUDED.role, password_hash = EXCLUDED.password_hash, email_verified = TRUE;
+    ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, team = EXCLUDED.team, role = EXCLUDED.role, password_hash = EXCLUDED.password_hash, email_verified = TRUE;
 
-    INSERT INTO public.profiles (id, name, email, password_hash, department, role, email_verified)
+    INSERT INTO public.profiles (id, name, email, password_hash, team, role, email_verified)
     VALUES (v_manager_id, 'Nittaya P.', 'nittaya@company.com', v_pw_hash, 'Management', 'manager', TRUE)
-    ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, department = EXCLUDED.department, role = EXCLUDED.role, password_hash = EXCLUDED.password_hash, email_verified = TRUE;
+    ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, team = EXCLUDED.team, role = EXCLUDED.role, password_hash = EXCLUDED.password_hash, email_verified = TRUE;
 
     SELECT id INTO v_admin_id FROM public.profiles WHERE email = 'admin@company.com';
     SELECT id INTO v_user_id FROM public.profiles WHERE email = 'somchai@company.com';

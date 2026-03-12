@@ -37,7 +37,7 @@ export function CardRequestForm() {
         resolver: zodResolver(requestFormSchema),
         defaultValues: {
             fullName: "",
-            department: "",
+            team: "",
             contactNo: "",
             email: "",
             objective: "",
@@ -169,9 +169,9 @@ export function CardRequestForm() {
                             {errors.fullName && <p className="text-red-400 text-xs mt-1">{errors.fullName.message}</p>}
                         </div>
                         <div>
-                            <label className="label-text">Department</label>
-                            <input {...register("department")} className="input-field" placeholder="e.g. Digital Marketing" />
-                            {errors.department && <p className="text-red-400 text-xs mt-1">{errors.department.message}</p>}
+                            <label className="label-text">Team</label>
+                            <input {...register("team")} className="input-field" placeholder="e.g. Digital Marketing" />
+                            {errors.team && <p className="text-red-400 text-xs mt-1">{errors.team.message}</p>}
                         </div>
                         <div>
                             <label className="label-text">Contact No.</label>
