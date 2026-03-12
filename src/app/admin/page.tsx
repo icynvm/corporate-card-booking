@@ -6,6 +6,8 @@ import { ApprovalUploadModal } from "@/components/dashboard/ApprovalUploadModal"
 import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
 import SubProjectAllocation from "@/components/dashboard/SubProjectAllocation";
 import { RequestRecord, AuditLog, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
+import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
+
 export default function AdminPage() {
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -16,7 +18,54 @@ export default function AdminPage() {
     const [receiptModalOpen, setReceiptModalOpen] = useState(false);
     const [expandedRequest, setExpandedRequest] = useState<string | null>(null);
     const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
-    const [actionFeedback, setActionFeedback] = useState<{ id: string; message: string; type: "success" | "error" } | null>(null);
+    
+    // Email Settings State
+    const [showEmailSettings, setShowEmailSettings] = useState(false);
+    const [managerEmail, setManagerEmail] = useState("");
+    const [savingSettings, setSavingSettings] = useState(false);
+
+    // Toast State
+    const [toasts, setToasts] = useState<{ id: string; message: string; severity: AlertSeverity }[]>([]);
+    
+    const addToast = (message: string, severity: AlertSeverity = "info") => {
+        const id = Math.random().toString(36).substring(2, 9);
+        setToasts((prev) => [...prev, { id, message, severity }]);
+        setTimeout(() => removeToast(id), 5000);
+    };
+
+    const removeToast = (id: string) => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+    };
+
+    const fetchSettings = async () => {
+        try {
+            const res = await fetch("/api/settings");
+            if (res.ok) {
+                const data = await res.json();
+                setManagerEmail(data.managerEmail || "");
+            }
+        } catch {}
+    };
+
+    const saveSettings = async () => {
+        setSavingSettings(true);
+        try {
+            const res = await fetch("/api/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ key: "MANAGER_EMAIL", value: managerEmail }),
+            });
+            if (res.ok) {
+                addToast("Email settings saved successfully", "success");
+            } else {
+                addToast("Failed to save settings", "error");
+            }
+        } catch {
+            addToast("Network error saving settings", "error");
+        } finally {
+            setSavingSettings(false);
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -33,11 +82,13 @@ export default function AdminPage() {
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => { 
+        fetchData(); 
+        fetchSettings();
+    }, []);
 
     const handleStatusChange = async (requestId: string, newStatus: string) => {
         setStatusUpdating(requestId);
-        setActionFeedback(null);
         try {
             const res = await fetch(`/api/requests/${requestId}/status`, {
                 method: "PATCH",
@@ -45,17 +96,16 @@ export default function AdminPage() {
                 body: JSON.stringify({ status: newStatus }),
             });
             if (res.ok) {
-                setActionFeedback({ id: requestId, message: `Status changed to ${newStatus}`, type: "success" });
+                addToast(`Status changed to ${newStatus}`, "success");
                 await fetchData();
             } else {
                 const data = await res.json();
-                setActionFeedback({ id: requestId, message: data.error || "Failed", type: "error" });
+                addToast(data.error || "Failed to update status", "error");
             }
         } catch {
-            setActionFeedback({ id: requestId, message: "Network error", type: "error" });
+            addToast("Network error updating status", "error");
         } finally {
             setStatusUpdating(null);
-            setTimeout(() => setActionFeedback(null), 3000);
         }
     };
 
@@ -94,16 +144,54 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 relative">
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
+            
             {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                    Admin <span className="gradient-text">Panel</span>
-                </h1>
-                <p className="text-sm text-gray-500">
-                    Manage all requests and review submissions
-                </p>
+            <div className="flex justify-between items-start">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800 mb-1">
+                        Admin <span className="gradient-text">Panel</span>
+                    </h1>
+                    <p className="text-sm text-gray-500">
+                        Manage all requests and review submissions
+                    </p>
+                </div>
+                <button 
+                    onClick={() => setShowEmailSettings(!showEmailSettings)} 
+                    className="btn-secondary text-sm px-4 py-2 flex items-center gap-2"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    <span>Email Settings</span>
+                </button>
             </div>
+
+            {/* Email Settings Panel */}
+            {showEmailSettings && (
+                <GlassCard className="!p-5 border-l-4 border-l-brand-500 animate-slide-down">
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Manager Email Configuration</h3>
+                    <p className="text-xs text-gray-500 mb-4">Set the email address that will receive approval requests when users click "Send Email".</p>
+                    <div className="flex gap-3 items-end max-w-md">
+                        <div className="flex-1">
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">Target Email</label>
+                            <input 
+                                type="email" 
+                                value={managerEmail} 
+                                onChange={(e) => setManagerEmail(e.target.value)} 
+                                className="input-field" 
+                                placeholder="manager@company.com"
+                            />
+                        </div>
+                        <button 
+                            onClick={saveSettings} 
+                            disabled={savingSettings || !managerEmail} 
+                            className="btn-primary py-2.5 px-6"
+                        >
+                            {savingSettings ? "Saving..." : "Save"}
+                        </button>
+                    </div>
+                </GlassCard>
+            )}
 
             {/* KPI Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -148,7 +236,7 @@ export default function AdminPage() {
                                             </span>
                                             {req.approval_file_url && (
                                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700 border border-purple-200">
-                                                    ๐“ Signed
+                                                    Signed
                                                 </span>
                                             )}
                                         </div>
@@ -200,14 +288,7 @@ export default function AdminPage() {
                                     </div>
                                 </div>
 
-                                {/* Feedback */}
-                                {
-                                    actionFeedback && actionFeedback.id === req.id && (
-                                        <div className={`mx-5 mb-3 px-3 py-2 rounded-lg text-xs font-medium ${actionFeedback.type === "success" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>
-                                            {actionFeedback.message}
-                                        </div>
-                                    )
-                                }
+
 
                                 {/* Expanded Details */}
                                 {
@@ -241,7 +322,7 @@ export default function AdminPage() {
                                                     <span className="text-gray-400 text-xs block mb-2">Attached Approval Document</span>
                                                     <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                                                            <span className="text-purple-600 text-lg">๐“</span>
+                                                            <span className="text-purple-600 text-lg">V</span>
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <p className="text-sm font-medium text-gray-700 truncate">

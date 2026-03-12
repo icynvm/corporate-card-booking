@@ -5,9 +5,22 @@ import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 import SubProjectAllocation from "@/components/dashboard/SubProjectAllocation";
 import { RequestRecord, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
+import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
+
 export default function MyRequestsPage() {
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [toasts, setToasts] = useState<{ id: string; message: string; severity: AlertSeverity }[]>([]);
+    const addToast = (message: string, severity: AlertSeverity = "info") => {
+        const id = Math.random().toString(36).substring(2, 9);
+        setToasts((prev) => [...prev, { id, message, severity }]);
+        setTimeout(() => removeToast(id), 5000);
+    };
+
+    const removeToast = (id: string) => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+    };
 
     useEffect(() => {
         const fetchRequests = async () => {
@@ -56,7 +69,7 @@ export default function MyRequestsPage() {
             URL.revokeObjectURL(url);
         } catch (err) {
             console.error(err);
-            alert("Failed to download PDF. Please try again.");
+            addToast("Failed to download PDF. Please try again.", "error");
         } finally {
             setDownloadingPDFs(prev => ({ ...prev, [requestId]: false }));
         }
@@ -76,10 +89,10 @@ export default function MyRequestsPage() {
                 );
             } else {
                 const data = await res.json();
-                alert(data.error || "Failed to cancel");
+                addToast(data.error || "Failed to cancel", "error");
             }
         } catch {
-            alert("Failed to cancel request");
+            addToast("Failed to cancel request", "error");
         }
     };
 
@@ -106,13 +119,13 @@ export default function MyRequestsPage() {
                                 : r
                         )
                     );
-                    alert("Signed file uploaded successfully! Status changed to Pending Approval.");
+                    addToast("Signed file uploaded successfully! Status changed to Pending Approval.", "success");
                 } else {
                     const data = await res.json();
-                    alert(data.error || "Upload failed");
+                    addToast(data.error || "Upload failed", "error");
                 }
             } catch {
-                alert("Upload failed");
+                addToast("Upload failed", "error");
             }
         };
         input.click();
@@ -127,9 +140,10 @@ export default function MyRequestsPage() {
                 body: JSON.stringify({ id: requestId }),
             });
             if (!res.ok) throw new Error("Failed to send email");
-            alert("Email sent to Manager successfully!");
+            const data = await res.json();
+            addToast(`Email sent to Manager (${data.sentTo}) successfully!`, "success");
         } catch {
-            alert("Failed to send email. Please try again.");
+            addToast("Failed to send email. Please try again.", "error");
         } finally {
             setSendingEmails((prev) => ({ ...prev, [requestId]: false }));
         }
@@ -152,7 +166,9 @@ export default function MyRequestsPage() {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 relative">
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
+            
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
                     My <span className="gradient-text">Requests</span>

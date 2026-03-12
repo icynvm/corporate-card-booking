@@ -49,7 +49,15 @@ export async function POST(req: NextRequest) {
 
     // Send approval email via Resend
     if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_xxxxxxxxxxxx" && process.env.RESEND_API_KEY !== "re_dummy_key_for_build") {
-      const managerEmail = body.managerEmail || "manager@company.com";
+
+      // Fetch dynamic manager email from app_settings
+      const { data: settingData } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'MANAGER_EMAIL')
+        .single();
+
+      const managerEmail = settingData?.value || "manager@company.com";
 
       await resend.emails.send({
         from: "Card Booking System <onboarding@resend.dev>",
@@ -91,7 +99,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Approval request sent to manager",
+      message: `Approval request sent to manager (${managerEmail})`,
+      sentTo: managerEmail,
     });
   } catch (error) {
     console.error("Failed to send approval:", error);

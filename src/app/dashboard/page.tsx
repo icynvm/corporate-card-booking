@@ -5,6 +5,8 @@ import { KPICard } from "@/components/ui/KPICard";
 import { RequestsTable } from "@/components/dashboard/RequestsTable";
 import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
 import { RequestRecord, STATUS_LABELS } from "@/lib/types";
+import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
+
 export default function DashboardPage() {
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [filterStatus, setFilterStatus] = useState("");
@@ -13,6 +15,17 @@ export default function DashboardPage() {
     const [receiptModalOpen, setReceiptModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<RequestRecord | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const [toasts, setToasts] = useState<{ id: string; message: string; severity: AlertSeverity }[]>([]);
+    const addToast = (message: string, severity: AlertSeverity = "info") => {
+        const id = Math.random().toString(36).substring(2, 9);
+        setToasts((prev) => [...prev, { id, message, severity }]);
+        setTimeout(() => removeToast(id), 5000);
+    };
+
+    const removeToast = (id: string) => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+    };
 
     useEffect(() => {
         const fetchRequests = async () => {
@@ -85,20 +98,22 @@ export default function DashboardPage() {
                 });
                 if (res.ok) {
                     await fetchRequests(); // Refresh data to show changes
-                    alert("Signed file uploaded successfully!");
+                    addToast("Signed file uploaded successfully!", "success");
                 } else {
                     const data = await res.json();
-                    alert(data.error || "Upload failed");
+                    addToast(data.error || "Upload failed", "error");
                 }
             } catch {
-                alert("Upload failed");
+                addToast("Upload failed", "error");
             }
         };
         input.click();
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 relative">
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
+            
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
                     Dashboard
