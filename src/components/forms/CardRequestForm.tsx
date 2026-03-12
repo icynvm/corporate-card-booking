@@ -19,7 +19,7 @@ interface ProjectOption {
 
 export function CardRequestForm() {
     const [isSubmitted, setIsSubmitted] = useState(false);
-    const [submittedData, setSubmittedData] = useState<RequestFormData | null>(null);
+    const [submittedData, setSubmittedData] = useState<any | null>(null);
     const [selectedChannels, setSelectedChannels] = useState<Set<string>>(new Set());
     const [projectSearch, setProjectSearch] = useState("");
     const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
@@ -119,7 +119,8 @@ export function CardRequestForm() {
             });
 
             if (res.ok) {
-                setSubmittedData(data);
+                const result = await res.json();
+                setSubmittedData(result);
                 setIsSubmitted(true);
             } else {
                 const errorData = await res.json();
