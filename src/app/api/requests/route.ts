@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
                 promotional_channels: body.promotionalChannels || [],
                 status: "PENDING_APPROVAL",
             })
-            .select("*, profiles(name, team)")
+            .select()
             .single();
 
         if (insertError) throw new Error(`Database insert failed: ${insertError.message}`);

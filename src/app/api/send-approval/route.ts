@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     if (!id) {
       const { data: latestReq } = await supabase
         .from("requests")
-        .select("*, projects(project_name), profiles(name, team)")
+        .select("*, projects(project_name), profiles(name, department)")
         .eq("status", "PENDING_APPROVAL")
         .order("created_at", { ascending: false })
         .limit(1)
@@ -26,45 +26,36 @@ export async function POST(req: NextRequest) {
       if (latestReq) {
         requestData = {
           ...latestReq,
-          projectName: latestReq.projects?.project_name || latestReq.project_name || "N/A",
-          fullName: latestReq.profiles?.name || latestReq.full_name || "Unknown User",
-          team: latestReq.profiles?.team || latestReq.team || "N/A",
+          projectName: latestReq.projects?.project_name || "N/A",
+          fullName: latestReq.profiles?.name || "Unknown User",
+          department: latestReq.profiles?.department || "N/A",
           amount: latestReq.amount,
-          billingType: latestReq.billing_type || latestReq.billingType,
+          billingType: latestReq.billing_type,
           objective: latestReq.objective,
-          eventId: latestReq.event_id || latestReq.eventId
+          eventId: latestReq.event_id
         };
       }
     } else {
       // Fetch full details with join to profiles for requester name
       const { data: dbReq } = await supabase
         .from("requests")
-        .select("*, projects(project_name), profiles(name, team)")
+        .select("*, projects(project_name), profiles(name, department)")
         .eq("id", id)
         .single();
       
       if (dbReq) {
         requestData = {
           ...dbReq,
-          projectName: dbReq.projects?.project_name || dbReq.project_name || "N/A",
-          fullName: dbReq.profiles?.name || dbReq.full_name || "Unknown User",
-          team: dbReq.profiles?.team || dbReq.team || "N/A",
+          projectName: dbReq.projects?.project_name || "N/A",
+          fullName: dbReq.profiles?.name || "Unknown User",
+          department: dbReq.profiles?.department || "N/A",
           amount: dbReq.amount,
-          billingType: dbReq.billing_type || dbReq.billingType,
+          billingType: dbReq.billing_type,
           objective: dbReq.objective,
-          eventId: dbReq.event_id || dbReq.eventId
+          eventId: dbReq.event_id
         };
       }
     }
-
-    // Ensure we have values even if from body (handles both snake_case from DB result and camelCase from Form)
-    if (!requestData.fullName) requestData.fullName = body.fullName || body.profiles?.name || body.full_name;
-    if (!requestData.projectName) requestData.projectName = body.projectName || body.project_name || body.projects?.project_name;
-    if (!requestData.team) requestData.team = body.team || body.profiles?.team || body.team_name;
-    if (!requestData.billingType) requestData.billingType = body.billingType || body.billing_type;
-    if (!requestData.amount) requestData.amount = body.amount;
-    if (!requestData.objective) requestData.objective = body.objective;
-    if (!requestData.eventId) requestData.eventId = body.eventId || body.event_id;
 
     const billingLabel = (requestData.billingType || "")
       .replace("ONE_TIME", "One-time")
@@ -129,8 +120,8 @@ export async function POST(req: NextRequest) {
                                     <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 600;">${requestData.fullName}</td>
                                   </tr>
                                   <tr>
-                                    <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Team</td>
-                                    <td style="padding: 8px 0; color: #1e293b; font-size: 14px;">${requestData.team || 'N/A'}</td>
+                                    <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Department</td>
+                                    <td style="padding: 8px 0; color: #1e293b; font-size: 14px;">${requestData.department}</td>
                                   </tr>
                                   <tr>
                                     <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Project</td>

@@ -34,7 +34,7 @@ export async function GET(
         const formData = {
             eventId: request.event_id,
             fullName: request.profiles?.name || "",
-            team: request.profiles?.team || "",
+            department: request.profiles?.department || "",
             contactNo: request.contact_no || "",
             email: request.email || "",
             objective: request.objective || "",
@@ -115,8 +115,8 @@ export async function GET(
         page.drawLine({ start: { x: 138, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
-        page.drawText("Team :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-        page.drawText(formData.team, { x: 165, y, size: 9, font: helvetica, color: textColor });
+        page.drawText("Department :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.department, { x: 165, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 163, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
@@ -234,7 +234,7 @@ export async function GET(
         page.drawLine({ start: { x: 335, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 40;
 
-        page.drawText("FA  TEAM USE ONLY", {
+        page.drawText("FA  DEPARTMENT USE ONLY", {
             x: 50, y, size: 10, font: helveticaBold, color: textColor,
         });
         y -= 25;

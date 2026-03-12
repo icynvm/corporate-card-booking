@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         page.drawLine({ start: { x: 270, y: y - 4 }, end: { x: 430, y: y - 4 }, thickness: 0.5, color: lightGray });
 
         // Hidden from page content as requested, but used for filename
-        const eventId = formData.eventId || formData.event_id || `REQ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`;
+        const eventId = formData.eventId || `REQ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`;
         // page.drawText(eventId, { x: 275, y, size: 10, font: helvetica, color: textColor });
         y -= 35;
 
@@ -82,19 +82,19 @@ export async function POST(req: NextRequest) {
 
         // Full Name
         page.drawText("Full Name :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-        page.drawText(formData.fullName || formData.profiles?.name || "", { x: 140, y, size: 9, font: helvetica, color: textColor });
+        page.drawText(formData.fullName || "", { x: 140, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 138, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
-        // Team
-        page.drawText("Team :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-        page.drawText(formData.team || formData.profiles?.team || "", { x: 165, y, size: 9, font: helvetica, color: textColor });
+        // Department
+        page.drawText("Department :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        page.drawText(formData.department || "", { x: 165, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 163, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
         // Contact No. + E-Mail
         page.drawText("Contact No. :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-        page.drawText(formData.contactNo || formData.contact_no || "", { x: 185, y, size: 9, font: helvetica, color: textColor });
+        page.drawText(formData.contactNo || "", { x: 185, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 183, y: y - 4 }, end: { x: 320, y: y - 4 }, thickness: 0.5, color: lightGray });
 
         page.drawText("E-Mail  :", { x: 330, y, size: 8.5, font: helvetica, color: labelColor });
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
         y -= 30;
 
         const channels = ["Facebook", "Youtube", "Google", "IG", "Line", "Other", "Tiktok", "WeChat"];
-        const selectedChannels = (formData.promotionalChannels || formData.promotional_channels || []).map((c: { channel: string }) => c.channel);
+        const selectedChannels = (formData.promotionalChannels || []).map((c: { channel: string }) => c.channel);
         const colWidth = (width - 100) / 3;
 
         channels.forEach((ch, i) => {
@@ -160,29 +160,28 @@ export async function POST(req: NextRequest) {
         // DATES
         // โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•โ•
         page.drawText("Booking Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-        page.drawText(fmtDate(formData.bookingDate || formData.booking_date), { x: 230, y, size: 9, font: helvetica, color: textColor });
+        page.drawText(fmtDate(formData.bookingDate), { x: 230, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 228, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
         page.drawText("Effective Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-        page.drawText(fmtDate(formData.effectiveDate || formData.effective_date), { x: 230, y, size: 9, font: helvetica, color: textColor });
+        page.drawText(fmtDate(formData.effectiveDate), { x: 230, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 228, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
         // Start + End
         page.drawText("Start Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-        page.drawText(fmtDate(formData.startDate || formData.start_date), { x: 160, y, size: 9, font: helvetica, color: textColor });
+        page.drawText(fmtDate(formData.startDate), { x: 160, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 158, y: y - 4 }, end: { x: 280, y: y - 4 }, thickness: 0.5, color: lightGray });
 
         page.drawText("End Date :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
-        page.drawText(fmtDate(formData.endDate || formData.end_date), { x: 400, y, size: 9, font: helvetica, color: textColor });
+        page.drawText(fmtDate(formData.endDate), { x: 400, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 398, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
         // Amount
         page.drawText("Amount :", { x: 50, y: y, size: 8.5, font: helvetica, color: labelColor });
-        const amountValue = formData.amount || formData.amount; // Just for clarity
-        const amountStr = amountValue ? `${parseFloat(amountValue).toLocaleString()} THB` : "";
+        const amountStr = formData.amount ? `${parseFloat(formData.amount).toLocaleString()} THB` : "";
         page.drawText(amountStr, { x: 175, y: y, size: 9, font: helveticaBold, color: textColor });
         page.drawLine({ start: { x: 173, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 35;
@@ -217,8 +216,8 @@ export async function POST(req: NextRequest) {
         page.drawLine({ start: { x: 335, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 40;
 
-        // FA Team Use Only
-        page.drawText("FA  TEAM USE ONLY", {
+        // FA Department Use Only
+        page.drawText("FA  DEPARTMENT USE ONLY", {
             x: 50, y, size: 10, font: helveticaBold, color: textColor,
         });
         y -= 25;

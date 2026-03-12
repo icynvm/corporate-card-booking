@@ -19,7 +19,7 @@ interface ProjectOption {
 
 export function CardRequestForm() {
     const [isSubmitted, setIsSubmitted] = useState(false);
-    const [submittedData, setSubmittedData] = useState<any | null>(null);
+    const [submittedData, setSubmittedData] = useState<RequestFormData | null>(null);
     const [selectedChannels, setSelectedChannels] = useState<Set<string>>(new Set());
     const [projectSearch, setProjectSearch] = useState("");
     const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
@@ -37,7 +37,7 @@ export function CardRequestForm() {
         resolver: zodResolver(requestFormSchema),
         defaultValues: {
             fullName: "",
-            team: "",
+            department: "",
             contactNo: "",
             email: "",
             objective: "",
@@ -119,8 +119,7 @@ export function CardRequestForm() {
             });
 
             if (res.ok) {
-                const result = await res.json();
-                setSubmittedData(result);
+                setSubmittedData(data);
                 setIsSubmitted(true);
             } else {
                 const errorData = await res.json();
@@ -170,9 +169,9 @@ export function CardRequestForm() {
                             {errors.fullName && <p className="text-red-400 text-xs mt-1">{errors.fullName.message}</p>}
                         </div>
                         <div>
-                            <label className="label-text">Team</label>
-                            <input {...register("team")} className="input-field" placeholder="e.g. Digital Marketing" />
-                            {errors.team && <p className="text-red-400 text-xs mt-1">{errors.team.message}</p>}
+                            <label className="label-text">Department</label>
+                            <input {...register("department")} className="input-field" placeholder="e.g. Digital Marketing" />
+                            {errors.department && <p className="text-red-400 text-xs mt-1">{errors.department.message}</p>}
                         </div>
                         <div>
                             <label className="label-text">Contact No.</label>

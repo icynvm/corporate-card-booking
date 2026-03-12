@@ -13,7 +13,7 @@ export const PROMOTIONAL_CHANNELS = [
 
 export const requestFormSchema = z.object({
     fullName: z.string().min(1, "Full name is required"),
-    team: z.string().min(1, "Team is required"),
+    department: z.string().min(1, "Department is required"),
     contactNo: z.string().min(1, "Contact number is required"),
     email: z.string().email("Valid email is required"),
     projectId: z.string().optional(),
