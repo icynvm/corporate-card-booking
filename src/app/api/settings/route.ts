@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
             managerEmail: settings.MANAGER_EMAIL || "manager@company.com",
             senderEmail: settings.SENDER_EMAIL || "support@booking.kie-ra.online",
+            resendApiKey: settings.RESEND_API_KEY ? `${settings.RESEND_API_KEY.slice(0, 7)}...${settings.RESEND_API_KEY.slice(-4)}` : null,
         });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });

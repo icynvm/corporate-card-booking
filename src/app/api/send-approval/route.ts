@@ -88,11 +88,11 @@ export async function POST(req: NextRequest) {
       .replace("YEARLY_MONTHLY", "Yearly (Monthly payments)")
       .replace("YEARLY", "Yearly");
 
-    // Fetch dynamic manager and sender email from app_settings
+    // Fetch dynamic manager, sender, and API key from app_settings
     const { data: settingsData } = await supabase
       .from('app_settings')
       .select('key, value')
-      .in('key', ['MANAGER_EMAIL', 'SENDER_EMAIL']);
+      .in('key', ['MANAGER_EMAIL', 'SENDER_EMAIL', 'RESEND_API_KEY']);
     
     const settings = (settingsData || []).reduce((acc: Record<string, string>, curr) => {
       acc[curr.key] = curr.value;
@@ -100,11 +100,15 @@ export async function POST(req: NextRequest) {
     }, {});
 
     const managerEmail = requestData.managerEmail || settings.MANAGER_EMAIL || "manager@company.com";
-    const senderEmail = settings.SENDER_EMAIL || "noreply@kie-ra.online";
+    const senderEmail = settings.SENDER_EMAIL || "support@booking.kie-ra.online";
+    
+    // Initialize Resend with dynamic key if available
+    const activeResendKey = settings.RESEND_API_KEY || process.env.RESEND_API_KEY;
+    const activeResend = activeResendKey ? new Resend(activeResendKey) : resend;
 
     // Send approval email via Resend
-    if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_xxxxxxxxxxxx" && process.env.RESEND_API_KEY !== "re_dummy_key_for_build") {
-      const resendResponse = await resend.emails.send({
+    if (activeResendKey && activeResendKey !== "re_xxxxxxxxxxxx" && activeResendKey !== "re_dummy_key_for_build") {
+      const resendResponse = await activeResend.emails.send({
         from: senderEmail,
         to: managerEmail,
         subject: `[Action Required] Card Request: ${requestData.eventId || "New Request"}`,

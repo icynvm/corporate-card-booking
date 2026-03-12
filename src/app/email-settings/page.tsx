@@ -6,6 +6,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 export default function EmailSettingsPage() {
     const [emailTo, setEmailTo] = useState("");
     const [emailFrom, setEmailFrom] = useState("");
+    const [resendKey, setResendKey] = useState("");
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -18,6 +19,7 @@ export default function EmailSettingsPage() {
                     const data = await res.json();
                     setEmailTo(data.managerEmail || "");
                     setEmailFrom(data.senderEmail || "");
+                    setResendKey(data.resendApiKey || "");
                 }
             } catch {
                 // ignore
@@ -48,7 +50,16 @@ export default function EmailSettingsPage() {
                 body: JSON.stringify({ key: "SENDER_EMAIL", value: emailFrom }),
             });
 
-            if (res1.ok && res2.ok) {
+            // Save Resend API Key (only if not masked and changed)
+            const res3 = resendKey.includes("...") 
+                ? { ok: true } 
+                : await fetch("/api/settings", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ key: "RESEND_API_KEY", value: resendKey }),
+                });
+
+            if (res1.ok && res2.ok && res3.ok) {
                 setMessage({ text: "Email settings saved successfully!", type: "success" });
             } else {
                 setMessage({ text: "Failed to save some settings", type: "error" });
@@ -131,6 +142,26 @@ export default function EmailSettingsPage() {
                             </p>
                             <p className="text-[10px] text-brand-400 mt-0.5">
                                 Leave blank to use testing address: Card Booking System &lt;support@booking.kie-ra.online&gt;
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="label-text flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+                                Resend API Key
+                            </label>
+                            <input
+                                type="password"
+                                value={resendKey}
+                                onChange={(e) => setResendKey(e.target.value)}
+                                className="input-field"
+                                placeholder="re_xxxxxxxxxxxxxxxxxxxxxx"
+                            />
+                            <p className="text-xs text-gray-400 mt-1">
+                                Optional. If provided, this will override the system environment variable. Key is masked for security.
                             </p>
                         </div>
 
