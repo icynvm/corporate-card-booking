@@ -84,8 +84,8 @@ export default function EmailSettingsPage() {
                     <form onSubmit={handleSave} className="space-y-6">
                         {message && (
                             <div className={`px-4 py-3 rounded-xl text-sm border ${message.type === "success"
-                                    ? "bg-green-50 border-green-200 text-green-700"
-                                    : "bg-red-50 border-red-200 text-red-600"
+                                ? "bg-green-50 border-green-200 text-green-700"
+                                : "bg-red-50 border-red-200 text-red-600"
                                 }`}>
                                 {message.text}
                             </div>
@@ -130,7 +130,7 @@ export default function EmailSettingsPage() {
                                 The email address used to send notifications and OTPs. This <strong>must</strong> use a domain verified on your Resend account.
                             </p>
                             <p className="text-[10px] text-brand-400 mt-0.5">
-                                Leave blank to use testing address: Card Booking System &lt;onboarding@resend.dev&gt;
+                                Leave blank to use testing address: Card Booking System &lt;support@booking.kie-ra.online&gt;
                             </p>
                         </div>
 
