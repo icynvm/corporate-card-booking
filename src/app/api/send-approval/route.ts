@@ -47,19 +47,20 @@ export async function POST(req: NextRequest) {
       .replace("YEARLY_MONTHLY", "Yearly (Monthly payments)")
       .replace("YEARLY", "Yearly");
 
-    // Send approval email via Resend
-    if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_xxxxxxxxxxxx" && process.env.RESEND_API_KEY !== "re_dummy_key_for_build") {
-
-      // Fetch dynamic manager email from app_settings
+    // Fetch dynamic manager email from app_settings
+    let managerEmail = body.managerEmail;
+    if (!managerEmail) {
       const { data: settingData } = await supabase
         .from('app_settings')
         .select('value')
         .eq('key', 'MANAGER_EMAIL')
         .single();
+      managerEmail = settingData?.value || "manager@company.com";
+    }
 
-      const managerEmail = settingData?.value || "manager@company.com";
-
-      await resend.emails.send({
+    // Send approval email via Resend
+    if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_xxxxxxxxxxxx" && process.env.RESEND_API_KEY !== "re_dummy_key_for_build") {
+      const resendResponse = await resend.emails.send({
         from: "Card Booking System <onboarding@resend.dev>",
         to: managerEmail,
         subject: `[Action Required] Card Request: ${body.eventId || "New Request"}`,
@@ -85,6 +86,11 @@ export async function POST(req: NextRequest) {
             </div>
           </div>`,
       });
+
+      if (resendResponse.error) {
+        console.error("Resend API Error:", resendResponse.error);
+        throw new Error(resendResponse.error.message || "Failed to send email via Resend");
+      }
     }
 
     // Audit log
@@ -94,7 +100,7 @@ export async function POST(req: NextRequest) {
       action: "SEND_APPROVAL",
       user_id: body.userId || null,
       user_name: body.fullName || "",
-      changes: { sent_to: body.managerEmail || "manager@company.com" },
+      changes: { sent_to: managerEmail },
     });
 
     return NextResponse.json({
