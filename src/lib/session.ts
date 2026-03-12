@@ -65,18 +65,19 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
     return computed === hash;
 }
 
-export async function sendOTPEmail(email: string, code: string, name?: string) {
-    const resendKey = process.env.RESEND_API_KEY;
-    if (!resendKey || resendKey.startsWith("re_xxxx") || resendKey === "re_dummy_key_for_build") {
+export async function sendOTPEmail(email: string, code: string, name?: string, fromEmail?: string, resendApiKey?: string) {
+    const activeResendKey = resendApiKey || process.env.RESEND_API_KEY;
+    
+    if (!activeResendKey || activeResendKey.startsWith("re_xxxx") || activeResendKey === "re_dummy_key_for_build") {
         console.log(`[DEV] OTP for ${email}: ${code}`);
         return { success: true, dev: true, code };
     }
 
     const { Resend } = await import("resend");
-    const resend = new Resend(resendKey);
+    const resend = new Resend(activeResendKey);
 
-    await resend.emails.send({
-        from: "Card Booking System <onboarding@resend.dev>",
+    const { data, error } = await resend.emails.send({
+        from: fromEmail || "Card Booking System <support@booking.kie-ra.online>",
         to: email,
         subject: `Your verification code: ${code}`,
         html: `
@@ -95,6 +96,16 @@ export async function sendOTPEmail(email: string, code: string, name?: string) {
                 </div>
             </div>`,
     });
+
+    if (error) {
+        console.error("Resend OTP Error details:", {
+            error,
+            email,
+            from: fromEmail || "Card Booking System <support@booking.kie-ra.online>",
+            apiKeyUsed: activeResendKey ? `${activeResendKey.slice(0, 7)}...` : "none"
+        });
+        throw new Error(error.message ? `OTP Email Error: ${error.message}` : "Failed to send verification email. Please check your admin configuration.");
+    }
 
     return { success: true };
 }
