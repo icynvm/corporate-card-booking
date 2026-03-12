@@ -27,20 +27,21 @@ export default function DashboardPage() {
         setToasts((prev) => prev.filter((t) => t.id !== id));
     };
 
-    useEffect(() => {
-        const fetchRequests = async () => {
-            try {
-                const res = await fetch("/api/requests");
-                if (res.ok) {
-                    const data = await res.json();
-                    setRequests(data);
-                }
-            } catch {
-                // No data
-            } finally {
-                setLoading(false);
+    const fetchRequests = async () => {
+        try {
+            const res = await fetch("/api/requests");
+            if (res.ok) {
+                const data = await res.json();
+                setRequests(data);
             }
-        };
+        } catch {
+            // No data
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchRequests();
     }, []);
 
@@ -103,7 +104,8 @@ export default function DashboardPage() {
                     const data = await res.json();
                     addToast(data.error || "Upload failed", "error");
                 }
-            } catch {
+            } catch (err: any) {
+                console.error(err);
                 addToast("Upload failed", "error");
             }
         };

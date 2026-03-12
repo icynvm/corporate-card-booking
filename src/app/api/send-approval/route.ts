@@ -9,7 +9,14 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = createServerSupabase();
     const body = await req.json();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    
+    // Check various headers for absolute Vercel/Prod URLs
+    const proto = req.headers.get("x-forwarded-proto") || "http";
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+    
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL !== "http://localhost:3000") 
+        ? process.env.NEXT_PUBLIC_APP_URL 
+        : host ? `${proto}://${host}` : "http://localhost:3000";
 
     // Generate approval token
     const approvalToken = uuidv4();
@@ -79,8 +86,8 @@ export async function POST(req: NextRequest) {
                 <tr><td style="padding: 10px 0; color: #94a3b8;">Objective</td><td style="padding: 10px 0; color: #1e293b;">${body.objective}</td></tr>
               </table>
               <div style="margin-top: 32px; text-align: center;">
-                <a href="${approveUrl}" style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #10b981, #14b8a6); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px; margin-right: 12px;">โ“ Approve</a>
-                <a href="${rejectUrl}" style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #ef4444, #f43f5e); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px;">โ• Reject</a>
+                <a href="${approveUrl}" style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #10b981, #14b8a6); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px; margin-right: 12px;">Approve</a>
+                <a href="${rejectUrl}" style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #ef4444, #f43f5e); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px;">Reject</a>
               </div>
               <p style="margin-top: 24px; font-size: 11px; color: #94a3b8; text-align: center;">This link expires in 7 days.</p>
             </div>

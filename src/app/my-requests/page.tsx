@@ -22,20 +22,21 @@ export default function MyRequestsPage() {
         setToasts((prev) => prev.filter((t) => t.id !== id));
     };
 
-    useEffect(() => {
-        const fetchRequests = async () => {
-            try {
-                const res = await fetch("/api/requests");
-                if (res.ok) {
-                    const data = await res.json();
-                    setRequests(data);
-                }
-            } catch {
-                // ignore
-            } finally {
-                setLoading(false);
+    const fetchRequests = async () => {
+        try {
+            const res = await fetch("/api/requests");
+            if (res.ok) {
+                const data = await res.json();
+                setRequests(data);
             }
-        };
+        } catch {
+            // ignore
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchRequests();
     }, []);
 
@@ -111,20 +112,14 @@ export default function MyRequestsPage() {
                     body: formData,
                 });
                 if (res.ok) {
-                    const data = await res.json();
-                    setRequests((prev) =>
-                        prev.map((r) =>
-                            r.id === requestId
-                                ? { ...r, approval_file_url: data.url || "uploaded", status: "PENDING_APPROVAL" }
-                                : r
-                        )
-                    );
-                    addToast("Signed file uploaded successfully! Status changed to Pending Approval.", "success");
+                    await fetchRequests(); // Refresh actual data from db
+                    addToast("Signed file uploaded successfully!", "success");
                 } else {
                     const data = await res.json();
                     addToast(data.error || "Upload failed", "error");
                 }
-            } catch {
+            } catch (err: any) {
+                console.error(err);
                 addToast("Upload failed", "error");
             }
         };
@@ -244,8 +239,16 @@ export default function MyRequestsPage() {
                                     {request.status === "CANCELLED" && (
                                         <p className="text-xs text-gray-400 mt-2 italic">This request has been cancelled</p>
                                     )}
-                                </div>
                                 <div className="flex items-center gap-2 flex-wrap">
+                                    {request.status === "APPROVED" && !request.approval_file_url && (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                                <polyline points="22,6 12,13 2,6" />
+                                            </svg>
+                                            Approved via Email
+                                        </span>
+                                    )}
                                     {/* Upload Signed PDF */}
                                     {canUploadSigned(request.status) && (
                                         <button

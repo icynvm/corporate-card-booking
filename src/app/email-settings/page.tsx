@@ -13,11 +13,10 @@ export default function EmailSettingsPage() {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const res = await fetch("/api/email-settings");
+                const res = await fetch("/api/settings");
                 if (res.ok) {
                     const data = await res.json();
-                    setEmailTo(data.email_to || "");
-                    setEmailCc(data.email_cc || "");
+                    setEmailTo(data.managerEmail || "");
                 }
             } catch {
                 // ignore
@@ -34,10 +33,10 @@ export default function EmailSettingsPage() {
         setMessage(null);
 
         try {
-            const res = await fetch("/api/email-settings", {
-                method: "PUT",
+            const res = await fetch("/api/settings", {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email_to: emailTo, email_cc: emailCc }),
+                body: JSON.stringify({ key: "MANAGER_EMAIL", value: emailTo }),
             });
 
             if (res.ok) {
