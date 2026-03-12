@@ -69,6 +69,34 @@ export default function DashboardPage() {
         setReceiptModalOpen(true);
     };
 
+    const handleUploadSigned = async (request: RequestRecord) => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".pdf,.jpg,.jpeg,.png";
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append("file", file);
+            try {
+                const res = await fetch(`/api/requests/${request.id}/upload-approval`, {
+                    method: "POST",
+                    body: formData,
+                });
+                if (res.ok) {
+                    await fetchRequests(); // Refresh data to show changes
+                    alert("Signed file uploaded successfully!");
+                } else {
+                    const data = await res.json();
+                    alert(data.error || "Upload failed");
+                }
+            } catch {
+                alert("Upload failed");
+            }
+        };
+        input.click();
+    };
+
     return (
         <div className="space-y-8">
             <div>
@@ -200,7 +228,7 @@ export default function DashboardPage() {
                     <p className="text-gray-400 text-sm">Loading requests...</p>
                 </div>
             ) : (
-                <RequestsTable data={filteredData} onUploadReceipt={handleUploadReceipt} />
+                <RequestsTable data={filteredData} onUploadReceipt={handleUploadReceipt} onUploadSigned={handleUploadSigned} />
             )}
 
             {/* Receipt Upload Modal */}
