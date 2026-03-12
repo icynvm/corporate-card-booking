@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({
             managerEmail: settings.MANAGER_EMAIL || "manager@company.com",
-            senderEmail: settings.SENDER_EMAIL || "Card Booking System <onboarding@resend.dev>",
+            senderEmail: settings.SENDER_EMAIL || "noreply@kie-ra.online",
         });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });

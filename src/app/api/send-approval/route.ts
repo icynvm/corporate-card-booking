@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     }, {});
 
     const managerEmail = requestData.managerEmail || settings.MANAGER_EMAIL || "manager@company.com";
-    const senderEmail = settings.SENDER_EMAIL || "Card Booking System <onboarding@resend.dev>";
+    const senderEmail = settings.SENDER_EMAIL || "noreply@kie-ra.online";
 
     // Send approval email via Resend
     if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_xxxxxxxxxxxx" && process.env.RESEND_API_KEY !== "re_dummy_key_for_build") {
