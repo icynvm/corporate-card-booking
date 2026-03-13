@@ -7,8 +7,13 @@ export default function EmailSettingsPage() {
     const [emailTo, setEmailTo] = useState("");
     const [emailFrom, setEmailFrom] = useState("");
     const [resendKey, setResendKey] = useState("");
+    const [lineChannelId, setLineChannelId] = useState("");
+    const [lineChannelSecret, setLineChannelSecret] = useState("");
+    const [lineAccessToken, setLineAccessToken] = useState("");
+    const [lineDestinationId, setLineDestinationId] = useState("");
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [testingLine, setTestingLine] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
     useEffect(() => {
@@ -20,6 +25,10 @@ export default function EmailSettingsPage() {
                     setEmailTo(data.managerEmail || "");
                     setEmailFrom(data.senderEmail || "");
                     setResendKey(data.resendApiKey || "");
+                    setLineChannelId(data.lineChannelId || "");
+                    setLineChannelSecret(data.lineChannelSecret || "");
+                    setLineAccessToken(data.lineAccessToken || "");
+                    setLineDestinationId(data.lineDestinationId || "");
                 }
             } catch {
                 // ignore
@@ -59,8 +68,37 @@ export default function EmailSettingsPage() {
                     body: JSON.stringify({ key: "RESEND_API_KEY", value: resendKey }),
                 });
 
-            if (res1.ok && res2.ok && res3.ok) {
-                setMessage({ text: "Email settings saved successfully!", type: "success" });
+            // Save LINE Settings
+            await fetch("/api/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ key: "LINE_CHANNEL_ID", value: lineChannelId }),
+            });
+
+            if (!lineChannelSecret.includes("...")) {
+                await fetch("/api/settings", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ key: "LINE_CHANNEL_SECRET", value: lineChannelSecret }),
+                });
+            }
+
+            if (!lineAccessToken.includes("...")) {
+                await fetch("/api/settings", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ key: "LINE_ACCESS_TOKEN", value: lineAccessToken }),
+                });
+            }
+
+            const resLineDest = await fetch("/api/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ key: "LINE_DESTINATION_ID", value: lineDestinationId }),
+            });
+
+            if (res1.ok && res2.ok && res3.ok && resLineDest.ok) {
+                setMessage({ text: "All settings saved successfully!", type: "success" });
             } else {
                 setMessage({ text: "Failed to save some settings", type: "error" });
             }
@@ -71,14 +109,32 @@ export default function EmailSettingsPage() {
         }
     };
 
+    const handleTestLine = async () => {
+        setTestingLine(true);
+        setMessage(null);
+        try {
+            const res = await fetch("/api/settings/test-line", { method: "POST" });
+            const data = await res.json();
+            if (res.ok) {
+                setMessage({ text: "Test LINE message sent! Check your group.", type: "success" });
+            } else {
+                setMessage({ text: `LINE Test Failed: ${data.error}`, type: "error" });
+            }
+        } catch {
+            setMessage({ text: "Failed to connect to test endpoint", type: "error" });
+        } finally {
+            setTestingLine(false);
+        }
+    };
+
     return (
         <div className="max-w-2xl mx-auto space-y-8">
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                    Email <span className="gradient-text">Settings</span>
+                    Notification <span className="gradient-text">Settings</span>
                 </h1>
                 <p className="text-sm text-gray-500">
-                    Configure the recipient and CC email addresses for request notifications sent to managers.
+                    Configure Email (Resend) and LINE Messaging for request alerts.
                 </p>
             </div>
 
@@ -165,21 +221,83 @@ export default function EmailSettingsPage() {
                             </p>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={saving}
-                            className="btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                            {saving ? (
-                                <>
-                                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        <div className="pt-6 border-t border-gray-100">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <span className="w-8 h-8 rounded-lg bg-[#06C755] flex items-center justify-center">
+                                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="currentColor">
+                                        <path d="M24 10.304c0-5.691-5.383-10.304-12-10.304s-12 4.613-12 10.304c0 5.1 4.273 9.387 10.035 10.154.391.083.923.258 1.058.592.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.541 6.916-4.085 9.448-6.992 1.894-2.146 2.534-4.043 2.534-6.539z" />
                                     </svg>
-                                    Saving...
-                                </>
-                            ) : "Save Settings"}
-                        </button>
+                                </span>
+                                LINE Notifications
+                            </h3>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="label-text">Channel ID</label>
+                                    <input
+                                        type="text"
+                                        value={lineChannelId}
+                                        onChange={(e) => setLineChannelId(e.target.value)}
+                                        className="input-field"
+                                        placeholder="200xxxxxxx"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="label-text">Channel Secret</label>
+                                    <input
+                                        type="password"
+                                        value={lineChannelSecret}
+                                        onChange={(e) => setLineChannelSecret(e.target.value)}
+                                        className="input-field"
+                                        placeholder="โ€ขโ€ขโ€ขโ€ขโ€ขโ€ขโ€ขโ€ข"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="label-text">Channel Access Token (Long-lived)</label>
+                                    <textarea
+                                        value={lineAccessToken}
+                                        onChange={(e) => setLineAccessToken(e.target.value)}
+                                        className="input-field min-h-[100px] py-3"
+                                        placeholder="LzOfNMkAnYms..."
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="label-text">Destination ID (User or Group ID)</label>
+                                    <input
+                                        type="text"
+                                        value={lineDestinationId}
+                                        onChange={(e) => setLineDestinationId(e.target.value)}
+                                        className="input-field"
+                                        placeholder="Uxxxxxxxx or Gxxxxxxxx"
+                                    />
+                                    <p className="text-[10px] text-gray-400 mt-1">
+                                        Tip: To find the Group ID, add the bot to your group. We will log the ID when it receives a message.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {saving ? "Saving..." : "Save All Settings"}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleTestLine}
+                                disabled={testingLine || !lineDestinationId}
+                                className="btn-secondary flex-1 flex items-center justify-center gap-2 border-[#06C755] text-[#06C755] hover:bg-[#06C755]/5 disabled:opacity-50"
+                            >
+                                {testingLine ? "Testing..." : "Test LINE Message"}
+                            </button>
+                        </div>
                     </form>
                 )}
             </GlassCard>

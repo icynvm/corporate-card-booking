@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
 import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+import { sendLineNotification } from "@/lib/line";
 
 // Helper to get session from cookie
 function getSession(req: NextRequest) {
@@ -159,6 +160,14 @@ export async function POST(req: NextRequest) {
             user_name: body.fullName || "Developer Admin",
             changes: { event_id: eventId, amount: body.amount, project_name: body.projectName, billing_type: body.billingType },
         });
+
+        // LINE Notification
+        try {
+            const lineMessage = `๐“ข New Card Request!\n\n๐‘ค Requester: ${body.fullName}\n๐ข Dept: ${body.department}\n๐“ Project: ${body.projectName}\n๐’ฐ Amount: THB ${parseFloat(body.amount).toLocaleString()}\n๐“ Objective: ${body.objective}\n\n๐”— View in Admin Panel: https://booking.kie-ra.online/admin`;
+            await sendLineNotification(lineMessage);
+        } catch (lineError) {
+            console.error("Failed to send LINE notification:", lineError);
+        }
 
         return NextResponse.json(request, { status: 201 });
     } catch (error: any) {

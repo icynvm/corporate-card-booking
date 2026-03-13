@@ -39,6 +39,10 @@ export async function GET(req: NextRequest) {
             managerEmail: settings.MANAGER_EMAIL || "manager@company.com",
             senderEmail: settings.SENDER_EMAIL || "support@booking.kie-ra.online",
             resendApiKey: settings.RESEND_API_KEY ? `${settings.RESEND_API_KEY.slice(0, 7)}...${settings.RESEND_API_KEY.slice(-4)}` : null,
+            lineChannelId: settings.LINE_CHANNEL_ID || "",
+            lineChannelSecret: settings.LINE_CHANNEL_SECRET ? `${settings.LINE_CHANNEL_SECRET.slice(0, 4)}...${settings.LINE_CHANNEL_SECRET.slice(-4)}` : null,
+            lineAccessToken: settings.LINE_ACCESS_TOKEN ? `${settings.LINE_ACCESS_TOKEN.slice(0, 10)}...${settings.LINE_ACCESS_TOKEN.slice(-10)}` : null,
+            lineDestinationId: settings.LINE_DESTINATION_ID || "",
         });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
