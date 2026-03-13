@@ -358,7 +358,7 @@ export function CardRequestForm() {
                                             <input
                                                 {...register(`promotionalChannels.${index}.accessList`)}
                                                 className="input-field"
-                                                placeholder="e.g. John, Sarah, Marketing Team"
+                                                placeholder="e.g. John, Sarah, Marketing Department"
                                             />
                                         </div>
                                     </div>

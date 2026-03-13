@@ -40,9 +40,9 @@ export default function HomePage() {
             {/* Feature Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 w-full max-w-3xl">
                 {[
-                    { title: "Quick Requests", desc: "Submit card requests with our streamlined form", icon: "📝" },
-                    { title: "PDF Generation", desc: "Auto-generate pre-filled PDF documents", icon: "📄" },
-                    { title: "Track Expenses", desc: "Monitor budgets and receipt uploads", icon: "📊" },
+                    { title: "Quick Requests", desc: "Submit card requests with our streamlined form", icon: "๐“" },
+                    { title: "PDF Generation", desc: "Auto-generate pre-filled PDF documents", icon: "๐“" },
+                    { title: "Track Expenses", desc: "Monitor budgets and receipt uploads", icon: "๐“" },
                 ].map((feature) => (
                     <div key={feature.title} className="glass-card-hover p-6 text-center">
                         <div className="text-3xl mb-3">{feature.icon}</div>

@@ -9,7 +9,7 @@ export default function RegisterPage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [team, setTeam] = useState("");
+    const [department, setDepartment] = useState("");
     const [otpCode, setOtpCode] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export default function RegisterPage() {
             const res = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, password, team }),
+                body: JSON.stringify({ name, email, password, department }),
             });
             const data = await res.json();
 
@@ -106,8 +106,8 @@ export default function RegisterPage() {
                             </div>
 
                             <div>
-                                <label className="label-text">Team</label>
-                                <input type="text" value={team} onChange={(e) => setTeam(e.target.value)} className="input-field" placeholder="e.g. Digital Marketing" required />
+                                <label className="label-text">Department</label>
+                                <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} className="input-field" placeholder="e.g. Digital Marketing" required />
                             </div>
 
                             <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">

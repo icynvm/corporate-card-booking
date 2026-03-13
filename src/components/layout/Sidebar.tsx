@@ -24,7 +24,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const [userName, setUserName] = useState("Loading...");
-    const [userTeam, setUserTeam] = useState("");
+    const [userDepartment, setUserDepartment] = useState("");
     const [userRole, setUserRole] = useState("");
 
     useEffect(() => {
@@ -35,7 +35,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     const data = await res.json();
                     if (data.user) {
                         setUserName(data.user.name);
-                        setUserTeam(data.user.team);
+                        setUserDepartment(data.user.department);
                         setUserRole(data.user.role);
                         return;
                     }
@@ -112,7 +112,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-700 truncate">{userName}</p>
-                            <p className="text-[10px] text-gray-400 truncate">{userTeam} &middot; {userRole}</p>
+                            <p className="text-[10px] text-gray-400 truncate">{userDepartment} &middot; {userRole}</p>
                         </div>
                     </div>
                     <button
