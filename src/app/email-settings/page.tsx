@@ -60,8 +60,8 @@ export default function EmailSettingsPage() {
             });
 
             // Save Resend API Key (only if not masked and changed)
-            const res3 = resendKey.includes("...") 
-                ? { ok: true } 
+            const res3 = resendKey.includes("...")
+                ? { ok: true }
                 : await fetch("/api/settings", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -230,7 +230,7 @@ export default function EmailSettingsPage() {
                                 </span>
                                 LINE Notifications
                             </h3>
-                            
+
                             <div className="space-y-4">
                                 <div>
                                     <label className="label-text">Channel ID</label>
@@ -250,7 +250,7 @@ export default function EmailSettingsPage() {
                                         value={lineChannelSecret}
                                         onChange={(e) => setLineChannelSecret(e.target.value)}
                                         className="input-field"
-                                        placeholder="โ€ขโ€ขโ€ขโ€ขโ€ขโ€ขโ€ขโ€ข"
+                                        placeholder=".............."
                                     />
                                 </div>
 

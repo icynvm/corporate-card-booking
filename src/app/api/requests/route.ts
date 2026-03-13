@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
                     })
                     .select()
                     .single();
-                
+
                 if (!projectError && newProject) {
                     projectId = newProject.id;
                 }
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
 
         // LINE Notification
         try {
-            const lineMessage = `๐“ข New Card Request!\n\n๐‘ค Requester: ${body.fullName}\n๐ข Dept: ${body.department}\n๐“ Project: ${body.projectName}\n๐’ฐ Amount: THB ${parseFloat(body.amount).toLocaleString()}\n๐“ Objective: ${body.objective}\n\n๐”— View in Admin Panel: https://booking.kie-ra.online/admin`;
+            const lineMessage = ` New Card Request!\n\n Requester: ${body.fullName}\n Dept: ${body.department}\n Project: ${body.projectName}\n Amount: THB ${parseFloat(body.amount).toLocaleString()}\n Objective: ${body.objective}\n`;
             await sendLineNotification(lineMessage);
         } catch (lineError) {
             console.error("Failed to send LINE notification:", lineError);
