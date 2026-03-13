@@ -56,14 +56,23 @@ export async function POST(req: NextRequest) {
         const supabase = createServerSupabase();
         const body = await req.json();
 
-        // Generate Event ID: REQ-YYYY-XXXX
+        // Generate Event ID: REQ-YYYY-XXXX (More robust max-based logic)
         const year = new Date().getFullYear();
-        const { count } = await supabase
+        const { data: existingIds } = await supabase
             .from("requests")
-            .select("*", { count: "exact", head: true })
+            .select("event_id")
             .like("event_id", `REQ-${year}%`);
 
-        const eventId = `REQ-${year}-${String((count || 0) + 1).padStart(4, "0")}`;
+        let nextNumber = 1;
+        if (existingIds && existingIds.length > 0) {
+            const numbers = existingIds.map(req => {
+                const parts = req.event_id.split("-");
+                return parseInt(parts[parts.length - 1]) || 0;
+            });
+            nextNumber = Math.max(...numbers) + 1;
+        }
+
+        const eventId = `REQ-${year}-${String(nextNumber).padStart(4, "0")}`;
         const userId = session.pid;
 
         // Automatic Project Matching/Creation
