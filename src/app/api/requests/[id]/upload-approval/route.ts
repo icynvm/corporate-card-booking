@@ -79,3 +79,57 @@ export async function POST(
         );
     }
 }
+
+// GET: Proxy Download/View of the approval file strictly from backend stream
+export async function GET(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    try {
+        const supabase = createServerSupabase();
+        const id = params.id;
+
+        const { data: request, error: fetchError } = await supabase
+            .from("requests")
+            .select("approval_file_url")
+            .eq("id", id)
+            .single();
+
+        if (fetchError || !request?.approval_file_url) {
+            return NextResponse.json({ error: "Approval file not found or inaccessible" }, { status: 404 });
+        }
+
+        // Parse file path from url
+        const url = new URL(request.approval_file_url);
+        const pathParts = url.pathname.split("/Request%20Form/");
+        if (pathParts.length < 2) {
+             return NextResponse.json({ error: "Invalid path stored" }, { status: 400 });
+        }
+        const filePath = decodeURIComponent(pathParts[1].split("?")[0]);
+
+        // Download stream using Service Role direct client
+        const { data, error } = await supabase.storage
+            .from("Request Form")
+            .download(filePath);
+
+        if (error || !data) {
+            console.error("Supabase Storage Download Error:", error);
+            return NextResponse.json({ error: "File failed to retrieve from storage stream" }, { status: 500 });
+        }
+
+        const buffer = Buffer.from(await data.arrayBuffer());
+        const fileName = filePath.split("/").pop() || "approval.pdf";
+        const isDownload = req.nextUrl.searchParams.get("download") === "true";
+
+        return new NextResponse(buffer, {
+            headers: {
+                "Content-Type": fileName.endsWith(".pdf") ? "application/pdf" : "application/octet-stream",
+                "Content-Disposition": `${isDownload ? "attachment" : "inline"}; filename="${fileName}"`,
+            }
+        });
+
+    } catch (error: any) {
+         console.error("Failed to proxy approval file stream:", error);
+         return NextResponse.json({ error: "Failed to load approval file" }, { status: 500 });
+    }
+}
