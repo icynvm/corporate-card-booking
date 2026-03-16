@@ -200,7 +200,7 @@ export function CardRequestForm() {
                             <input type="hidden" {...register("projectId")} value={selectedProjectId || ""} />
 
                             {showProjectDropdown && projectSearch && (
-                                <div className="absolute z-10 w-full mt-1 bg-white/95 backdrop-blur-lg border border-white/30 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto">
                                     {projectOptions.map((p) => (
                                         <button
                                             key={p.id}
