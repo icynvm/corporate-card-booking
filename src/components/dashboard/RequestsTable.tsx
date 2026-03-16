@@ -158,9 +158,25 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                                         <polyline points="22,6 12,13 2,6" />
                                     </svg>
                                     Email Approved
-                                </span>
-                            )}
-                            {canUploadReceipt && (
+                                 </span>
+                             )}
+                             
+                             {row.approval_file_url && (
+                                 <a
+                                     href={row.approval_file_url}
+                                     target="_blank"
+                                     rel="noopener noreferrer"
+                                     className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-all flex items-center gap-1.5"
+                                 >
+                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                         <circle cx="12" cy="12" r="3" />
+                                     </svg>
+                                     View Approval
+                                 </a>
+                             )}
+                             
+                             {canUploadReceipt && (
                                 <button
                                     onClick={() => onUploadReceipt(row)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${latestReceipt
