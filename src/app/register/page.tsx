@@ -106,7 +106,7 @@ export default function RegisterPage() {
                             </div>
 
                             <div>
-                                <label className="label-text">Department</label>
+                                <label className="label-text">Team</label>
                                 <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} className="input-field" placeholder="e.g. Digital Marketing" required />
                             </div>
 

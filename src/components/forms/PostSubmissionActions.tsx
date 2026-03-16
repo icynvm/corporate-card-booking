@@ -83,19 +83,23 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
                 <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-4">Request Summary</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
+                        <span className="text-gray-400">Requester</span>
+                        <p className="font-medium text-gray-700">{formData.fullName}</p>
+                    </div>
+                    <div>
                         <span className="text-gray-400">Team</span>
                         <p className="font-medium text-gray-700">{formData.department}</p>
                     </div>
                     <div>
                         <span className="text-gray-400">Amount</span>
                         <p className="font-medium text-gray-700">
-                            THB {parseFloat(formData.amount?.toString() || "0").toLocaleString()}
+                            THB {formData.amount.toLocaleString()}
                         </p>
                     </div>
                     <div>
                         <span className="text-gray-400">Billing Type</span>
                         <p className="font-medium text-gray-700">
-                            {(formData.billingType || formData.billing_type || "").replace("_", " ")}
+                            {formData.billingType.replace("_", " ")}
                         </p>
                     </div>
                     <div className="col-span-2">
@@ -115,6 +119,7 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
                         </div>
                     )}
                 </div>
+                <p className="text-[10px] text-gray-300 text-right mt-3">Build Check: 2026-03-16</p>
             </GlassCard>
 
             {/* Action Buttons */}

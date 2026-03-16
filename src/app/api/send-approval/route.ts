@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
                                     <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 600;">${requestData.fullName}</td>
                                   </tr>
                                   <tr>
-                                    <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Department</td>
+                                    <td style="padding: 8px 0; color: #64748b; font-size: 13px;">Team</td>
                                     <td style="padding: 8px 0; color: #1e293b; font-size: 14px;">${requestData.department}</td>
                                   </tr>
                                   <tr>

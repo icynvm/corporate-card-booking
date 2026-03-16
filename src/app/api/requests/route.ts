@@ -159,6 +159,39 @@ export async function POST(req: NextRequest) {
                 // Don't fail the whole request for payments
             }
         }
+        
+        // Generate and upload PDF to Supabase Bucket "request-form"
+        if (request) {
+            try {
+                const { generateRequestPdf } = await import("@/lib/pdf-generator");
+                const pdfBytes = await generateRequestPdf({
+                    eventId: eventId,
+                    fullName: body.fullName,
+                    department: body.department,
+                    contactNo: body.contactNo,
+                    email: body.email,
+                    objective: body.objective,
+                    projectName: body.projectName,
+                    promotionalChannels: body.promotionalChannels,
+                    bookingDate: body.bookingDate,
+                    effectiveDate: body.effectiveDate,
+                    startDate: body.startDate,
+                    endDate: body.endDate,
+                    amount: body.amount
+                });
+                
+                await supabase.storage
+                    .from("request-form")
+                    .upload(`${request.id}.pdf`, Buffer.from(pdfBytes), {
+                         contentType: "application/pdf",
+                         upsert: true
+                    });
+                    
+                // Update request with invoice_url or similar if needed? User didn't ask, just asked to keep it.
+            } catch (pdfError) {
+                console.error("PDF Backup Failed:", pdfError);
+            }
+        }
 
         // Audit log
         await supabase.from("audit_logs").insert({

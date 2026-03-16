@@ -86,8 +86,8 @@ export async function POST(req: NextRequest) {
         page.drawLine({ start: { x: 138, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
 
-        // Department
-        page.drawText("Department :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+        // Team
+        page.drawText("Team :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
         page.drawText(formData.department || "", { x: 165, y, size: 9, font: helvetica, color: textColor });
         page.drawLine({ start: { x: 163, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
         y -= 22;
