@@ -40,12 +40,40 @@ export default function HomePage() {
             {/* Feature Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 w-full max-w-3xl">
                 {[
-                    { title: "Quick Requests", desc: "Submit card requests with our streamlined form", icon: "๐“" },
-                    { title: "PDF Generation", desc: "Auto-generate pre-filled PDF documents", icon: "๐“" },
-                    { title: "Track Expenses", desc: "Monitor budgets and receipt uploads", icon: "๐“" },
+                    { 
+                        title: "Quick Requests", 
+                        desc: "Submit card requests with our streamlined form", 
+                        icon: (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-brand-500 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                            </svg>
+                        ) 
+                    },
+                    { 
+                        title: "PDF Generation", 
+                        desc: "Auto-generate pre-filled PDF documents", 
+                        icon: (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-brand-500 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                        ) 
+                    },
+                    { 
+                        title: "Track Expenses", 
+                        desc: "Monitor budgets and receipt uploads", 
+                        icon: (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-brand-500 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="20" x2="18" y2="10" />
+                                <line x1="12" y1="20" x2="12" y2="4" />
+                                <line x1="6" y1="20" x2="6" y2="14" />
+                            </svg>
+                        ) 
+                    },
                 ].map((feature) => (
                     <div key={feature.title} className="glass-card-hover p-6 text-center">
-                        <div className="text-3xl mb-3">{feature.icon}</div>
+                        <div className="mb-3">{feature.icon}</div>
                         <h3 className="font-semibold text-gray-700 mb-1">{feature.title}</h3>
                         <p className="text-xs text-gray-400">{feature.desc}</p>
                     </div>
