@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
             }
         }
         
-        // Generate and upload PDF to Supabase Bucket "request-form"
+        // Generate and upload PDF to Supabase Bucket "Request Form"
         if (request) {
             try {
                 const { generateRequestPdf } = await import("@/lib/pdf-generator");
@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
                 });
                 
                 await supabase.storage
-                    .from("request-form")
+                    .from("Request Form")
                     .upload(`${request.id}.pdf`, Buffer.from(pdfBytes), {
                          contentType: "application/pdf",
                          upsert: true
