@@ -180,9 +180,13 @@ export async function POST(req: NextRequest) {
                     amount: body.amount
                 });
                 
+                const now = new Date();
+                const dateStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
+                const fileName = `${dateStr}_${request.id}.pdf`;
+
                 await supabase.storage
                     .from("Request Form")
-                    .upload(`${request.id}.pdf`, Buffer.from(pdfBytes), {
+                    .upload(fileName, Buffer.from(pdfBytes), {
                          contentType: "application/pdf",
                          upsert: true
                     });
