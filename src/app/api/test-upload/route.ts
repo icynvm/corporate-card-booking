@@ -16,10 +16,12 @@ export async function GET() {
             });
 
         if (error) {
+            const { data: buckets } = await supabase.storage.listBuckets();
             return NextResponse.json({ 
                 success: false, 
-                message: "Bucket upload failed", 
-                error: error 
+                message: "Bucket upload failed (Bucket not found)", 
+                error: error,
+                existingBuckets: buckets?.map(b => b.name) || []
             });
         }
 
