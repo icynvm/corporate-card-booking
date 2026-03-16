@@ -88,6 +88,7 @@ export default function MyRequestsPage() {
                 setRequests((prev) =>
                     prev.map((r) => (r.id === requestId ? { ...r, status: "CANCELLED" } : r))
                 );
+                addToast("Request cancelled successfully!", "success");
             } else {
                 const data = await res.json();
                 addToast(data.error || "Failed to cancel", "error");

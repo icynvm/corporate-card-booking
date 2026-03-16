@@ -172,7 +172,15 @@ export async function POST(req: NextRequest) {
 
         // LINE Notification
         try {
-            const lineMessage = ` New Card Request!\n\n Requester: ${body.fullName}\n Dept: ${body.department}\n Project: ${body.projectName}\n Amount: THB ${parseFloat(body.amount).toLocaleString()}\n Objective: ${body.objective}\n`;
+            const lineMessage = `๐“ฃ เธกเธตเธเธณเธเธญเธเธฒเธฃเนเธเนเธเธฑเธ•เธฃเน€เธเธฃเธ”เธดเธ•เน€เธเนเธฒเธกเธฒเนเธซเธกเน!
+
+๐‘ค เธเธนเนเธเธญ: ${body.fullName}
+๐ข เธ—เธตเธก: ${body.department}
+๐“ เนเธเธฃเน€เธเธเธ•เน: ${body.projectName}
+๐’ฐ เธงเธเน€เธเธดเธ: ${parseFloat(body.amount).toLocaleString()} เธเธฒเธ—
+๐“ เน€เธซเธ•เธธเธเธฅ: ${body.objective}
+
+เธเธฒเธเธเธดเธเธฒเธฃเธ“เธฒเนเธซเนเธซเธเนเธญเธขเธเธฐ ๐`;
             await sendLineNotification(lineMessage);
         } catch (lineError) {
             console.error("Failed to send LINE notification:", lineError);

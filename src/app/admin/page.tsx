@@ -417,6 +417,7 @@ export default function AdminPage() {
                                                 requestId={req.id}
                                                 totalAmount={req.amount}
                                                 isApproved={req.status === 'APPROVED'}
+                                                addToast={addToast}
                                             />
                                         </div>
                                     )
@@ -433,7 +434,7 @@ export default function AdminPage() {
                 onClose={() => { setApprovalModalOpen(false); setSelectedRequest(null); }}
                 requestId={selectedRequest?.id || null}
                 eventId={selectedRequest?.event_id || ""}
-                onSuccess={fetchData}
+                onSuccess={() => { fetchData(); addToast("Approval file uploaded successfully!", "success"); }}
             />
             {/* Receipt Upload Modal (Admins can also view/manage) */}
             <ReceiptUploadModal
