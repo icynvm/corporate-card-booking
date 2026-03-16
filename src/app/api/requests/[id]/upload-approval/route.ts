@@ -33,13 +33,19 @@ export async function POST(
             });
 
         if (uploadError) {
-             // ... leaving fallback logic to save as previous if needed, but let's see if we can get robust success
+            throw uploadError;
         }
 
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
+        // Get Signed URL for secure access (10 years duration)
+        const { data: signedData, error: signedError } = await supabase.storage
             .from("Request Form")
-            .getPublicUrl(filePath);
+            .createSignedUrl(filePath, 315360000);
+
+        if (signedError || !signedData?.signedUrl) {
+            throw new Error(`Failed to generate signed URL: ${signedError?.message || "Unknown error"}`);
+        }
+        
+        const publicUrl = signedData.signedUrl;
 
         // Update request with file URL
         const { data, error } = await supabase
