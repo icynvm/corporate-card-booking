@@ -126,7 +126,9 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
     y -= 30;
 
     const channels = ["Facebook", "Youtube", "Google", "IG", "Line", "Other", "Tiktok", "WeChat"];
-    const selectedChannels = Array.isArray(formData.promotionalChannels) ? formData.promotionalChannels.map((c: any) => c.channel) : [];
+    const selectedChannels = Array.isArray(formData.promotionalChannels) 
+        ? formData.promotionalChannels.map((c: any) => typeof c === "string" ? c : c?.channel).filter(Boolean)
+        : [];
     const colWidth = (width - 100) / 3;
 
     channels.forEach((ch, i) => {

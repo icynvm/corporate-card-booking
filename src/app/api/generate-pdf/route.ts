@@ -135,7 +135,9 @@ export async function POST(req: NextRequest) {
         y -= 30;
 
         const channels = ["Facebook", "Youtube", "Google", "IG", "Line", "Other", "Tiktok", "WeChat"];
-        const selectedChannels = (formData.promotionalChannels || []).map((c: { channel: string }) => c.channel);
+        const selectedChannels = (formData.promotionalChannels || [])
+            .map((c: any) => typeof c === "string" ? c : c?.channel)
+            .filter(Boolean);
         const colWidth = (width - 100) / 3;
 
         channels.forEach((ch, i) => {
@@ -238,10 +240,10 @@ export async function POST(req: NextRequest) {
                 "Content-Disposition": `attachment; filename="card-request-${eventId}.pdf"`,
             },
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("PDF generation error:", error);
         return NextResponse.json(
-            { error: "Failed to generate PDF" },
+            { error: "Failed to generate PDF", details: error?.message || String(error) },
             { status: 500 }
         );
     }
