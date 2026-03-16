@@ -143,9 +143,6 @@ export async function GET(
         y -= 18;
 
         let secondaryObjText = objectiveText.length > 70 ? objectiveText.substring(70, 140) : "";
-        if (formData.projectName) {
-            secondaryObjText += (secondaryObjText ? " - " : "") + `Project: ${formData.projectName}`;
-        }
 
         if (secondaryObjText) {
             page.drawText(secondaryObjText.substring(0, 80), { x: 100, y, size: 9, font: helvetica, color: textColor });
