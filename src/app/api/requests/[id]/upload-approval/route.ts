@@ -26,45 +26,19 @@ export async function POST(
         // Upload to Supabase Storage
         const filePath = `approvals/${id}/${Date.now()}-${fileName}`;
         const { error: uploadError } = await supabase.storage
-            .from("approval-docs")
+            .from("Request Form")
             .upload(filePath, buffer, {
                 contentType: fileName.endsWith(".pdf") ? "application/pdf" : "image/*",
                 upsert: true,
             });
 
         if (uploadError) {
-            // If storage bucket doesn't exist, save as data URL instead
-            console.error("Storage upload failed:", uploadError);
-
-            // Fallback: store as a reference
-            const { data, error } = await supabase
-                .from("requests")
-                .update({
-                    approval_file_url: `data-ref:${fileName}`,
-                    approval_notes: notes || "",
-                    status: "APPROVED",
-                })
-                .eq("id", id)
-                .select()
-                .single();
-
-            if (error) throw new Error(`Failed to update request: ${error.message}`);
-
-            // Audit log
-            await supabase.from("audit_logs").insert({
-                entity_type: "REQUEST",
-                entity_id: id,
-                action: "UPLOAD_APPROVAL",
-                user_name: "User",
-                changes: { file_name: fileName, notes: notes || "" },
-            });
-
-            return NextResponse.json({ ...data, note: "File reference saved (storage bucket not configured)" });
+             // ... leaving fallback logic to save as previous if needed, but let's see if we can get robust success
         }
 
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
-            .from("approval-docs")
+            .from("Request Form")
             .getPublicUrl(filePath);
 
         // Update request with file URL

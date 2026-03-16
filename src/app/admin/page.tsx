@@ -8,6 +8,24 @@ import SubProjectAllocation from "@/components/dashboard/SubProjectAllocation";
 import { RequestRecord, AuditLog, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
 import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
 
+const downloadFile = async (url: string) => {
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const urlBlob = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = urlBlob;
+        const filename = url.split("/").pop()?.split("?")[0] || "document.pdf";
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(urlBlob);
+    } catch (error) {
+        console.error("Download failed:", error);
+    }
+};
+
 export default function AdminPage() {
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -290,6 +308,37 @@ export default function AdminPage() {
                                             >
                                                 {req.approval_file_url ? "Replace File" : "Attach File"}
                                             </button>
+                                        )}
+
+                                        {req.approval_file_url && (
+                                            <div className="flex gap-1.5 align-middle">
+                                                {!req.approval_file_url.startsWith("data-ref:") ? (
+                                                    <>
+                                                        <a
+                                                            href={req.approval_file_url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="px-3 py-2 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors flex items-center gap-1"
+                                                            title="View Approval"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                                                            View
+                                                        </a>
+                                                        <button
+                                                            onClick={() => downloadFile(req.approval_file_url)}
+                                                            className="px-3 py-2 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center gap-1"
+                                                            title="Download Approval"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                                                            Download
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <span className="px-2 py-1 rounded text-[10px] font-semibold bg-red-50 text-red-500 border border-red-200 flex items-center" title="Upload failed to save stream in storage bucket due to missing configurations on attempt">
+                                                        Storage Missing
+                                                    </span>
+                                                )}
+                                            </div>
                                         )}
 
                                         {/* Manage Receipts (Admin View) */}
