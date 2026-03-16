@@ -26,7 +26,7 @@ export async function sendLineNotification(message: string) {
         const response = await fetch("https://api.line.me/v2/bot/message/push", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
+                "Content-Type": "application/json; charset=utf-8",
                 "Authorization": `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
