@@ -217,7 +217,7 @@ export function CardRequestForm() {
                                     ))}
                                     {projectOptions.length === 0 && (
                                         <div className="px-4 py-3 text-sm text-gray-400">
-                                            No matching projects โ€” this name will create a new project
+                                            No matching projects — this name will create a new project
                                         </div>
                                     )}
                                 </div>

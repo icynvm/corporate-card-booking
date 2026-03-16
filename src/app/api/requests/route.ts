@@ -205,15 +205,15 @@ export async function POST(req: NextRequest) {
 
         // LINE Notification
         try {
-            const lineMessage = `๐“ฃ เธกเธตเธเธณเธเธญเธเธฒเธฃเนเธเนเธเธฑเธ•เธฃเน€เธเธฃเธ”เธดเธ•เน€เธเนเธฒเธกเธฒเนเธซเธกเน!
+            const lineMessage = `📣 มีคำขอการใช้บัตรเครดิตเข้ามาใหม่!
 
-๐‘ค เธเธนเนเธเธญ: ${body.fullName}
-๐ข เธ—เธตเธก: ${body.department}
-๐“ เนเธเธฃเน€เธเธเธ•เน: ${body.projectName}
-๐’ฐ เธงเธเน€เธเธดเธ: ${parseFloat(body.amount).toLocaleString()} เธเธฒเธ—
-๐“ เน€เธซเธ•เธธเธเธฅ: ${body.objective}
+👤 ผู้ขอ: ${body.fullName}
+🏢 ทีม: ${body.department}
+📂 โปรเจกต์: ${body.projectName}
+💰 วงเงิน: ${parseFloat(body.amount).toLocaleString()} บาท
+📝 เหตุผล: ${body.objective}
 
-เธเธฒเธเธเธดเธเธฒเธฃเธ“เธฒเนเธซเนเธซเธเนเธญเธขเธเธฐ ๐`;
+ฝากพิจารณาให้หน่อยนะ 🙏`;
             await sendLineNotification(lineMessage);
         } catch (lineError) {
             console.error("Failed to send LINE notification:", lineError);

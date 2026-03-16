@@ -138,7 +138,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
 
         page.drawRectangle({ x: cx, y: cy - 3, width: 10, height: 10, borderColor: lineColor, borderWidth: 0.5 });
         if (isChecked) {
-            page.drawText("โ“", { x: cx + 1.5, y: cy - 1.5, size: 9, font: helveticaBold, color: textColor });
+            page.drawText("✓", { x: cx + 1.5, y: cy - 1.5, size: 9, font: helveticaBold, color: textColor });
         }
         page.drawText(ch, { x: cx + 15, y: cy, size: 8.5, font: helvetica, color: textColor });
     });
