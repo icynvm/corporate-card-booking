@@ -5,6 +5,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 export const metadata: Metadata = {
     title: "Corporate Card Booking System | IMPACT",
     description: "Corporate credit card request and expense tracking system",
+    icons: {
+        icon: "https://wxxaazwykroptrnuaotk.supabase.co/storage/v1/object/public/Image/logo-impactorganizer-square.png",
+    }
 };
 
 export default function RootLayout({
