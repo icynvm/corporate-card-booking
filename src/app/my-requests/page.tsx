@@ -73,7 +73,7 @@ export default function MyRequestsPage() {
             URL.revokeObjectURL(url);
         } catch (err) {
             console.error(err);
-            addToast("Failed to download PDF. Please try again.", "error");
+            addToast(err instanceof Error ? err.message : "Failed to download PDF. Please try again.", "error");
         } finally {
             setDownloadingPDFs(prev => ({ ...prev, [requestId]: false }));
         }
