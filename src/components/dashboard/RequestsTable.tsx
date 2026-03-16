@@ -17,6 +17,25 @@ import { RequestRecord } from "@/lib/types";
 import SubProjectAllocation from "./SubProjectAllocation";
 
 const columnHelper = createColumnHelper<RequestRecord>();
+ 
+const downloadFile = async (url: string) => {
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const urlBlob = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = urlBlob;
+        // Extract filename from URL
+        const filename = url.split("/").pop()?.split("?")[0] || "document.pdf";
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(urlBlob);
+    } catch (error) {
+        console.error("Download failed:", error);
+    }
+};
 
 interface RequestsTableProps {
     data: RequestRecord[];
@@ -162,18 +181,33 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                              )}
                              
                              {row.approval_file_url && (
-                                 <a
-                                     href={row.approval_file_url}
-                                     target="_blank"
-                                     rel="noopener noreferrer"
-                                     className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-all flex items-center gap-1.5"
-                                 >
-                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                         <circle cx="12" cy="12" r="3" />
-                                     </svg>
-                                     View Approval
-                                 </a>
+                                 <div className="flex gap-1.5">
+                                     <a
+                                         href={row.approval_file_url}
+                                         target="_blank"
+                                         rel="noopener noreferrer"
+                                         className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-all flex items-center gap-1"
+                                         title="View Approval"
+                                     >
+                                         <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                             <circle cx="12" cy="12" r="3" />
+                                         </svg>
+                                         View
+                                     </a>
+                                     <button
+                                         onClick={() => downloadFile(row.approval_file_url)}
+                                         className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-all flex items-center gap-1"
+                                         title="Download Approval"
+                                     >
+                                         <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                             <polyline points="7 10 12 15 17 10" />
+                                             <line x1="12" y1="15" x2="12" y2="3" />
+                                         </svg>
+                                         Download
+                                     </button>
+                                 </div>
                              )}
                              
                              {canUploadReceipt && (
