@@ -57,7 +57,10 @@ export default function MyRequestsPage() {
         setDownloadingPDFs(prev => ({ ...prev, [requestId]: true }));
         try {
             const res = await fetch(`/api/requests/${requestId}/pdf`);
-            if (!res.ok) throw new Error("PDF download failed");
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.details || errorData.error || "PDF download failed");
+            }
 
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);

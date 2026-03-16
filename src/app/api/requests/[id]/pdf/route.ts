@@ -16,11 +16,16 @@ export async function GET(
 
         const supabase = createServerSupabase();
 
-        const { data: request } = await supabase
+        const { data: request, error: fetchError } = await supabase
             .from("requests")
             .select("*, profiles(*), projects(*)")
             .eq("id", params.id)
             .single();
+            
+        if (fetchError) {
+            console.error("Fetch request error:", fetchError);
+            return NextResponse.json({ error: "Failed to fetch request details", details: fetchError.message }, { status: 500 });
+        }
 
         if (!request) {
             return NextResponse.json({ error: "Request not found" }, { status: 404 });
