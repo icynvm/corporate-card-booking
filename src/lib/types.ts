@@ -4,7 +4,7 @@ export interface Profile {
     id: string;
     name: string;
     email: string;
-    team: string;
+    department: string;
     contact_no: string;
     role: "admin" | "user" | "manager";
     created_at: string;
@@ -44,6 +44,8 @@ export interface RequestRecord {
     approval_token: string | null;
     created_at: string;
     updated_at: string;
+    full_name?: string;
+    department?: string;
     // Joined data
     profiles?: Profile;
     projects?: Project;

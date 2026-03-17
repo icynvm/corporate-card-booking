@@ -49,13 +49,13 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
             columns: [
                 {
                     canvas: [
-                        { type: 'rect', x: 0, y: 1, w: 9, h: 9, lineWidth: 0.5, lineColor: '#AAAAAA' },
+                        { type: 'rect', x: 0, y: 1, w: 9, h: 9, lineWidth: 0.8, lineColor: '#555555' },
                         ...(isChecked ? [
-                            { type: 'line', x1: 2, y1: 5, x2: 4, y2: 8, lineWidth: 1.2, lineColor: '#222222' },
-                            { type: 'line', x1: 4, y1: 8, x2: 8, y2: 2, lineWidth: 1.2, lineColor: '#222222' }
+                            { type: 'line', x1: 2, y1: 5, x2: 4, y2: 8, lineWidth: 1.5, lineColor: '#222222' },
+                            { type: 'line', x1: 4, y1: 8, x2: 8, y2: 2, lineWidth: 1.5, lineColor: '#222222' }
                         ] : [])
                     ],
-                    width: 15
+                    width: 14
                 },
                 { text: label, fontSize: 8.5 }
             ],
@@ -63,21 +63,74 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
         };
     };
 
+    const getUnderlinedField = (label: string, value: string, labelWidth: number = 100) => {
+        return {
+            table: {
+                widths: [labelWidth, '*'],
+                body: [
+                    [
+                        { text: label, style: 'label', border: [false, false, false, false] },
+                        { text: value, style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
+                    ]
+                ]
+            },
+            margin: [0, 3, 0, 3]
+        };
+    };
+
+    const getTwoColumnUnderlinedField = (label1: string, value1: string, width1: number, label2: string, value2: string, width2: number = 60) => {
+        return {
+            table: {
+                widths: [width1, 140, width2, '*'],
+                body: [
+                    [
+                        { text: label1, style: 'label', border: [false, false, false, false] },
+                        { text: value1, style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
+                        { text: label2, style: 'label', border: [false, false, false, false] },
+                        { text: value2, style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
+                    ]
+                ]
+            },
+            margin: [0, 3, 0, 3]
+        };
+    };
+
+    const checkboxOther = (label: string, otherValue: string) => {
+        const isChecked = selectedChannels.includes(label);
+        return {
+            columns: [
+                {
+                    canvas: [
+                        { type: 'rect', x: 0, y: 1, w: 9, h: 9, lineWidth: 0.8, lineColor: '#555555' },
+                        ...(isChecked ? [
+                            { type: 'line', x1: 2, y1: 5, x2: 4, y2: 8, lineWidth: 1.5, lineColor: '#222222' },
+                            { type: 'line', x1: 4, y1: 8, x2: 8, y2: 2, lineWidth: 1.5, lineColor: '#222222' }
+                        ] : [])
+                    ],
+                    width: 14
+                },
+                { text: label + ' : ', fontSize: 8.5 },
+                { text: otherValue || "__________________________", fontSize: 8.5, decoration: otherValue ? 'underline' : 'none' }
+            ],
+            margin: [0, 3, 0, 3]
+        };
+    };
+
     const docDefinition: any = {
         pageSize: 'A4',
-        pageMargins: [40, 40, 40, 40],
+        pageMargins: [40, 30, 40, 30],
         content: [
             {
                 columns: [
                     { text: '', width: '*' },
                     {
                         image: 'logo',
-                        width: 100,
+                        width: 90,
                         alignment: 'right'
                     }
                 ]
             },
-            { text: 'CORPORATE EXECUTIVE CARD REQUEST FORM', style: 'title', alignment: 'center', margin: [0, 10, 0, 20] },
+            { text: 'แบบฟอร์มขอใช้ CORPORATE EXECUTIVE CARD', style: 'title', alignment: 'center', margin: [0, 5, 0, 5] },
             
             {
                 columns: [
@@ -85,60 +138,26 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                     { text: 'CARD NO. ', bold: true, width: 'auto', fontSize: 10 },
                     { text: '_______________________', width: 120, fontSize: 10 }
                 ],
-                margin: [0, 0, 0, 20]
+                margin: [0, 0, 0, 15]
             },
 
-            { text: 'REQUESTER STAFF', style: 'sectionHeader' },
-            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#8E5A34' }] },
-            { text: '', margin: [0, 5] },
+            { text: 'REQUESTER STAFF / พนักงานผู้ขอใช้', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
             
-            {
-                columns: [
-                    { text: 'Full Name :', style: 'label', width: 80 },
-                    { text: normalizeThai(formData.fullName), style: 'value' }
-                ],
-                margin: [0, 4, 0, 4]
-            },
-            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
+            getUnderlinedField('Full Name/ ชื่อ  :', normalizeThai(formData.fullName), 100),
+            getUnderlinedField('Department / แผนก  :', normalizeThai(formData.department), 100),
+            getTwoColumnUnderlinedField('Contact No. / เบอร์ติดต่อ  :', formData.contactNo, 100, 'E-Mail  :', formData.email, 40),
 
-            {
-                columns: [
-                    { text: 'Team :', style: 'label', width: 80 },
-                    { text: normalizeThai(formData.department), style: 'value' }
-                ],
-                margin: [0, 4, 0, 4]
-            },
-            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
+            { text: '', margin: [0, 10] },
 
-            {
-                columns: [
-                    { text: 'Contact No. :', style: 'label', width: 80 },
-                    { text: formData.contactNo, style: 'value', width: 160 },
-                    { text: 'E-Mail :', style: 'label', width: 50 },
-                    { text: formData.email, style: 'value' }
-                ],
-                margin: [0, 4, 0, 4]
-            },
-            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 240, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }, { type: 'line', x1: 290, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
+            { text: 'REQUEST DETAILS / รายละเอียดการขอใช้', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
 
-            { text: '', margin: [0, 15] },
-
-            { text: 'REQUEST DETAILS', style: 'sectionHeader' },
-            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#8E5A34' }] },
-            { text: '', margin: [0, 5] },
-
-            {
-                columns: [
-                    { text: 'Objective :', style: 'label', width: 80 },
-                    { text: normalizeThai(formData.objective), style: 'value' }
-                ],
-                margin: [0, 4, 0, 4]
-            },
-            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
+            getUnderlinedField('Objective / วัตถุประสงค์  :', normalizeThai(formData.objective), 120),
 
             { text: '', margin: [0, 5] },
-            { text: 'Promotional Channels', style: 'labelSub', bold: true },
-            { text: '*Choose your type of Promotional Channels', fontSize: 6.5, color: '#999999', margin: [0, 2, 0, 5] },
+            { text: 'Promotional Channels / ช่องทางในการโฆษณา', style: 'labelSub', bold: true },
+            { text: '*Choose your type of Promotional Channels', fontSize: 6.5, color: '#666666', margin: [0, 1, 0, 4] },
 
             {
                 columns: [
@@ -154,60 +173,63 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                     ],
                     [
                         getCheckbox("Google"),
-                        getCheckbox("Other")
+                        checkboxOther("Other", "")
                     ]
-                ]
+                ],
+                margin: [5, 0, 0, 10]
+            },
+
+            {
+                table: {
+                    widths: [140, '*'],
+                    body: [[
+                        { text: 'Booking Date / วันที่สั่งซื้อโฆษณา  :', style: 'label', border: [false,false,false,false] },
+                        { text: fmtDate(formData.bookingDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                    ]]
+                },
+                margin: [0, 3, 0, 3]
+            },
+
+            {
+                table: {
+                    widths: [140, '*'],
+                    body: [[
+                        { text: 'Effective Date / วันที่โฆษณาเริ่มมีผล  :', style: 'label', border: [false,false,false,false] },
+                        { text: fmtDate(formData.effectiveDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                    ]]
+                },
+                margin: [0, 3, 0, 3]
+            },
+
+            {
+                table: {
+                    widths: [90, 140, 90, '*'],
+                    body: [[
+                        { text: 'Start Date / วันเริ่ม  :', style: 'label', border: [false,false,false,false] },
+                        { text: fmtDate(formData.startDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] },
+                        { text: 'End Date / วันสิ้นสุด  :', style: 'label', border: [false,false,false,false] },
+                        { text: fmtDate(formData.endDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                    ]]
+                },
+                margin: [0, 3, 0, 3]
+            },
+
+            {
+                table: {
+                    widths: [90, '*'],
+                    body: [[
+                        { text: 'Amount / จำนวนเงิน  :', style: 'label', border: [false,false,false,false] },
+                        { text: formData.amount ? `${parseFloat(String(formData.amount)).toLocaleString()} THB` : "", style: 'value', bold: true, border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                    ]]
+                },
+                margin: [0, 5, 0, 5]
             },
 
             { text: '', margin: [0, 15] },
 
-            {
-                columns: [
-                    { text: 'Booking Date :', style: 'label', width: 100 },
-                    { text: fmtDate(formData.bookingDate), style: 'value' }
-                ],
-                margin: [0, 4, 0, 4]
-            },
-            { canvas: [{ type: 'line', x1: 100, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
-
-            {
-                columns: [
-                    { text: 'Effective Date :', style: 'label', width: 100 },
-                    { text: fmtDate(formData.effectiveDate), style: 'value' }
-                ],
-                margin: [0, 4, 0, 4]
-            },
-            { canvas: [{ type: 'line', x1: 100, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
-
-            {
-                columns: [
-                    { text: 'Start Date :', style: 'label', width: 80 },
-                    { text: fmtDate(formData.startDate), style: 'value', width: 120 },
-                    { text: 'End Date :', style: 'label', width: 60 },
-                    { text: fmtDate(formData.endDate), style: 'value' }
-                ],
-                margin: [0, 4, 0, 4]
-            },
-            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 200, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }, { type: 'line', x1: 260, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
-
-            {
-                columns: [
-                    { text: 'Amount :', style: 'label', width: 80 },
-                    { 
-                        text: formData.amount ? `${parseFloat(String(formData.amount)).toLocaleString()} THB` : "", 
-                        style: 'value', 
-                        bold: true 
-                    }
-                ],
-                margin: [0, 8, 0, 8]
-            },
-            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#DDDDDD' }] },
-
-            { text: '', margin: [0, 20] },
-
-            { text: 'REQUESTER SIGNATURE', style: 'sectionHeader' },
-            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#8E5A34' }] },
-            { text: '', margin: [0, 15] },
+            { text: 'REQUESTER SIGNATURE / ลงชื่อผู้ขอใช้', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 0.8, lineColor: '#8E5A34' }] },
+            { text: '', margin: [0, 10] },
             {
                 columns: [
                     { text: 'Signature  : _______________________', width: 250, fontSize: 8.5 },
@@ -215,11 +237,11 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 ]
             },
 
-            { text: '', margin: [0, 20] },
-
-            { text: 'AUTHORIZER', style: 'sectionHeader' },
-            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#8E5A34' }] },
             { text: '', margin: [0, 15] },
+
+            { text: 'AUTHORIZER / ลงชื่อผู้อนุมัติ', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 0.8, lineColor: '#8E5A34' }] },
+            { text: '', margin: [0, 10] },
             {
                 columns: [
                     { text: 'Signature  : _______________________', width: 250, fontSize: 8.5 },
@@ -227,22 +249,22 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 ]
             },
 
-            { text: '', margin: [0, 20] },
+            { text: '', margin: [0, 15] },
 
-            { text: 'FA  DEPARTMENT USE ONLY', bold: true, fontSize: 10, margin: [0, 10, 0, 10] },
+            { text: 'FA  DEPARTMENT USE ONLY', bold: true, fontSize: 10, margin: [0, 10, 0, 6] },
             {
                 columns: [
-                    { text: 'Verified By : _______________________', width: 250, fontSize: 8.5 },
+                    { text: 'Verified By / ตรวจสอบโดย  : _______________________', width: 250, fontSize: 8.5 },
                     { text: 'Date  : _______________________', width: '*', fontSize: 8.5 }
                 ]
             }
         ],
         styles: {
-            title: { fontSize: 14, bold: true },
-            sectionHeader: { fontSize: 10, bold: true, color: '#8E5A34' },
-            label: { fontSize: 8.5, color: '#555555' },
-            labelSub: { fontSize: 9, color: '#555555' },
-            value: { fontSize: 9, color: '#222222' }
+            title: { fontSize: 13, bold: true },
+            sectionHeader: { fontSize: 9.5, bold: true, color: '#8E5A34' },
+            label: { fontSize: 8.5, color: '#333333' },
+            labelSub: { fontSize: 8.5, color: '#333333' },
+            value: { fontSize: 8.5, color: '#111111' }
         },
         defaultStyle: {
             font: 'Sarabun'
