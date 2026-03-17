@@ -59,6 +59,12 @@ export async function DELETE(
     }
 }
 
+const cleanText = (text: string = "") =>
+  text
+    .normalize("NFC")
+    .replace(/([\u0E48-\u0E4C])([\u0E31-\u0E3A])/g, "$2$1")
+    .replace(/\u0E33\u0E32/g, "\u0E33");
+
 export async function PUT(
     req: NextRequest,
     { params }: { params: { id: string } }
@@ -79,11 +85,11 @@ export async function PUT(
         const supabase = createServerSupabase();
 
         const updatePayload: any = {};
-        if (objective !== undefined) updatePayload.objective = objective;
-        if (project_name !== undefined) updatePayload.project_name = project_name;
+        if (objective !== undefined) updatePayload.objective = cleanText(objective);
+        if (project_name !== undefined) updatePayload.project_name = cleanText(project_name);
         if (amount !== undefined) updatePayload.amount = typeof amount === "string" ? parseFloat(amount) : amount;
-        if (contact_no !== undefined) updatePayload.contact_no = contact_no;
-        if (email !== undefined) updatePayload.email = email;
+        if (contact_no !== undefined) updatePayload.contact_no = cleanText(contact_no);
+        if (email !== undefined) updatePayload.email = cleanText(email);
         if (billing_type !== undefined) updatePayload.billing_type = billing_type;
         if (start_date !== undefined) updatePayload.start_date = start_date;
         if (end_date !== undefined) updatePayload.end_date = end_date;

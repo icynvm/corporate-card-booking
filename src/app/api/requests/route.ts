@@ -47,6 +47,12 @@ export async function GET(req: NextRequest) {
     }
 }
 
+const cleanText = (text: string = "") =>
+  text
+    .normalize("NFC")
+    .replace(/([\u0E48-\u0E4C])([\u0E31-\u0E3A])/g, "$2$1")
+    .replace(/\u0E33\u0E32/g, "\u0E33");
+
 // POST: Create a new request
 export async function POST(req: NextRequest) {
     try {
@@ -55,6 +61,12 @@ export async function POST(req: NextRequest) {
 
         const supabase = createServerSupabase();
         const body = await req.json();
+
+        // Clean Thai text combining mark order / typos
+        if (body.projectName) body.projectName = cleanText(body.projectName);
+        if (body.objective) body.objective = cleanText(body.objective);
+        if (body.contactNo) body.contactNo = cleanText(body.contactNo);
+        if (body.email) body.email = cleanText(body.email);
 
         // Generate Event ID: REQ-YYYY-XXXX (More robust max-based logic)
         const year = new Date().getFullYear();
@@ -159,7 +171,7 @@ export async function POST(req: NextRequest) {
                 // Don't fail the whole request for payments
             }
         }
-        
+
         // Generate and upload PDF to Supabase Bucket "Request Form"
         if (request) {
             try {
@@ -179,7 +191,7 @@ export async function POST(req: NextRequest) {
                     endDate: body.endDate,
                     amount: body.amount
                 });
-                
+
                 const now = new Date();
                 const dateStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
                 const fileName = `${dateStr}_${request.id}.pdf`;
@@ -187,10 +199,10 @@ export async function POST(req: NextRequest) {
                 await supabase.storage
                     .from("Request Form")
                     .upload(fileName, Buffer.from(pdfBytes), {
-                         contentType: "application/pdf",
-                         upsert: true
+                        contentType: "application/pdf",
+                        upsert: true
                     });
-                    
+
                 // Update request with invoice_url or similar if needed? User didn't ask, just asked to keep it.
             } catch (pdfError) {
                 console.error("PDF Backup Failed:", pdfError);
