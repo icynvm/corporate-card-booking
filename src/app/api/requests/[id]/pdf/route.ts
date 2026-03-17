@@ -52,10 +52,10 @@ export async function GET(
             amount: request.amount,
         };
 
-        const { generateRequestPdf } = await import("@/lib/pdf-generator");
-        const pdfBytes = await generateRequestPdf(formData);
+        const { generatePuppeteerPDF } = await import("@/lib/puppeteer-generator");
+        const pdfBytes = await generatePuppeteerPDF(formData);
 
-        return new NextResponse(Buffer.from(pdfBytes), {
+        return new NextResponse(pdfBytes, {
             headers: {
                 "Content-Type": "application/pdf",
                 "Content-Disposition": `attachment; filename="card-request-${formData.eventId}.pdf"`,
