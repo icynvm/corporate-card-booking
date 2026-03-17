@@ -87,23 +87,31 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
     page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 1, color: brownColor });
     y -= 25;
 
-    page.drawText("Full Name :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(formData.fullName, { x: 140, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 138, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+    const nameLabel = "Full Name :";
+    const nameWidth = helvetica.widthOfTextAtSize(nameLabel, 8.5);
+    page.drawText(nameLabel, { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+    page.drawText(formData.fullName, { x: 50 + nameWidth + 8, y, size: 9, font: helvetica, color: textColor });
+    page.drawLine({ start: { x: 50 + nameWidth + 6, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
     y -= 22;
 
-    page.drawText("Team :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(formData.department, { x: 165, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 163, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+    const teamLabel = "Team :";
+    const teamWidth = helvetica.widthOfTextAtSize(teamLabel, 8.5);
+    page.drawText(teamLabel, { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+    page.drawText(formData.department, { x: 50 + teamWidth + 8, y, size: 9, font: helvetica, color: textColor });
+    page.drawLine({ start: { x: 50 + teamWidth + 6, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
     y -= 22;
 
-    page.drawText("Contact No. :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(formData.contactNo, { x: 185, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 183, y: y - 4 }, end: { x: 320, y: y - 4 }, thickness: 0.5, color: lightGray });
+    const contactLabel = "Contact No. :";
+    const contactWidth = helvetica.widthOfTextAtSize(contactLabel, 8.5);
+    page.drawText(contactLabel, { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+    page.drawText(formData.contactNo, { x: 50 + contactWidth + 8, y, size: 9, font: helvetica, color: textColor });
+    page.drawLine({ start: { x: 50 + contactWidth + 6, y: y - 4 }, end: { x: 320, y: y - 4 }, thickness: 0.5, color: lightGray });
 
-    page.drawText("E-Mail  :", { x: 330, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(formData.email, { x: 375, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 373, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+    const emailLabel = "E-Mail  :";
+    const emailWidth = helvetica.widthOfTextAtSize(emailLabel, 8.5);
+    page.drawText(emailLabel, { x: 330, y, size: 8.5, font: helvetica, color: labelColor });
+    page.drawText(formData.email, { x: 330 + emailWidth + 8, y, size: 9, font: helvetica, color: textColor });
+    page.drawLine({ start: { x: 330 + emailWidth + 6, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
     y -= 35;
 
     // SECTION 2: REQUEST DETAILS
@@ -113,10 +121,12 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
     page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 1, color: brownColor });
     y -= 25;
 
-    page.drawText("Objective :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
+    const objLabel = "Objective :";
+    const objWidth = helvetica.widthOfTextAtSize(objLabel, 8.5);
+    page.drawText(objLabel, { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
     const objectiveText = formData.objective || "";
-    page.drawText(objectiveText.substring(0, 70), { x: 180, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 178, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
+    page.drawText(objectiveText.substring(0, 70), { x: 50 + objWidth + 8, y, size: 9, font: helvetica, color: textColor });
+    page.drawLine({ start: { x: 50 + objWidth + 6, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
     y -= 18;
 
     let secondaryObjText = objectiveText.length > 70 ? objectiveText.substring(70, 140) : "";

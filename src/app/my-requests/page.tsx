@@ -6,10 +6,13 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import SubProjectAllocation from "@/components/dashboard/SubProjectAllocation";
 import { RequestRecord, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
 import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
+import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
 
 export default function MyRequestsPage() {
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [loading, setLoading] = useState(true);
+    const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<RequestRecord | null>(null);
 
     const [toasts, setToasts] = useState<{ id: string; message: string; severity: AlertSeverity }[]>([]);
     const addToast = (message: string, severity: AlertSeverity = "info") => {
@@ -164,6 +167,15 @@ export default function MyRequestsPage() {
         return status === "PENDING_APPROVAL";
     };
 
+    const canUploadReceipt = (status: string) => {
+        return ["APPROVED", "ACTIVE", "COMPLETED"].includes(status);
+    };
+
+    const handleUploadReceipt = (request: RequestRecord) => {
+        setSelectedRequest(request);
+        setReceiptModalOpen(true);
+    };
+
     return (
         <div className="space-y-8 relative">
             <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -290,6 +302,23 @@ export default function MyRequestsPage() {
                                             {sendingEmails[request.id] ? "Sending..." : "Send Email"}
                                         </button>
                                     )}
+                                    {/* Upload Receipt */}
+                                    {canUploadReceipt(request.status) && (
+                                        <button
+                                            onClick={() => handleUploadReceipt(request)}
+                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                                <polyline points="14 2 14 8 20 8" />
+                                                <line x1="12" y1="18" x2="12" y2="12" />
+                                                <line x1="9" y1="15" x2="12" y2="12" />
+                                                <line x1="15" y1="15" x2="12" y2="12" />
+                                            </svg>
+                                            Upload Receipt
+                                        </button>
+                                    )}
+
                                     {/* Download PDF */}
                                     {canDownloadPDF(request.status) && (
                                         <button
@@ -345,6 +374,16 @@ export default function MyRequestsPage() {
                     ))}
                 </div>
             )}
+            {/* Receipt Upload Modal */}
+            <ReceiptUploadModal
+                isOpen={receiptModalOpen}
+                onClose={() => {
+                    setReceiptModalOpen(false);
+                    setSelectedRequest(null);
+                    fetchRequests(); // Refresh data on close
+                }}
+                request={selectedRequest}
+            />
         </div>
     );
 }
