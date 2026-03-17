@@ -8,8 +8,14 @@ export async function POST(req: NextRequest) {
         const pdfDoc = await PDFDocument.create();
         const page = pdfDoc.addPage([595.28, 841.89]); // A4
 
-        const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        // Load custom Thai font (Sarabun)
+        const fs = await import("fs");
+        const path = await import("path");
+        const fontRegularBytes = fs.readFileSync(path.join(process.cwd(), "public", "fonts", "Sarabun-Regular.ttf"));
+        const fontBoldBytes = fs.readFileSync(path.join(process.cwd(), "public", "fonts", "Sarabun-Bold.ttf"));
+
+        const helvetica = await pdfDoc.embedFont(fontRegularBytes);
+        const helveticaBold = await pdfDoc.embedFont(fontBoldBytes);
 
         const { width, height } = page.getSize();
         const textColor = rgb(0.15, 0.15, 0.15);
