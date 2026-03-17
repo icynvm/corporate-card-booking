@@ -32,6 +32,12 @@ export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
     
     const channels = ["Facebook", "Youtube", "Google", "IG", "Line", "Other", "Tiktok", "WeChat"];
 
+    const normalizeThai = (text: string = "") => {
+        return text
+            .replace(/\u0E48\u0E37/g, "\u0E37\u0E48") // Swap Tone + Vowel to Vowel + Tone 
+            .replace(/\u0E33\u0E32/g, "\u0E33");  // Fix นำา -> นำ
+    };
+
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="th">
@@ -176,20 +182,20 @@ export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
         <div class="section-title">REQUESTER STAFF</div>
         <div class="field-row">
             <div class="field-label">Full Name :</div>
-            <div class="field-value">${formData.fullName || ""}</div>
+            <div class="field-value">${normalizeThai(formData.fullName || "")}</div>
         </div>
         <div class="field-row">
             <div class="field-label">Team :</div>
-            <div class="field-value">${formData.department || ""}</div>
+            <div class="field-value">${normalizeThai(formData.department || "")}</div>
         </div>
         <div class="field-row-half">
             <div class="field-half">
                 <div class="field-label">Contact No. :</div>
-                <div class="field-value">${formData.contactNo || ""}</div>
+                <div class="field-value">${normalizeThai(formData.contactNo || "")}</div>
             </div>
             <div class="field-half">
                 <div class="field-label" style="width: 50px;">E-Mail :</div>
-                <div class="field-value">${formData.email || ""}</div>
+                <div class="field-value">${normalizeThai(formData.email || "")}</div>
             </div>
         </div>
 
@@ -197,7 +203,7 @@ export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
         <div class="section-title">REQUEST DETAILS</div>
         <div class="field-row">
             <div class="field-label">Objective :</div>
-            <div class="field-value" style="min-height: 40px;">${formData.objective || ""}</div>
+            <div class="field-value" style="min-height: 40px;">${normalizeThai(formData.objective || "")}</div>
         </div>
 
         <div style="margin-top: 15px; font-weight: bold; color: #595959;">Promotional Channels</div>
