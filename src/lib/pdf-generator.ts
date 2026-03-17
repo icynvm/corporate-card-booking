@@ -52,7 +52,6 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
         return (text || "")
             .normalize("NFC")
             .replace(/([\u0E48-\u0E4C])([\u0E31-\u0E3A])/g, "$2$1")
-            .replace(/า([\u0E48-\u0E4C])/g, "$1า")
             .replace(/\u0E33\u0E32/g, "\u0E33")
             .replace(/\u0E37\u0E48/g, "\u0E48\u0E37");
     };
