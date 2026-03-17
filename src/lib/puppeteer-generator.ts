@@ -1,6 +1,7 @@
 import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 import { IMPACT_LOGO_BASE64 } from "./logo-base64";
+import { SARABUN_REGULAR_BASE64, SARABUN_BOLD_BASE64 } from "./fonts-base64";
 
 export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
     const browser = await puppeteer.launch({
@@ -46,7 +47,18 @@ export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
     <head>
         <meta charset="UTF-8">
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+            @font-face {
+                font-family: 'Sarabun';
+                src: url(data:font/ttf;base64,${SARABUN_REGULAR_BASE64}) format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'Sarabun';
+                src: url(data:font/ttf;base64,${SARABUN_BOLD_BASE64}) format('truetype');
+                font-weight: bold;
+                font-style: normal;
+            }
             
             body {
                 font-family: 'Sarabun', sans-serif;
