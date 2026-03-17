@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { KPICard } from "@/components/ui/KPICard";
 import { RequestsTable } from "@/components/dashboard/RequestsTable";
 import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
+import { SignedUploadModal } from "@/components/dashboard/SignedUploadModal";
 import { RequestRecord, STATUS_LABELS } from "@/lib/types";
 import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
 
@@ -13,6 +14,7 @@ export default function DashboardPage() {
     const [filterBilling, setFilterBilling] = useState("");
     const [filterProject, setFilterProject] = useState("");
     const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+    const [signedModalOpen, setSignedModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<RequestRecord | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -83,33 +85,9 @@ export default function DashboardPage() {
         setReceiptModalOpen(true);
     };
 
-    const handleUploadSigned = async (request: RequestRecord) => {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".pdf,.jpg,.jpeg,.png";
-        input.onchange = async (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0];
-            if (!file) return;
-            const formData = new FormData();
-            formData.append("file", file);
-            try {
-                const res = await fetch(`/api/requests/${request.id}/upload-approval`, {
-                    method: "POST",
-                    body: formData,
-                });
-                if (res.ok) {
-                    await fetchRequests(); // Refresh data to show changes
-                    addToast("Signed file uploaded successfully!", "success");
-                } else {
-                    const data = await res.json();
-                    addToast(data.error || "Upload failed", "error");
-                }
-            } catch (err: any) {
-                console.error(err);
-                addToast("Upload failed", "error");
-            }
-        };
-        input.click();
+    const handleUploadSigned = (request: RequestRecord) => {
+        setSelectedRequest(request);
+        setSignedModalOpen(true);
     };
 
     return (
@@ -229,7 +207,7 @@ export default function DashboardPage() {
                             }}
                             className="text-xs text-brand-500 hover:text-brand-700 font-medium transition-colors"
                         >
-                            Clear All โ•
+                            Clear All ✕
                         </button>
                     )}
                 </div>
@@ -254,8 +232,23 @@ export default function DashboardPage() {
                 onClose={() => {
                     setReceiptModalOpen(false);
                     setSelectedRequest(null);
+                    fetchRequests(); // Refresh on close
                 }}
                 request={selectedRequest}
+            />
+
+            {/* Signed Upload Modal */}
+            <SignedUploadModal
+                isOpen={signedModalOpen}
+                onClose={() => {
+                    setSignedModalOpen(false);
+                    setSelectedRequest(null);
+                }}
+                request={selectedRequest}
+                onSuccess={() => {
+                    fetchRequests(); // Refresh data on success
+                    addToast("Signed file uploaded successfully!", "success");
+                }}
             />
         </div>
     );

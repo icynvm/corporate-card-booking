@@ -32,6 +32,11 @@ const fmtDate = (d: string | null | undefined) => {
 
 export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint8Array> {
     const pdfDoc = await PDFDocument.create();
+    
+    // Register fontkit for custom font support
+    const fontkit = await import("@/lib/fontkit");
+    pdfDoc.registerFontkit(fontkit.default || fontkit);
+
     const page = pdfDoc.addPage([595.28, 841.89]); // A4
 
     // Load custom Thai font from Base64
