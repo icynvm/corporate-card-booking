@@ -9,8 +9,44 @@ export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
         executablePath: await chromium.executablePath(),
         headless: true,
     });
-    
+
     const page = await browser.newPage();
+
+    // ✅ Thai normalize (ตัวจริง)
+    const normalizeThai = (text: string = "") => {
+        return text
+            .normalize("NFC")
+            .replace(/([\u0E48-\u0E4C])([\u0E31-\u0E3A])/g, "$2$1")
+            .replace(/\u0E33\u0E32/g, "\u0E33");
+    };
+
+    // ✅ sanitize object ทั้งก้อน
+    const sanitize = (obj: any): any => {
+        if (typeof obj === "string") return normalizeThai(obj);
+
+        if (Array.isArray(obj)) return obj.map(sanitize);
+
+        if (obj && typeof obj === "object") {
+            const out: any = {};
+            for (const k in obj) out[k] = sanitize(obj[k]);
+            return out;
+        }
+
+        return obj;
+    };
+
+    // ✅ escape HTML กันพัง
+    const escapeHtml = (str: string = "") =>
+        str.replace(/[&<>"']/g, (m) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;",
+        }[m]!));
+
+    // 🔥 สำคัญ: clean data ตรงนี้
+    const cleanData = sanitize(formData);
 
     const fmtDate = (d: string | null | undefined) => {
         if (!d) return "";
@@ -29,18 +65,13 @@ export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
         return amount ? `${parseFloat(String(amount)).toLocaleString()} THB` : "";
     };
 
-    const selectedChannels = Array.isArray(formData.promotionalChannels) 
-        ? formData.promotionalChannels.map((c: any) => typeof c === "string" ? c : c?.channel).filter(Boolean)
+    const selectedChannels = Array.isArray(cleanData.promotionalChannels)
+        ? cleanData.promotionalChannels
+            .map((c: any) => typeof c === "string" ? c : c?.channel)
+            .filter(Boolean)
         : [];
-    
+
     const channels = ["Facebook", "Youtube", "Google", "IG", "Line", "Other", "Tiktok", "WeChat"];
-
-    const normalizeThai = (text: string = "") => {
-        return text
-            .replace(/\u0E48\u0E37/g, "\u0E37\u0E48") // Swap Tone + Vowel to Vowel + Tone 
-            .replace(/\u0E33\u0E32/g, "\u0E33");  // Fix นำา -> นำ
-    };
-
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="th">
@@ -196,20 +227,20 @@ export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
         <div class="section-title">REQUESTER STAFF</div>
         <div class="field-row">
             <div class="field-label">Full Name :</div>
-            <div class="field-value">${normalizeThai(formData.fullName || "")}</div>
+            <div class="field-value">${escapeHtml(cleanData.fullName || "")}</div>
         </div>
         <div class="field-row">
             <div class="field-label">Team :</div>
-            <div class="field-value">${normalizeThai(formData.department || "")}</div>
+            <div class="field-value">${escapeHtml(cleanData.department || "")}</div>
         </div>
         <div class="field-row-half">
             <div class="field-half">
                 <div class="field-label">Contact No. :</div>
-                <div class="field-value">${normalizeThai(formData.contactNo || "")}</div>
+                <div class="field-value">${escapeHtml(cleanData.contactNo || "")}</div>
             </div>
             <div class="field-half">
                 <div class="field-label" style="width: 50px;">E-Mail :</div>
-                <div class="field-value">${normalizeThai(formData.email || "")}</div>
+                <div class="field-value">${escapeHtml(cleanData.email || "")}</div>
             </div>
         </div>
 
@@ -217,7 +248,7 @@ export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
         <div class="section-title">REQUEST DETAILS</div>
         <div class="field-row">
             <div class="field-label">Objective :</div>
-            <div class="field-value" style="min-height: 40px;">${normalizeThai(formData.objective || "")}</div>
+            <div class="field-value" style="min-height: 40px;">${escapeHtml(cleanData.objective || "")}</div>
         </div>
 
         <div style="margin-top: 15px; font-weight: bold; color: #595959;">Promotional Channels</div>
@@ -297,7 +328,7 @@ export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
     `;
 
     await page.setContent(htmlContent, { waitUntil: "networkidle0" });
-    
+
     const pdfBuffer = await page.pdf({
         format: "A4",
         printBackground: true,
@@ -305,7 +336,7 @@ export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
     });
 
     await browser.close();
-    
+
     // Convert to Uint8Array for compatibility if needed, but pdf-lib uses Buffer often.
     // page.pdf returns a Buffer in Node environments.
     return Buffer.from(pdfBuffer);
