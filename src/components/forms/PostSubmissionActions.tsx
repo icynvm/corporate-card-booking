@@ -16,18 +16,28 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
     const handleDownloadPdf = async () => {
         setIsDownloading(true);
         try {
-            const res = await fetch("/api/generate-pdf", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
+            const { generateRequestPdf } = await import("@/lib/pdf-generator");
+            
+            const mappedData = {
+                eventId: `REQ-${Date.now()}`,
+                fullName: formData.fullName,
+                department: formData.department,
+                contactNo: formData.contactNo,
+                email: formData.email,
+                objective: formData.objective,
+                projectName: formData.projectName,
+                promotionalChannels: formData.promotionalChannels || [],
+                bookingDate: formData.bookingDate,
+                effectiveDate: formData.effectiveDate,
+                startDate: formData.startDate,
+                endDate: formData.endDate,
+                amount: formData.amount,
+            };
 
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.details || errData.error || "PDF generation failed on server");
-            }
+            const pdfBytes = await generateRequestPdf(mappedData);
 
-            const blob = await res.blob();
+            // Use type assertion to satisfy TypeScript Blob format
+            const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
@@ -37,7 +47,7 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         } catch (err: any) {
-            console.error(err);
+            console.error("PDF generation error:", err);
             alert(`Failed to generate PDF: ${err.message || String(err)}`);
         } finally {
             setIsDownloading(false);

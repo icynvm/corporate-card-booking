@@ -61,23 +61,42 @@ export default function MyRequestsPage() {
     const handleDownloadPDF = async (requestId: string) => {
         setDownloadingPDFs(prev => ({ ...prev, [requestId]: true }));
         try {
-            const res = await fetch(`/api/requests/${requestId}/pdf`);
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.details || errorData.error || "PDF download failed");
-            }
+            const request = requests.find((r: RequestRecord) => r.id === requestId);
+            if (!request) throw new Error("Request not found");
 
-            const blob = await res.blob();
+            const formData = {
+                eventId: request.event_id,
+                fullName: request.full_name || request.profiles?.name || "",
+                department: request.department || request.profiles?.department || "",
+                contactNo: request.contact_no || "",
+                email: request.email || "",
+                objective: request.objective || "",
+                projectName: request.project_name || "",
+                promotionalChannels: request.promotional_channels || [],
+                bookingDate: request.booking_date,
+                effectiveDate: request.effective_date,
+                startDate: request.start_date,
+                endDate: request.end_date,
+                amount: request.amount,
+            };
+
+            const { generateRequestPdf } = await import("@/lib/pdf-generator");
+            const pdfBytes = await generateRequestPdf(formData);
+
+            // Use type assertion to satisfy TypeScript Blob format
+            const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
+            if (blob.size === 0) throw new Error("Generated PDF is empty");
+
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `card-request-${requestId.split("-")[0]}.pdf`; // Basic fallback
+            a.download = `card-request-${formData.eventId}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         } catch (err) {
-            console.error(err);
+            console.error("PDF download error:", err);
             addToast(err instanceof Error ? err.message : "Failed to download PDF. Please try again.", "error");
         } finally {
             setDownloadingPDFs(prev => ({ ...prev, [requestId]: false }));
