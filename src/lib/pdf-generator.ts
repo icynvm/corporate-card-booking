@@ -48,7 +48,14 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
     const helveticaBold = await pdfDoc.embedFont(fontBoldBytes, { subset: false });
 
     const { width, height } = page.getSize();
-    const fixThaiCombining = (text: string) => (text || "").replace(/\u0E37\u0E48/g, "\u0E48\u0E37");
+    const normalizeThai = (text: string = "") => {
+        return (text || "")
+            .normalize("NFC")
+            .replace(/([\u0E48-\u0E4C])([\u0E31-\u0E3A])/g, "$2$1")
+            .replace(/า([\u0E48-\u0E4C])/g, "$1า")
+            .replace(/\u0E33\u0E32/g, "\u0E33")
+            .replace(/\u0E37\u0E48/g, "\u0E48\u0E37");
+    };
     const textColor = rgb(0.15, 0.15, 0.15);
     const labelColor = rgb(0.35, 0.35, 0.35);
     const brownColor = rgb(0.55, 0.32, 0.15);
@@ -125,7 +132,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
     const objLabel = "Objective :";
     const objWidth = helvetica.widthOfTextAtSize(objLabel, 8.5);
     page.drawText(objLabel, { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    const objectiveText = fixThaiCombining((formData.objective || "").replace(/\s+/g, " "));
+    const objectiveText = normalizeThai((formData.objective || "").replace(/\s+/g, " "));
     page.drawText(objectiveText.substring(0, 70), { x: 50 + objWidth + 8, y, size: 9, font: helvetica, color: textColor });
     page.drawLine({ start: { x: 50 + objWidth + 6, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
     y -= 18;

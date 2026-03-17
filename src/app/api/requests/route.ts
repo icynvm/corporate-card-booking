@@ -178,8 +178,8 @@ export async function POST(req: NextRequest) {
         // Generate and upload PDF to Supabase Bucket "Request Form"
         if (request) {
             try {
-                const { generatePuppeteerPDF } = await import("@/lib/puppeteer-generator");
-                const pdfBytes = await generatePuppeteerPDF({
+                const { generateRequestPdf } = await import("@/lib/pdf-generator");
+                const pdfBytes = await generateRequestPdf({
                     eventId: eventId,
                     fullName: body.fullName,
                     department: body.department,

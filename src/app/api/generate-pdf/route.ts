@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generatePuppeteerPDF } from "@/lib/puppeteer-generator";
+import { generateRequestPdf } from "@/lib/pdf-generator";
 
 export async function POST(req: NextRequest) {
     try {
@@ -7,8 +7,7 @@ export async function POST(req: NextRequest) {
         
         const eventId = formData.eventId || `REQ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`;
 
-        // Generate PDF using Puppeteer for perfect Thai shaping support
-        const pdfBytes = await generatePuppeteerPDF(formData);
+        const pdfBytes = await generateRequestPdf(formData);
 
         return new NextResponse(pdfBytes, {
             headers: {

@@ -52,8 +52,8 @@ export async function GET(
             amount: request.amount,
         };
 
-        const { generatePuppeteerPDF } = await import("@/lib/puppeteer-generator");
-        const pdfBytes = await generatePuppeteerPDF(formData);
+        const { generateRequestPdf } = await import("@/lib/pdf-generator");
+        const pdfBytes = await generateRequestPdf(formData);
 
         return new NextResponse(pdfBytes, {
             headers: {
