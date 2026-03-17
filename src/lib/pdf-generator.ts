@@ -124,7 +124,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
     const objLabel = "Objective :";
     const objWidth = helvetica.widthOfTextAtSize(objLabel, 8.5);
     page.drawText(objLabel, { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    const objectiveText = formData.objective || "";
+    const objectiveText = (formData.objective || "").replace(/\s+/g, " ");
     page.drawText(objectiveText.substring(0, 70), { x: 50 + objWidth + 8, y, size: 9, font: helvetica, color: textColor });
     page.drawLine({ start: { x: 50 + objWidth + 6, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
     y -= 18;

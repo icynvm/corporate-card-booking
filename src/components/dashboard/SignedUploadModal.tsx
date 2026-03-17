@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { RequestRecord } from "@/lib/types";
 
@@ -17,11 +17,36 @@ export function SignedUploadModal({ isOpen, onClose, request, onSuccess }: Signe
     const [uploading, setUploading] = useState(false);
     const [uploaded, setUploaded] = useState(false);
 
+    const [objective, setObjective] = useState("");
+    const [projectName, setProjectName] = useState("");
+    const [amount, setAmount] = useState("");
+
+    useEffect(() => {
+        if (request && isOpen) {
+            setObjective(request.objective || "");
+            setProjectName(request.project_name || "");
+            setAmount(request.amount?.toString() || "");
+        }
+    }, [request, isOpen]);
+
     const handleUpload = async () => {
         if (!file || !request) return;
 
         setUploading(true);
         try {
+            // 1. Update text fields first
+            const updateRes = await fetch(`/api/requests/${request.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    objective,
+                    project_name: projectName,
+                    amount: amount ? parseFloat(amount) : 0
+                }),
+            });
+            if (!updateRes.ok) throw new Error("Failed to update request fields");
+
+            // 2. Upload file
             const formData = new FormData();
             formData.append("file", file);
             if (notes.trim()) {
@@ -72,20 +97,43 @@ export function SignedUploadModal({ isOpen, onClose, request, onSuccess }: Signe
                 </div>
             ) : (
                 <div className="space-y-5">
-                    {/* Request Info */}
+                    {/* Request Info / Editable Fields */}
                     {request && (
-                        <div className="bg-gray-50 rounded-xl p-4">
+                        <div className="bg-gray-50 rounded-xl p-4 space-y-3">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-400">Request</span>
                                 <span className="font-mono font-semibold text-brand-600">
                                     {request.event_id}
                                 </span>
                             </div>
-                            <div className="flex justify-between items-center text-sm mt-1">
-                                <span className="text-gray-400">Project</span>
-                                <span className="text-gray-900 font-medium truncate max-w-[200px]">
-                                    {request.project_name}
-                                </span>
+                            <div>
+                                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 block">Objective</label>
+                                <textarea
+                                    value={objective}
+                                    onChange={(e) => setObjective(e.target.value)}
+                                    className="input-field resize-none text-sm p-2"
+                                    rows={2}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 block">Project Name</label>
+                                    <input
+                                        type="text"
+                                        value={projectName}
+                                        onChange={(e) => setProjectName(e.target.value)}
+                                        className="input-field text-sm p-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 block">Amount (THB)</label>
+                                    <input
+                                        type="number"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        className="input-field text-sm p-2"
+                                    />
+                                </div>
                             </div>
                         </div>
                     )}

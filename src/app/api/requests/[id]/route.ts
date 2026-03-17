@@ -58,3 +58,52 @@ export async function DELETE(
         );
     }
 }
+
+export async function PUT(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    try {
+        const session = getSession(req);
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const requestId = params.id;
+        if (!requestId) {
+            return NextResponse.json({ error: "Request ID is required" }, { status: 400 });
+        }
+
+        const { objective, project_name, amount } = await req.json();
+
+        const supabase = createServerSupabase();
+
+        const { error: updateError } = await supabase
+            .from("requests")
+            .update({
+                objective,
+                project_name,
+                amount: typeof amount === "string" ? parseFloat(amount) : amount
+            })
+            .eq("id", requestId);
+
+        if (updateError) throw updateError;
+
+        // Log the update
+        await supabase.from("audit_logs").insert({
+            entity_type: "REQUEST",
+            entity_id: requestId,
+            action: "UPDATE",
+            user_name: session.email || "User",
+            changes: { objective, project_name, amount },
+        });
+
+        return NextResponse.json({ success: true, message: "Request updated successfully" });
+    } catch (error: any) {
+        console.error("Failed to update request:", error);
+        return NextResponse.json(
+            { error: error.message || "Failed to update request" },
+            { status: 500 }
+        );
+    }
+}
