@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import pdfMake from "./pdfmake-fonts";
 import { IMPACT_LOGO_BASE64 } from "./logo-base64";
 
 export interface RequestPdfData {
@@ -30,212 +30,236 @@ const fmtDate = (d: string | null | undefined) => {
     }
 };
 
+const normalizeThai = (text: string = "") => {
+    return (text || "")
+        .normalize("NFC")
+        .replace(/([\u0E48-\u0E4C])([\u0E31-\u0E3A])/g, "$2$1")
+        .replace(/\u0E33\u0E32/g, "\u0E33")
+        .replace(/\u0E37\u0E48/g, "\u0E48\u0E37");
+};
+
 export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint8Array> {
-    const pdfDoc = await PDFDocument.create();
-    
-    // Register fontkit for custom font support
-    const fontkit = await import("@/lib/fontkit");
-    pdfDoc.registerFontkit(fontkit.default || fontkit);
-
-    const page = pdfDoc.addPage([595.28, 841.89]); // A4
-
-    // Load custom Thai font from Base64
-    const { SARABUN_REGULAR_BASE64, SARABUN_BOLD_BASE64 } = await import("@/lib/fonts-base64");
-    const fontRegularBytes = Buffer.from(SARABUN_REGULAR_BASE64, "base64");
-    const fontBoldBytes = Buffer.from(SARABUN_BOLD_BASE64, "base64");
-
-    const helvetica = await pdfDoc.embedFont(fontRegularBytes, { subset: false });
-    const helveticaBold = await pdfDoc.embedFont(fontBoldBytes, { subset: false });
-
-    const { width, height } = page.getSize();
-    const normalizeThai = (text: string = "") => {
-        return (text || "")
-            .normalize("NFC")
-            .replace(/([\u0E48-\u0E4C])([\u0E31-\u0E3A])/g, "$2$1")
-            .replace(/\u0E33\u0E32/g, "\u0E33")
-            .replace(/\u0E37\u0E48/g, "\u0E48\u0E37");
-    };
-    const textColor = rgb(0.15, 0.15, 0.15);
-    const labelColor = rgb(0.35, 0.35, 0.35);
-    const brownColor = rgb(0.55, 0.32, 0.15);
-    const lineColor = rgb(0.7, 0.7, 0.7);
-    const lightGray = rgb(0.85, 0.85, 0.85);
-
-    let y = height - 50;
-
-    // Header Logo
-    const logoBytes = Buffer.from(IMPACT_LOGO_BASE64.split(",")[1], "base64");
-    const logoImage = await pdfDoc.embedPng(logoBytes);
-    const logoDims = logoImage.scale(0.10);
-    page.drawImage(logoImage, {
-        x: width - logoDims.width - 25,
-        y: height - logoDims.height - 20,
-        width: logoDims.width,
-        height: logoDims.height,
-    });
-
-    // Title
-    const title = "CORPORATE EXECUTIVE CARD REQUEST FORM";
-    const titleWidth = helveticaBold.widthOfTextAtSize(title, 14);
-    page.drawText(title, {
-        x: (width - titleWidth) / 2, y: height - 50, size: 14, font: helveticaBold, color: textColor,
-    });
-    y = height - 80;
-
-    // CARD NO.
-    page.drawText("CARD NO.", { x: 200, y, size: 10, font: helveticaBold, color: textColor });
-    page.drawLine({ start: { x: 270, y: y - 4 }, end: { x: 430, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 35;
-
-    // SECTION 1: REQUESTER STAFF
-    page.drawText("REQUESTER STAFF", {
-        x: 50, y, size: 10, font: helveticaBold, color: brownColor,
-    });
-    page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 1, color: brownColor });
-    y -= 25;
-
-    const nameLabel = "Full Name :";
-    const nameWidth = helvetica.widthOfTextAtSize(nameLabel, 8.5);
-    page.drawText(nameLabel, { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(formData.fullName, { x: 50 + nameWidth + 8, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 50 + nameWidth + 6, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 22;
-
-    const teamLabel = "Team :";
-    const teamWidth = helvetica.widthOfTextAtSize(teamLabel, 8.5);
-    page.drawText(teamLabel, { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(formData.department, { x: 50 + teamWidth + 8, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 50 + teamWidth + 6, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 22;
-
-    const contactLabel = "Contact No. :";
-    const contactWidth = helvetica.widthOfTextAtSize(contactLabel, 8.5);
-    page.drawText(contactLabel, { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(formData.contactNo, { x: 50 + contactWidth + 8, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 50 + contactWidth + 6, y: y - 4 }, end: { x: 320, y: y - 4 }, thickness: 0.5, color: lightGray });
-
-    const emailLabel = "E-Mail  :";
-    const emailWidth = helvetica.widthOfTextAtSize(emailLabel, 8.5);
-    page.drawText(emailLabel, { x: 330, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(formData.email, { x: 330 + emailWidth + 8, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 330 + emailWidth + 6, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 35;
-
-    // SECTION 2: REQUEST DETAILS
-    page.drawText("REQUEST DETAILS", {
-        x: 50, y, size: 10, font: helveticaBold, color: brownColor,
-    });
-    page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 1, color: brownColor });
-    y -= 25;
-
-    const objLabel = "Objective :";
-    const objWidth = helvetica.widthOfTextAtSize(objLabel, 8.5);
-    page.drawText(objLabel, { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    const objectiveText = normalizeThai((formData.objective || "").replace(/\s+/g, " "));
-    page.drawText(objectiveText.substring(0, 70), { x: 50 + objWidth + 8, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 50 + objWidth + 6, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 18;
-
-    let secondaryObjText = objectiveText.length > 70 ? objectiveText.substring(70, 140) : "";
-    if (secondaryObjText) {
-        page.drawText(secondaryObjText.substring(0, 80), { x: 100, y, size: 9, font: helvetica, color: textColor });
-    }
-    page.drawLine({ start: { x: 98, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 30;
-
-    // SECTION 3: Promotional Channels
-    page.drawText("Promotional Channels", {
-        x: 50, y, size: 9, font: helveticaBold, color: labelColor,
-    });
-    page.drawText("*Choose your type of Promotional Channels", {
-        x: 55, y: y - 12, size: 6.5, font: helvetica, color: rgb(0.6, 0.6, 0.6),
-    });
-    y -= 30;
-
-    const channels = ["Facebook", "Youtube", "Google", "IG", "Line", "Other", "Tiktok", "WeChat"];
     const selectedChannels = Array.isArray(formData.promotionalChannels) 
         ? formData.promotionalChannels.map((c: any) => typeof c === "string" ? c : c?.channel).filter(Boolean)
         : [];
-    const colWidth = (width - 100) / 3;
 
-    channels.forEach((ch, i) => {
-        const col = i % 3;
-        const row = Math.floor(i / 3);
-        const cx = 55 + col * colWidth;
-        const cy = y - row * 20;
-        const isChecked = selectedChannels.includes(ch);
+    const getCheckbox = (label: string) => {
+        const isChecked = selectedChannels.includes(label);
+        return {
+            columns: [
+                {
+                    canvas: [
+                        { type: 'rect', x: 0, y: 1, w: 9, h: 9, lineWidth: 0.5, lineColor: '#AAAAAA' },
+                        ...(isChecked ? [
+                            { type: 'line', x1: 2, y1: 5, x2: 4, y2: 8, lineWidth: 1.2, lineColor: '#222222' },
+                            { type: 'line', x1: 4, y1: 8, x2: 8, y2: 2, lineWidth: 1.2, lineColor: '#222222' }
+                        ] : [])
+                    ],
+                    width: 15
+                },
+                { text: label, fontSize: 8.5 }
+            ],
+            margin: [0, 3, 0, 3]
+        };
+    };
 
-        page.drawRectangle({ x: cx, y: cy - 3, width: 10, height: 10, borderColor: lineColor, borderWidth: 0.5 });
-        if (isChecked) {
-            page.drawText("X", { x: cx + 2.5, y: cy - 1.5, size: 8, font: helveticaBold, color: textColor });
+    const docDefinition: any = {
+        pageSize: 'A4',
+        pageMargins: [40, 40, 40, 40],
+        content: [
+            {
+                columns: [
+                    { text: '', width: '*' },
+                    {
+                        image: 'logo',
+                        width: 100,
+                        alignment: 'right'
+                    }
+                ]
+            },
+            { text: 'CORPORATE EXECUTIVE CARD REQUEST FORM', style: 'title', alignment: 'center', margin: [0, 10, 0, 20] },
+            
+            {
+                columns: [
+                    { text: '', width: '*' },
+                    { text: 'CARD NO. ', bold: true, width: 'auto', fontSize: 10 },
+                    { text: '_______________________', width: 120, fontSize: 10 }
+                ],
+                margin: [0, 0, 0, 20]
+            },
+
+            { text: 'REQUESTER STAFF', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#8E5A34' }] },
+            { text: '', margin: [0, 5] },
+            
+            {
+                columns: [
+                    { text: 'Full Name :', style: 'label', width: 80 },
+                    { text: normalizeThai(formData.fullName), style: 'value' }
+                ],
+                margin: [0, 4, 0, 4]
+            },
+            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
+
+            {
+                columns: [
+                    { text: 'Team :', style: 'label', width: 80 },
+                    { text: normalizeThai(formData.department), style: 'value' }
+                ],
+                margin: [0, 4, 0, 4]
+            },
+            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
+
+            {
+                columns: [
+                    { text: 'Contact No. :', style: 'label', width: 80 },
+                    { text: formData.contactNo, style: 'value', width: 160 },
+                    { text: 'E-Mail :', style: 'label', width: 50 },
+                    { text: formData.email, style: 'value' }
+                ],
+                margin: [0, 4, 0, 4]
+            },
+            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 240, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }, { type: 'line', x1: 290, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
+
+            { text: '', margin: [0, 15] },
+
+            { text: 'REQUEST DETAILS', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#8E5A34' }] },
+            { text: '', margin: [0, 5] },
+
+            {
+                columns: [
+                    { text: 'Objective :', style: 'label', width: 80 },
+                    { text: normalizeThai(formData.objective), style: 'value' }
+                ],
+                margin: [0, 4, 0, 4]
+            },
+            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
+
+            { text: '', margin: [0, 5] },
+            { text: 'Promotional Channels', style: 'labelSub', bold: true },
+            { text: '*Choose your type of Promotional Channels', fontSize: 6.5, color: '#999999', margin: [0, 2, 0, 5] },
+
+            {
+                columns: [
+                    [
+                        getCheckbox("Facebook"),
+                        getCheckbox("IG"),
+                        getCheckbox("Tiktok")
+                    ],
+                    [
+                        getCheckbox("Youtube"),
+                        getCheckbox("Line"),
+                        getCheckbox("WeChat")
+                    ],
+                    [
+                        getCheckbox("Google"),
+                        getCheckbox("Other")
+                    ]
+                ]
+            },
+
+            { text: '', margin: [0, 15] },
+
+            {
+                columns: [
+                    { text: 'Booking Date :', style: 'label', width: 100 },
+                    { text: fmtDate(formData.bookingDate), style: 'value' }
+                ],
+                margin: [0, 4, 0, 4]
+            },
+            { canvas: [{ type: 'line', x1: 100, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
+
+            {
+                columns: [
+                    { text: 'Effective Date :', style: 'label', width: 100 },
+                    { text: fmtDate(formData.effectiveDate), style: 'value' }
+                ],
+                margin: [0, 4, 0, 4]
+            },
+            { canvas: [{ type: 'line', x1: 100, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
+
+            {
+                columns: [
+                    { text: 'Start Date :', style: 'label', width: 80 },
+                    { text: fmtDate(formData.startDate), style: 'value', width: 120 },
+                    { text: 'End Date :', style: 'label', width: 60 },
+                    { text: fmtDate(formData.endDate), style: 'value' }
+                ],
+                margin: [0, 4, 0, 4]
+            },
+            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 200, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }, { type: 'line', x1: 260, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#EEEEEE' }] },
+
+            {
+                columns: [
+                    { text: 'Amount :', style: 'label', width: 80 },
+                    { 
+                        text: formData.amount ? `${parseFloat(String(formData.amount)).toLocaleString()} THB` : "", 
+                        style: 'value', 
+                        bold: true 
+                    }
+                ],
+                margin: [0, 8, 0, 8]
+            },
+            { canvas: [{ type: 'line', x1: 80, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#DDDDDD' }] },
+
+            { text: '', margin: [0, 20] },
+
+            { text: 'REQUESTER SIGNATURE', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#8E5A34' }] },
+            { text: '', margin: [0, 15] },
+            {
+                columns: [
+                    { text: 'Signature  : _______________________', width: 250, fontSize: 8.5 },
+                    { text: 'Date  : _______________________', width: '*', fontSize: 8.5 }
+                ]
+            },
+
+            { text: '', margin: [0, 20] },
+
+            { text: 'AUTHORIZER', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#8E5A34' }] },
+            { text: '', margin: [0, 15] },
+            {
+                columns: [
+                    { text: 'Signature  : _______________________', width: 250, fontSize: 8.5 },
+                    { text: 'Date  : _______________________', width: '*', fontSize: 8.5 }
+                ]
+            },
+
+            { text: '', margin: [0, 20] },
+
+            { text: 'FA  DEPARTMENT USE ONLY', bold: true, fontSize: 10, margin: [0, 10, 0, 10] },
+            {
+                columns: [
+                    { text: 'Verified By : _______________________', width: 250, fontSize: 8.5 },
+                    { text: 'Date  : _______________________', width: '*', fontSize: 8.5 }
+                ]
+            }
+        ],
+        styles: {
+            title: { fontSize: 14, bold: true },
+            sectionHeader: { fontSize: 10, bold: true, color: '#8E5A34' },
+            label: { fontSize: 8.5, color: '#555555' },
+            labelSub: { fontSize: 9, color: '#555555' },
+            value: { fontSize: 9, color: '#222222' }
+        },
+        defaultStyle: {
+            font: 'Sarabun'
+        },
+        images: {
+            logo: `data:image/png;base64,${IMPACT_LOGO_BASE64.split(",")[1]}`
         }
-        page.drawText(ch, { x: cx + 15, y: cy, size: 8.5, font: helvetica, color: textColor });
+    };
+
+    return new Promise((resolve, reject) => {
+        try {
+            const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+            pdfDocGenerator.getBuffer((buffer: any) => {
+                resolve(new Uint8Array(buffer));
+            });
+        } catch (error) {
+            reject(error);
+        }
     });
-
-    y -= 65;
-
-    // DATES
-    page.drawText("Booking Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(fmtDate(formData.bookingDate), { x: 230, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 228, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 22;
-
-    page.drawText("Effective Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(fmtDate(formData.effectiveDate), { x: 230, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 228, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 22;
-
-    page.drawText("Start Date :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(fmtDate(formData.startDate), { x: 160, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 158, y: y - 4 }, end: { x: 280, y: y - 4 }, thickness: 0.5, color: lightGray });
-
-    page.drawText("End Date :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawText(fmtDate(formData.endDate), { x: 400, y, size: 9, font: helvetica, color: textColor });
-    page.drawLine({ start: { x: 398, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 22;
-
-    page.drawText("Amount :", { x: 50, y: y, size: 8.5, font: helvetica, color: labelColor });
-    const amountStr = formData.amount ? `${parseFloat(String(formData.amount)).toLocaleString()} THB` : "";
-    page.drawText(amountStr, { x: 175, y: y, size: 9, font: helveticaBold, color: textColor });
-    page.drawLine({ start: { x: 173, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 35;
-
-    // SIGNATURES
-    page.drawText("REQUESTER SIGNATURE", {
-        x: 50, y, size: 10, font: helveticaBold, color: brownColor,
-    });
-    page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 0.5, color: brownColor });
-    y -= 30;
-
-    page.drawText("Signature  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawLine({ start: { x: 110, y: y - 4 }, end: { x: 280, y: y - 4 }, thickness: 0.5, color: lightGray });
-    page.drawText("Date  :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawLine({ start: { x: 335, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 40;
-
-    page.drawText("AUTHORIZER", {
-        x: 50, y, size: 10, font: helveticaBold, color: brownColor,
-    });
-    page.drawLine({ start: { x: 50, y: y - 5 }, end: { x: width - 50, y: y - 5 }, thickness: 0.5, color: brownColor });
-    y -= 30;
-
-    page.drawText("Signature  :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawLine({ start: { x: 110, y: y - 4 }, end: { x: 280, y: y - 4 }, thickness: 0.5, color: lightGray });
-    page.drawText("Date  :", { x: 300, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawLine({ start: { x: 335, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-    y -= 40;
-
-    page.drawText("FA  DEPARTMENT USE ONLY", {
-        x: 50, y, size: 10, font: helveticaBold, color: textColor,
-    });
-    y -= 25;
-
-    page.drawText("Verified By :", { x: 50, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawLine({ start: { x: 190, y: y - 4 }, end: { x: 310, y: y - 4 }, thickness: 0.5, color: lightGray });
-    page.drawText("Date  :", { x: 340, y, size: 8.5, font: helvetica, color: labelColor });
-    page.drawLine({ start: { x: 370, y: y - 4 }, end: { x: width - 50, y: y - 4 }, thickness: 0.5, color: lightGray });
-
-    void y;
-
-    return await pdfDoc.save();
 }
