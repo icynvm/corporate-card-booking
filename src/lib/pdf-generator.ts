@@ -110,7 +110,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                     width: 14
                 },
                 { text: label + ' : ', fontSize: 8.5 },
-                { text: otherValue || "__________________________", fontSize: 8.5, decoration: otherValue ? 'underline' : 'none' }
+                { text: otherValue || "__________________________", fontSize: 8.5, decoration: otherValue ? 'underline' : undefined }
             ],
             margin: [0, 3, 0, 3]
         };
