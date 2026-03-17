@@ -80,13 +80,14 @@ export async function PUT(
             return NextResponse.json({ error: "Request ID is required" }, { status: 400 });
         }
 
-        const { objective, project_name, amount, contact_no, email, billing_type, start_date, end_date } = await req.json();
+        const { objective, project_name, amount, contact_no, email, billing_type, start_date, end_date, fullName } = await req.json();
 
         const supabase = createServerSupabase();
 
         const updatePayload: any = {};
         if (objective !== undefined) updatePayload.objective = cleanText(objective);
         if (project_name !== undefined) updatePayload.project_name = cleanText(project_name);
+        if (fullName !== undefined) updatePayload.full_name = cleanText(fullName);
         if (amount !== undefined) updatePayload.amount = typeof amount === "string" ? parseFloat(amount) : amount;
         if (contact_no !== undefined) updatePayload.contact_no = cleanText(contact_no);
         if (email !== undefined) updatePayload.email = cleanText(email);

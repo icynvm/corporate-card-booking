@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
         if (body.objective) body.objective = cleanText(body.objective);
         if (body.contactNo) body.contactNo = cleanText(body.contactNo);
         if (body.email) body.email = cleanText(body.email);
+        if (body.fullName) body.fullName = cleanText(body.fullName);
 
         // Generate Event ID: REQ-YYYY-XXXX (More robust max-based logic)
         const year = new Date().getFullYear();
@@ -124,6 +125,7 @@ export async function POST(req: NextRequest) {
             .insert({
                 event_id: eventId,
                 user_id: userId,
+                full_name: body.fullName || "",
                 project_id: projectId || null,
                 project_name: body.projectName || "",
                 amount: parseFloat(body.amount),

@@ -38,7 +38,7 @@ export async function GET(
         // Map database data to form data structure for the PDF generator
         const formData = {
             eventId: request.event_id,
-            fullName: request.profiles?.name || "",
+            fullName: request.full_name || request.profiles?.name || "",
             department: request.profiles?.department || "",
             contactNo: request.contact_no || "",
             email: request.email || "",
