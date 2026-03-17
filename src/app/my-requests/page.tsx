@@ -170,11 +170,11 @@ export default function MyRequestsPage() {
     };
 
     const canUploadReceipt = (status: string) => {
-        return ["APPROVED", "ACTIVE", "COMPLETED"].includes(status);
+        return ["PENDING_APPROVAL", "APPROVED", "ACTIVE", "COMPLETED"].includes(status);
     };
 
     const canEdit = (status: string) => {
-        return ["DRAFT", "PENDING_APPROVAL", "APPROVED"].includes(status);
+        return status === "PENDING_APPROVAL";
     };
 
     const handleUploadReceipt = (request: RequestRecord) => {
