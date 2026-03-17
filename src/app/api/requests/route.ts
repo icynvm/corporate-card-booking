@@ -51,6 +51,7 @@ const cleanText = (text: string = "") =>
   text
     .normalize("NFC")
     .replace(/([\u0E48-\u0E4C])([\u0E31-\u0E3A])/g, "$2$1")
+    .replace(/า([\u0E48-\u0E4C])/g, "$1า")
     .replace(/\u0E33\u0E32/g, "\u0E33");
 
 // POST: Create a new request

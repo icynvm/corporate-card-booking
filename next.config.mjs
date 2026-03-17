@@ -23,6 +23,9 @@ const nextConfig = {
         serverActions: {
             bodySizeLimit: '10mb',
         },
+        outputFileTracingIncludes: {
+            '/api/**/*': ['./node_modules/@sparticuz/chromium/bin/*'],
+        },
     },
 };
 
