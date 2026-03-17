@@ -1,12 +1,14 @@
 import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+import chromium from "@sparticuz/chromium-min";
 import { IMPACT_LOGO_BASE64 } from "./logo-base64";
 import { SARABUN_REGULAR_BASE64, SARABUN_BOLD_BASE64 } from "./fonts-base64";
 
 export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
     const browser = await puppeteer.launch({
         args: chromium.args,
-        executablePath: await chromium.executablePath(),
+        executablePath: await chromium.executablePath(
+            "https://github.com/Sparticuz/chromium/releases/download/v122.0.0/chromium-v122.0.0-pack.tar"
+        ),
         headless: true,
     });
 
