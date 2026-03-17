@@ -162,7 +162,7 @@ export default function MyRequestsPage() {
     };
 
     const canUploadSigned = (status: string) => {
-        return ["APPROVED", "PENDING_APPROVAL"].includes(status);
+        return status === "PENDING_APPROVAL";
     };
 
     const canSendEmail = (status: string) => {
