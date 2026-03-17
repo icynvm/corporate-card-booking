@@ -34,11 +34,10 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([595.28, 841.89]); // A4
 
-    // Load custom Thai font (Sarabun)
-    const fs = await import("fs");
-    const path = await import("path");
-    const fontRegularBytes = fs.readFileSync(path.join(process.cwd(), "public", "fonts", "Sarabun-Regular.ttf"));
-    const fontBoldBytes = fs.readFileSync(path.join(process.cwd(), "public", "fonts", "Sarabun-Bold.ttf"));
+    // Load custom Thai font from Base64
+    const { SARABUN_REGULAR_BASE64, SARABUN_BOLD_BASE64 } = await import("@/lib/fonts-base64");
+    const fontRegularBytes = Buffer.from(SARABUN_REGULAR_BASE64, "base64");
+    const fontBoldBytes = Buffer.from(SARABUN_BOLD_BASE64, "base64");
 
     const helvetica = await pdfDoc.embedFont(fontRegularBytes);
     const helveticaBold = await pdfDoc.embedFont(fontBoldBytes);
