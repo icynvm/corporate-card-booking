@@ -99,16 +99,35 @@ export function CardRequestForm() {
         setSelectedChannels(newSelection);
     };
 
+    const normalizeThai = (text: string = "") => {
+        return text
+            .normalize("NFC")
+            .replace(/([\u0E48-\u0E4C])([\u0E31-\u0E3A])/g, "$2$1")
+            .replace(/\u0E33\u0E32/g, "\u0E33");
+    };
+
     const onSubmit = async (data: RequestFormData) => {
         setSubmitError(null);
 
-        // Standalone mode: bypass auth and use dev profile
+        // ✅ Sanitize object recursively
+        const sanitize = (obj: any): any => {
+            if (typeof obj === "string") return normalizeThai(obj);
+            if (Array.isArray(obj)) return obj.map(sanitize);
+            if (obj && typeof obj === "object") {
+                const out: any = {};
+                for (const k in obj) out[k] = sanitize(obj[k]);
+                return out;
+            }
+            return obj;
+        };
+
+        const cleanData = sanitize(data);
+
         const requestBody = {
-            ...data,
+            ...cleanData,
+            projectName: normalizeThai(projectSearch),
             userId: null,
-            email: data.email,
             projectId: selectedProjectId,
-            projectName: projectSearch,
         };
 
         try {
