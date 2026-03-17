@@ -74,17 +74,23 @@ export async function PUT(
             return NextResponse.json({ error: "Request ID is required" }, { status: 400 });
         }
 
-        const { objective, project_name, amount } = await req.json();
+        const { objective, project_name, amount, contact_no, email, billing_type, start_date, end_date } = await req.json();
 
         const supabase = createServerSupabase();
 
+        const updatePayload: any = {};
+        if (objective !== undefined) updatePayload.objective = objective;
+        if (project_name !== undefined) updatePayload.project_name = project_name;
+        if (amount !== undefined) updatePayload.amount = typeof amount === "string" ? parseFloat(amount) : amount;
+        if (contact_no !== undefined) updatePayload.contact_no = contact_no;
+        if (email !== undefined) updatePayload.email = email;
+        if (billing_type !== undefined) updatePayload.billing_type = billing_type;
+        if (start_date !== undefined) updatePayload.start_date = start_date;
+        if (end_date !== undefined) updatePayload.end_date = end_date;
+
         const { error: updateError } = await supabase
             .from("requests")
-            .update({
-                objective,
-                project_name,
-                amount: typeof amount === "string" ? parseFloat(amount) : amount
-            })
+            .update(updatePayload)
             .eq("id", requestId);
 
         if (updateError) throw updateError;
@@ -95,7 +101,7 @@ export async function PUT(
             entity_id: requestId,
             action: "UPDATE",
             user_name: session.email || "User",
-            changes: { objective, project_name, amount },
+            changes: updatePayload,
         });
 
         return NextResponse.json({ success: true, message: "Request updated successfully" });

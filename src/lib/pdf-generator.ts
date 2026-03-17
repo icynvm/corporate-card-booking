@@ -44,8 +44,8 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
     const fontRegularBytes = Buffer.from(SARABUN_REGULAR_BASE64, "base64");
     const fontBoldBytes = Buffer.from(SARABUN_BOLD_BASE64, "base64");
 
-    const helvetica = await pdfDoc.embedFont(fontRegularBytes);
-    const helveticaBold = await pdfDoc.embedFont(fontBoldBytes);
+    const helvetica = await pdfDoc.embedFont(fontRegularBytes, { subset: false });
+    const helveticaBold = await pdfDoc.embedFont(fontBoldBytes, { subset: false });
 
     const { width, height } = page.getSize();
     const textColor = rgb(0.15, 0.15, 0.15);

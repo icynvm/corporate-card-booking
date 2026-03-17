@@ -7,11 +7,13 @@ import SubProjectAllocation from "@/components/dashboard/SubProjectAllocation";
 import { RequestRecord, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
 import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
 import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
+import { RequestEditModal } from "@/components/dashboard/RequestEditModal";
 
 export default function MyRequestsPage() {
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<RequestRecord | null>(null);
 
     const [toasts, setToasts] = useState<{ id: string; message: string; severity: AlertSeverity }[]>([]);
@@ -160,7 +162,7 @@ export default function MyRequestsPage() {
     };
 
     const canUploadSigned = (status: string) => {
-        return status === "PENDING_APPROVAL";
+        return status === "APPROVED";
     };
 
     const canSendEmail = (status: string) => {
@@ -169,6 +171,10 @@ export default function MyRequestsPage() {
 
     const canUploadReceipt = (status: string) => {
         return ["APPROVED", "ACTIVE", "COMPLETED"].includes(status);
+    };
+
+    const canEdit = (status: string) => {
+        return ["DRAFT", "PENDING_APPROVAL", "APPROVED"].includes(status);
     };
 
     const handleUploadReceipt = (request: RequestRecord) => {
@@ -267,6 +273,19 @@ export default function MyRequestsPage() {
                                             Approved via Email
                                         </span>
                                     )}
+                                    {canEdit(request.status) && (
+                                        <button
+                                            onClick={() => { setSelectedRequest(request); setEditModalOpen(true); }}
+                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200 transition-colors"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                            </svg>
+                                            Edit
+                                        </button>
+                                    )}
+
                                     {/* Upload Signed PDF */}
                                     {canUploadSigned(request.status) && (
                                         <button
@@ -278,7 +297,7 @@ export default function MyRequestsPage() {
                                                 <polyline points="17 8 12 3 7 8" />
                                                 <line x1="12" y1="3" x2="12" y2="15" />
                                             </svg>
-                                            Upload Signed PDF
+                                            Upload Signed
                                         </button>
                                     )}
                                     {/* Send Email */}
@@ -379,6 +398,16 @@ export default function MyRequestsPage() {
                 isOpen={receiptModalOpen}
                 onClose={() => {
                     setReceiptModalOpen(false);
+                    setSelectedRequest(null);
+                    fetchRequests(); // Refresh data on close
+                }}
+                request={selectedRequest}
+            />
+
+            <RequestEditModal
+                isOpen={editModalOpen}
+                onClose={() => {
+                    setEditModalOpen(false);
                     setSelectedRequest(null);
                     fetchRequests(); // Refresh data on close
                 }}
