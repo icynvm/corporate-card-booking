@@ -22,7 +22,10 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
                 body: JSON.stringify(formData),
             });
 
-            if (!res.ok) throw new Error("PDF generation failed");
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.details || errData.error || "PDF generation failed on server");
+            }
 
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
@@ -33,9 +36,9 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            alert("Failed to generate PDF. Please try again.");
+            alert(`Failed to generate PDF: ${err.message || String(err)}`);
         } finally {
             setIsDownloading(false);
         }

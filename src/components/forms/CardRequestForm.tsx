@@ -138,7 +138,7 @@ export function CardRequestForm() {
             });
 
             if (res.ok) {
-                setSubmittedData(data);
+                setSubmittedData(requestBody as any);
                 setIsSubmitted(true);
             } else {
                 const errorData = await res.json();
