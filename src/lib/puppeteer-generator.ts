@@ -1,10 +1,12 @@
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import { IMPACT_LOGO_BASE64 } from "./logo-base64";
 
 export async function generatePuppeteerPDF(formData: any): Promise<Buffer> {
     const browser = await puppeteer.launch({
+        args: chromium.args,
+        executablePath: await chromium.executablePath(),
         headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
     
     const page = await browser.newPage();
