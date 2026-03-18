@@ -34,13 +34,16 @@ const normalizeThai = (text: string = "") => {
     if (!text) return "";
     return text
         .normalize("NFC")
-        // ONLY reorder า and Tone Marks to place Tone Mark before า (zero width stack)
-        .replace(/า([\u0E48-\u0E4D])/g, "$1า")
-        .replace(/\u0E33\u0E32/g, "\u0E33");
+        // reorder tone + vowel (ครอบคลุมมากขึ้น)
+        .replace(/([\u0E48-\u0E4C]+)([\u0E31-\u0E3A\u0E34-\u0E39]+)/g, "$2$1")
+        // fix นำา → นำ
+        .replace(/\u0E33\u0E32/g, "\u0E33")
+        // fix common broken patterns
+        .replace(/เ([่-๋])([ก-ฮ])/g, "เ$2$1");
 };
 
 export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint8Array> {
-    const selectedChannels = Array.isArray(formData.promotionalChannels) 
+    const selectedChannels = Array.isArray(formData.promotionalChannels)
         ? formData.promotionalChannels.map((c: any) => typeof c === "string" ? c : c?.channel).filter(Boolean)
         : [];
 
@@ -132,7 +135,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 ]
             },
             { text: 'แบบฟอร์มขอใช้ CORPORATE EXECUTIVE CARD', style: 'title', alignment: 'center', margin: [0, 5, 0, 5] },
-            
+
             {
                 columns: [
                     { text: '', width: '*' },
@@ -144,7 +147,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
 
             { text: 'REQUESTER STAFF / พนักงานผู้ขอใช้', style: 'sectionHeader' },
             { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
-            
+
             getUnderlinedField('Full Name/ ชื่อ  :', normalizeThai(formData.fullName), 100),
             getUnderlinedField('Department / แผนก  :', normalizeThai(formData.department), 100),
             getTwoColumnUnderlinedField('Contact No. / เบอร์ติดต่อ  :', formData.contactNo, 100, 'E-Mail  :', formData.email, 40),
@@ -184,8 +187,8 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 table: {
                     widths: [140, '*'],
                     body: [[
-                        { text: 'Booking Date / วันที่สั่งซื้อโฆษณา  :', style: 'label', border: [false,false,false,false] },
-                        { text: fmtDate(formData.bookingDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                        { text: 'Booking Date / วันที่สั่งซื้อโฆษณา  :', style: 'label', border: [false, false, false, false] },
+                        { text: fmtDate(formData.bookingDate), style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
                     ]]
                 },
                 margin: [0, 3, 0, 3]
@@ -195,8 +198,8 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 table: {
                     widths: [140, '*'],
                     body: [[
-                        { text: 'Effective Date / วันที่โฆษณาเริ่มมีผล  :', style: 'label', border: [false,false,false,false] },
-                        { text: fmtDate(formData.effectiveDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                        { text: 'Effective Date / วันที่โฆษณาเริ่มมีผล  :', style: 'label', border: [false, false, false, false] },
+                        { text: fmtDate(formData.effectiveDate), style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
                     ]]
                 },
                 margin: [0, 3, 0, 3]
@@ -206,10 +209,10 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 table: {
                     widths: [90, '*', 90, '*'],
                     body: [[
-                        { text: 'Start Date / วันเริ่ม  :', style: 'label', border: [false,false,false,false] },
-                        { text: fmtDate(formData.startDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] },
-                        { text: 'End Date / วันสิ้นสุด  :', style: 'label', border: [false,false,false,false] },
-                        { text: fmtDate(formData.endDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                        { text: 'Start Date / วันเริ่ม  :', style: 'label', border: [false, false, false, false] },
+                        { text: fmtDate(formData.startDate), style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
+                        { text: 'End Date / วันสิ้นสุด  :', style: 'label', border: [false, false, false, false] },
+                        { text: fmtDate(formData.endDate), style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
                     ]]
                 },
                 margin: [0, 3, 0, 3]
@@ -219,8 +222,8 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 table: {
                     widths: [90, '*'],
                     body: [[
-                        { text: 'Amount / จำนวนเงิน  :', style: 'label', border: [false,false,false,false] },
-                        { text: formData.amount ? `${parseFloat(String(formData.amount)).toLocaleString()} THB` : "", style: 'value', bold: true, border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                        { text: 'Amount / จำนวนเงิน  :', style: 'label', border: [false, false, false, false] },
+                        { text: formData.amount ? `${parseFloat(String(formData.amount)).toLocaleString()} THB` : "", style: 'value', bold: true, border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
                     ]]
                 },
                 margin: [0, 5, 0, 5]
@@ -235,10 +238,10 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 table: {
                     widths: [80, 180, 80, '*'],
                     body: [[
-                        { text: 'Signature  :', style: 'label', border: [false,false,false,false] },
-                        { text: '_______________________', style: 'value', border: [false,false,false,false] },
-                        { text: 'Date  :', style: 'label', border: [false,false,false,false] },
-                        { text: '_______________________', style: 'value', border: [false,false,false,false] }
+                        { text: 'Signature  :', style: 'label', border: [false, false, false, false] },
+                        { text: '_______________________', style: 'value', border: [false, false, false, false] },
+                        { text: 'Date  :', style: 'label', border: [false, false, false, false] },
+                        { text: '_______________________', style: 'value', border: [false, false, false, false] }
                     ]]
                 },
                 margin: [0, 15, 0, 15]
@@ -251,10 +254,10 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 table: {
                     widths: [80, 180, 80, '*'],
                     body: [[
-                        { text: 'Signature  :', style: 'label', border: [false,false,false,false] },
-                        { text: '_______________________', style: 'value', border: [false,false,false,false] },
-                        { text: 'Date  :', style: 'label', border: [false,false,false,false] },
-                        { text: '_______________________', style: 'value', border: [false,false,false,false] }
+                        { text: 'Signature  :', style: 'label', border: [false, false, false, false] },
+                        { text: '_______________________', style: 'value', border: [false, false, false, false] },
+                        { text: 'Date  :', style: 'label', border: [false, false, false, false] },
+                        { text: '_______________________', style: 'value', border: [false, false, false, false] }
                     ]]
                 },
                 margin: [0, 15, 0, 15]
@@ -267,10 +270,10 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 table: {
                     widths: [80, 180, 80, '*'],
                     body: [[
-                        { text: 'Verified By  :', style: 'label', border: [false,false,false,false] },
-                        { text: '_______________________', style: 'value', border: [false,false,false,false] },
-                        { text: 'Date  :', style: 'label', border: [false,false,false,false] },
-                        { text: '_______________________', style: 'value', border: [false,false,false,false] }
+                        { text: 'Verified By  :', style: 'label', border: [false, false, false, false] },
+                        { text: '_______________________', style: 'value', border: [false, false, false, false] },
+                        { text: 'Date  :', style: 'label', border: [false, false, false, false] },
+                        { text: '_______________________', style: 'value', border: [false, false, false, false] }
                     ]]
                 },
                 margin: [0, 15, 0, 15]
