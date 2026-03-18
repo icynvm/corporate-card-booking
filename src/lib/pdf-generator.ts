@@ -1,6 +1,4 @@
-import { PDFDocument, rgb } from "pdf-lib";
-// @ts-ignore
-import fontkit from "./fontkit";
+import pdfMake from "./pdfmake-fonts";
 import { IMPACT_LOGO_BASE64 } from "./logo-base64";
 
 export interface RequestPdfData {
@@ -19,16 +17,6 @@ export interface RequestPdfData {
     amount?: string | number;
 }
 
-const normalizeThai = (text: string = "") => {
-    if (!text) return "";
-    return text
-        .normalize("NFC")
-        // Swap Consonant + Vowel + Tone to Consonant + Tone + Vowel
-        // Includes า (\u0E32) to prevent advance floating stalls
-        .replace(/([ิีึืุูา])([\u0E48-\u0E4D])/g, "$2$1")
-        .replace(/\u0E33\u0E32/g, "\u0E33");
-};
-
 const fmtDate = (d: string | null | undefined) => {
     if (!d) return "";
     try {
@@ -42,142 +30,270 @@ const fmtDate = (d: string | null | undefined) => {
     }
 };
 
+const normalizeThai = (text: string = "") => {
+    if (!text) return "";
+    return text
+        .normalize("NFC")
+        // ONLY reorder า and Tone Marks to place Tone Mark before า (zero width stack)
+        .replace(/า([\u0E48-\u0E4D])/g, "$1า")
+        .replace(/\u0E33\u0E32/g, "\u0E33");
+};
+
 export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint8Array> {
-    const pdfDoc = await PDFDocument.create();
-    pdfDoc.registerFontkit(fontkit as any);
-
-    // 1. Load Fonts Client Side
-    const fontBytes = await fetch('/fonts/Sarabun-Regular.ttf').then(res => res.arrayBuffer());
-    const fontBoldBytes = await fetch('/fonts/Sarabun-Bold.ttf').then(res => res.arrayBuffer());
-
-    const fontRegular = await pdfDoc.embedFont(fontBytes);
-    const fontBold = await pdfDoc.embedFont(fontBoldBytes);
-
-    const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
-    const { width, height } = page.getSize();
-
-    let y = height - 40; // Start at top
-
-    // 2. Logo
-    try {
-        const logoPngBytes = Uint8Array.from(atob(IMPACT_LOGO_BASE64), c => c.charCodeAt(0));
-        const logoImage = await pdfDoc.embedPng(logoPngBytes);
-        page.drawImage(logoImage, {
-            x: width - 130,
-            y: height - 55,
-            width: 90,
-            height: 25
-        });
-    } catch (e) {
-        console.error("Logo embed failed:", e);
-    }
-
-    // 3. Title Row
-    y -= 25;
-    page.drawText('แบบฟอร์มขอใช้ CORPORATE EXECUTIVE CARD', { x: 130, y, font: fontBold, size: 12 });
-    y -= 25;
-    page.drawText('CARD NO.', { x: 210, y, font: fontBold, size: 10.5 });
-    page.drawLine({ start: { x: 260, y: y-3 }, end: { x: 420, y: y-3 }, thickness: 0.8 });
-
-    y -= 35;
-
-    // --- Helpers ---
-    const drawSectionHeader = (english: string, thai: string) => {
-        page.drawText(`${english} / ${thai}`, { x: 40, y, font: fontBold, size: 10.5, color: rgb(0.55, 0.35, 0.2) });
-        page.drawLine({ start: { x: 40, y: y - 5 }, end: { x: width - 40, y: y - 5 }, thickness: 1, color: rgb(0.55, 0.35, 0.2) });
-        y -= 25;
-    };
-
-    const drawField = (label: string, value: string) => {
-        page.drawText(label, { x: 40, y, font: fontRegular, size: 9 });
-        const labelWidth = fontRegular.widthOfTextAtSize(label, 9);
-        const valueX = 40 + labelWidth + 5;
-        page.drawText(value, { x: valueX, y, font: fontRegular, size: 9 });
-        page.drawLine({ start: { x: valueX - 2, y: y - 3 }, end: { x: width - 40, y: y - 3 }, thickness: 0.6, color: rgb(0,0,0) });
-        y -= 22;
-    };
-
-    const drawTwoColumnField = (label1: string, value1: string, label2: string, value2: string) => {
-        const midX = width / 2;
-        
-        page.drawText(label1, { x: 40, y, font: fontRegular, size: 9 });
-        const l1Width = fontRegular.widthOfTextAtSize(label1, 9);
-        const v1X = 40 + l1Width + 5;
-        page.drawText(value1, { x: v1X, y, font: fontRegular, size: 9 });
-        page.drawLine({ start: { x: v1X - 2, y: y - 3 }, end: { x: midX - 20, y: y - 3 }, thickness: 0.6 });
-
-        page.drawText(label2, { x: midX, y, font: fontRegular, size: 9 });
-        const l2Width = fontRegular.widthOfTextAtSize(label2, 9);
-        const v2X = midX + l2Width + 5;
-        page.drawText(value2, { x: v2X, y, font: fontRegular, size: 9 });
-        page.drawLine({ start: { x: v2X - 2, y: y - 3 }, end: { x: width - 40, y: y - 3 }, thickness: 0.6 });
-
-        y -= 22;
-    };
-
-    // --- Content ---
-    drawSectionHeader('REQUESTER STAFF', 'พนักงานผู้ขอใช้');
-    drawField('Full Name/ ชื่อ :', normalizeThai(formData.fullName));
-    drawField('Department / แผนก :', normalizeThai(formData.department));
-    drawTwoColumnField('Contact No. / เบอร์ติดต่อ :', formData.contactNo, 'E-Mail :', formData.email);
-
-    y -= 15;
-    drawSectionHeader('REQUEST DETAILS', 'รายละเอียดการขอใช้');
-    drawField('Objective / วัตถุประสงค์ :', normalizeThai(formData.objective));
-
-    y -= 10;
-    page.drawText('Promotional Channels / ช่องทางในการโฆษณา', { x: 40, y, font: fontBold, size: 9 });
-    y -= 12;
-    page.drawText('*Choose your type of Promotional Channels', { x: 40, y, font: fontRegular, size: 6.5, color: rgb(0.4, 0.4, 0.4) });
-    y -= 20;
-
-    const channels = Array.isArray(formData.promotionalChannels) 
-        ? formData.promotionalChannels.map((c: any) => typeof c === "string" ? c : c?.channel)
+    const selectedChannels = Array.isArray(formData.promotionalChannels) 
+        ? formData.promotionalChannels.map((c: any) => typeof c === "string" ? c : c?.channel).filter(Boolean)
         : [];
 
-    const drawCheckbox = (label: string, xPos: number, yPos: number) => {
-        const isChecked = channels.includes(label);
-        page.drawRectangle({ x: xPos, y: yPos, width: 8, height: 8, borderWidth: 0.8, borderColor: rgb(0.3, 0.3, 0.3) });
-        if (isChecked) {
-            page.drawLine({ start: { x: xPos+2, y: yPos+4 }, end: { x: xPos+4, y: yPos+2 }, thickness: 1.2 });
-            page.drawLine({ start: { x: xPos+4, y: yPos+2 }, end: { x: xPos+7, y: yPos+7 }, thickness: 1.2 });
-        }
-        page.drawText(label, { x: xPos + 12, y: yPos+1, font: fontRegular, size: 8.5 });
+    const getCheckbox = (label: string) => {
+        const isChecked = selectedChannels.includes(label);
+        return {
+            columns: [
+                {
+                    canvas: [
+                        { type: 'rect', x: 0, y: 1, w: 9, h: 9, lineWidth: 0.8, lineColor: '#555555' },
+                        ...(isChecked ? [
+                            { type: 'line', x1: 2, y1: 5, x2: 4, y2: 8, lineWidth: 1.5, lineColor: '#222222' },
+                            { type: 'line', x1: 4, y1: 8, x2: 8, y2: 2, lineWidth: 1.5, lineColor: '#222222' }
+                        ] : [])
+                    ],
+                    width: 14
+                },
+                { text: label, fontSize: 8.5 }
+            ],
+            margin: [0, 3, 0, 3]
+        };
     };
 
-    const startYCheckbox = y;
-    drawCheckbox('Facebook', 40, startYCheckbox);
-    drawCheckbox('IG', 40, startYCheckbox - 15);
-    drawCheckbox('Tiktok', 40, startYCheckbox - 30);
+    const getUnderlinedField = (label: string, value: string, width1: number = 80) => {
+        return {
+            table: {
+                widths: [width1, '*'],
+                body: [
+                    [
+                        { text: label, style: 'label', border: [false, false, false, false] },
+                        { text: value, style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
+                    ]
+                ]
+            },
+            margin: [0, 3, 0, 3]
+        };
+    };
 
-    drawCheckbox('Youtube', 160, startYCheckbox);
-    drawCheckbox('Line', 160, startYCheckbox - 15);
-    drawCheckbox('WeChat', 160, startYCheckbox - 30);
+    const getTwoColumnUnderlinedField = (label1: string, value1: string, width1: number, label2: string, value2: string, width2: number = 60) => {
+        return {
+            table: {
+                widths: [width1, '*', width2, '*'], // stretched weights
+                body: [
+                    [
+                        { text: label1, style: 'label', border: [false, false, false, false] },
+                        { text: value1, style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
+                        { text: label2, style: 'label', border: [false, false, false, false] },
+                        { text: value2, style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
+                    ]
+                ]
+            },
+            margin: [0, 3, 0, 3]
+        };
+    };
 
-    drawCheckbox('Google', 280, startYCheckbox);
-    drawCheckbox('Other', 280, startYCheckbox - 15);
+    const checkboxOther = (label: string, otherValue: string) => {
+        const isChecked = selectedChannels.includes(label);
+        return {
+            columns: [
+                {
+                    canvas: [
+                        { type: 'rect', x: 0, y: 1, w: 9, h: 9, lineWidth: 0.8, lineColor: '#555555' },
+                        ...(isChecked ? [
+                            { type: 'line', x1: 2, y1: 5, x2: 4, y2: 8, lineWidth: 1.5, lineColor: '#222222' },
+                            { type: 'line', x1: 4, y1: 8, x2: 8, y2: 2, lineWidth: 1.5, lineColor: '#222222' }
+                        ] : [])
+                    ],
+                    width: 14
+                },
+                { text: label + ' : ', fontSize: 8.5 },
+                { text: normalizeThai(otherValue) || "__________________________", fontSize: 8.5, decoration: otherValue ? 'underline' : undefined }
+            ],
+            margin: [0, 3, 0, 3]
+        };
+    };
 
-    y -= 50;
-    
-    // Dates
-    drawField('Booking Date / วันที่สั่งซื้อโฆษณา :', fmtDate(formData.bookingDate));
-    drawField('Effective Date / วันที่โฆษณาเริ่มมีผล :', fmtDate(formData.effectiveDate));
-    drawTwoColumnField('Start Date / วันเริ่ม :', fmtDate(formData.startDate), 'End Date / วันสิ้นสุด :', fmtDate(formData.endDate));
-    y -= 5;
-    drawField('Amount / จำนวนเงิน :', formData.amount ? `${parseFloat(String(formData.amount)).toLocaleString()} THB` : "");
+    const docDefinition: any = {
+        pageSize: 'A4',
+        pageMargins: [40, 30, 40, 30],
+        content: [
+            {
+                columns: [
+                    { text: '', width: '*' },
+                    {
+                        image: 'logo',
+                        width: 90,
+                        alignment: 'right'
+                    }
+                ]
+            },
+            { text: 'แบบฟอร์มขอใช้ CORPORATE EXECUTIVE CARD', style: 'title', alignment: 'center', margin: [0, 5, 0, 5] },
+            
+            {
+                columns: [
+                    { text: '', width: '*' },
+                    { text: 'CARD NO. ', bold: true, width: 'auto', fontSize: 10 },
+                    { text: '_______________________', width: 120, fontSize: 10 }
+                ],
+                margin: [0, 0, 0, 15]
+            },
 
-    y -= 25;
-    drawSectionHeader('REQUESTER SIGNATURE', 'ลงชื่อผู้ขอใช้');
-    drawTwoColumnField('Signature :', '_______________________', 'Date :', '_______________________');
+            { text: 'REQUESTER STAFF / พนักงานผู้ขอใช้', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
+            
+            getUnderlinedField('Full Name/ ชื่อ  :', normalizeThai(formData.fullName), 100),
+            getUnderlinedField('Department / แผนก  :', normalizeThai(formData.department), 100),
+            getTwoColumnUnderlinedField('Contact No. / เบอร์ติดต่อ  :', formData.contactNo, 100, 'E-Mail  :', formData.email, 40),
 
-    y -= 20;
-    drawSectionHeader('AUTHORIZER', 'ลงชื่อผู้อนุมัติ');
-    drawTwoColumnField('Signature :', '_______________________', 'Date :', '_______________________');
+            { text: '', margin: [0, 10] },
 
-    y -= 20;
-    page.drawText('FA DEPARTMENT USE ONLY', { x: 40, y, font: fontBold, size: 10.5 });
-    y -= 20;
-    drawTwoColumnField('Verified By / ตรวจสอบโดย :', '_______________________', 'Date :', '_______________________');
+            { text: 'REQUEST DETAILS / รายละเอียดการขอใช้', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
 
-    return pdfDoc.save();
+            getUnderlinedField('Objective / วัตถุประสงค์  :', normalizeThai(formData.objective), 120),
+
+            { text: '', margin: [0, 5] },
+            { text: 'Promotional Channels / ช่องทางในการโฆษณา', style: 'labelSub', bold: true },
+            { text: '*Choose your type of Promotional Channels', fontSize: 6.5, color: '#666666', margin: [0, 1, 0, 4] },
+
+            {
+                columns: [
+                    [
+                        getCheckbox("Facebook"),
+                        getCheckbox("IG"),
+                        getCheckbox("Tiktok")
+                    ],
+                    [
+                        getCheckbox("Youtube"),
+                        getCheckbox("Line"),
+                        getCheckbox("WeChat")
+                    ],
+                    [
+                        getCheckbox("Google"),
+                        checkboxOther("Other", "")
+                    ]
+                ],
+                margin: [5, 0, 0, 10]
+            },
+
+            {
+                table: {
+                    widths: [140, '*'],
+                    body: [[
+                        { text: 'Booking Date / วันที่สั่งซื้อโฆษณา  :', style: 'label', border: [false,false,false,false] },
+                        { text: fmtDate(formData.bookingDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                    ]]
+                },
+                margin: [0, 3, 0, 3]
+            },
+
+            {
+                table: {
+                    widths: [140, '*'],
+                    body: [[
+                        { text: 'Effective Date / วันที่โฆษณาเริ่มมีผล  :', style: 'label', border: [false,false,false,false] },
+                        { text: fmtDate(formData.effectiveDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                    ]]
+                },
+                margin: [0, 3, 0, 3]
+            },
+
+            {
+                table: {
+                    widths: [90, '*', 90, '*'],
+                    body: [[
+                        { text: 'Start Date / วันเริ่ม  :', style: 'label', border: [false,false,false,false] },
+                        { text: fmtDate(formData.startDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] },
+                        { text: 'End Date / วันสิ้นสุด  :', style: 'label', border: [false,false,false,false] },
+                        { text: fmtDate(formData.endDate), style: 'value', border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                    ]]
+                },
+                margin: [0, 3, 0, 3]
+            },
+
+            {
+                table: {
+                    widths: [90, '*'],
+                    body: [[
+                        { text: 'Amount / จำนวนเงิน  :', style: 'label', border: [false,false,false,false] },
+                        { text: formData.amount ? `${parseFloat(String(formData.amount)).toLocaleString()} THB` : "", style: 'value', bold: true, border: [false,false,false,true], borderColor: ['','','','#6d4c41'] }
+                    ]]
+                },
+                margin: [0, 5, 0, 5]
+            },
+
+            { text: '', margin: [0, 15] },
+
+            { text: 'REQUESTER SIGNATURE / ลงชื่อผู้ขอใช้', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
+
+            {
+                table: {
+                    widths: [80, 180, 80, '*'],
+                    body: [[
+                        { text: 'Signature  :', style: 'label', border: [false,false,false,false] },
+                        { text: '_______________________', style: 'value', border: [false,false,false,false] },
+                        { text: 'Date  :', style: 'label', border: [false,false,false,false] },
+                        { text: '_______________________', style: 'value', border: [false,false,false,false] }
+                    ]]
+                },
+                margin: [0, 15, 0, 15]
+            },
+
+            { text: 'AUTHORIZER / ลงชื่อผู้อนุมัติ', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
+
+            {
+                table: {
+                    widths: [80, 180, 80, '*'],
+                    body: [[
+                        { text: 'Signature  :', style: 'label', border: [false,false,false,false] },
+                        { text: '_______________________', style: 'value', border: [false,false,false,false] },
+                        { text: 'Date  :', style: 'label', border: [false,false,false,false] },
+                        { text: '_______________________', style: 'value', border: [false,false,false,false] }
+                    ]]
+                },
+                margin: [0, 15, 0, 15]
+            },
+
+            { text: 'FA  DEPARTMENT USE ONLY', style: 'sectionHeader' },
+            { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
+
+            {
+                table: {
+                    widths: [80, 180, 80, '*'],
+                    body: [[
+                        { text: 'Verified By  :', style: 'label', border: [false,false,false,false] },
+                        { text: '_______________________', style: 'value', border: [false,false,false,false] },
+                        { text: 'Date  :', style: 'label', border: [false,false,false,false] },
+                        { text: '_______________________', style: 'value', border: [false,false,false,false] }
+                    ]]
+                },
+                margin: [0, 15, 0, 15]
+            }
+        ],
+        images: {
+            logo: IMPACT_LOGO_BASE64
+        },
+        styles: {
+            title: { fontSize: 11, bold: true },
+            sectionHeader: { fontSize: 9.5, bold: true, color: '#8E5A34', margin: [0, 5, 0, 1] },
+            label: { fontSize: 8.5, color: '#333333' },
+            labelSub: { fontSize: 8.5, color: '#333333', margin: [0, 2, 0, 1] },
+            value: { fontSize: 8.5, color: '#000000' }
+        },
+        defaultStyle: { font: 'Sarabun' }
+    };
+
+    const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+    return new Promise((resolve, reject) => {
+        pdfDocGenerator.getBuffer((buffer: Uint8Array) => {
+            if (buffer) resolve(buffer);
+            else reject(new Error("PDF generation failed"));
+        });
+    });
 }
