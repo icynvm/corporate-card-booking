@@ -14,7 +14,8 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen font-sans text-gray-800 antialiased;
+    @apply bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen text-gray-800 antialiased;
+    font-family: 'Noto Sans Thai', sans-serif;
   }
 
   * {
