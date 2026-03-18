@@ -220,12 +220,12 @@ export default function MyRequestsPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        <h3 className="font-bold text-gray-800 text-base mb-2 break-words">{request.objective}</h3>
+                                        <h3 className="font-bold text-gray-800 text-base mb-2 break-words">{request.project_name || "N/A"}</h3>
     
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-4 p-3 bg-gray-50/50 rounded-xl border border-gray-100">
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] uppercase font-bold text-gray-400">Project Details</span>
-                                                <span className="text-sm text-gray-700 break-words">{request.project_name || "N/A"}</span>
+                                                <span className="text-[10px] uppercase font-bold text-gray-400">Objective</span>
+                                                <span className="text-sm text-gray-700 break-words line-clamp-2 md:line-clamp-none">{request.objective}</span>
                                             </div>
                                             <div className="flex flex-col gap-1">
                                                 <span className="text-[10px] uppercase font-bold text-gray-400">Budget Breakdown</span>

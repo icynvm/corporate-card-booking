@@ -207,7 +207,7 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                         </div>
                         
                         <div>
-                            <h3 className="font-bold text-gray-800 text-xl break-words">{request.objective}</h3>
+                            <h3 className="font-bold text-gray-800 text-xl break-words">{request.project_name || "N/A"}</h3>
                         </div>
 
                         {request.status === "CANCELLED" && (
@@ -334,8 +334,8 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                                 </div>
                                 <div className="p-5 space-y-3 text-sm">
                                     <div>
-                                        <span className="text-gray-400 text-xs block mb-1">Project Name</span>
-                                        <p className="font-semibold text-gray-800 text-sm break-words">{request.project_name || "N/A"}</p>
+                                        <span className="text-gray-400 text-xs block mb-1">Objective</span>
+                                        <p className="font-medium text-gray-800 text-sm break-words">{request.objective}</p>
                                     </div>
                                     <div className="pt-2 border-t border-gray-50 grid grid-cols-2 gap-4">
                                         <div>
