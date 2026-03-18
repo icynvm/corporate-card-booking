@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
-import { Noto_Sans_Thai } from "next/font/google";
+import { Noto_Sans_Thai, Poppins } from "next/font/google";
 import "./globals.css";
 import { AppLayout } from "@/components/layout/AppLayout";
+
+const poppins = Poppins({
+    subsets: ["latin"],
+    weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+    variable: "--font-poppins",
+    display: "swap",
+});
 
 const noto_sans_thai = Noto_Sans_Thai({
     preload: false,
@@ -27,7 +34,7 @@ export default function RootLayout({
             <head>
                 {/* Favicon removed due to broken link */}
             </head>
-            <body className={`${noto_sans_thai.className} bg-[#f0f4f8] text-gray-800 min-h-screen view-height-fix selection:bg-brand-500/30`}>
+            <body className={`${poppins.variable} ${noto_sans_thai.variable} font-sans bg-[#f0f4f8] text-gray-800 min-h-screen view-height-fix selection:bg-brand-500/30`}>
                 <div className="fixed inset-0 -z-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]"></div>
 
                 {/* Soft ambient background blobs */}
