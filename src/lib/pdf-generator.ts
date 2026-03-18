@@ -31,11 +31,13 @@ const fmtDate = (d: string | null | undefined) => {
 };
 
 const normalizeThai = (text: string = "") => {
-    return (text || "")
+    if (!text) return "";
+    return text
         .normalize("NFC")
-        .replace(/([\u0E48-\u0E4C])([\u0E31-\u0E3A])/g, "$2$1")
-        .replace(/\u0E33\u0E32/g, "\u0E33")
-        .replace(/\u0E37\u0E48/g, "\u0E48\u0E37");
+        // Swap Consonant + Vowel + Tone to Consonant + Tone + Vowel
+        // Includes า (\u0E32) to prevent advance floating stalls
+        .replace(/([ิีึืุูา])([\u0E48-\u0E4D])/g, "$2$1")
+        .replace(/\u0E33\u0E32/g, "\u0E33");
 };
 
 export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint8Array> {
@@ -81,7 +83,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
     const getTwoColumnUnderlinedField = (label1: string, value1: string, width1: number, label2: string, value2: string, width2: number = 60) => {
         return {
             table: {
-                widths: [width1, 140, width2, '*'],
+                widths: [width1, '*', width2, '*'],
                 body: [
                     [
                         { text: label1, style: 'label', border: [false, false, false, false] },
@@ -110,7 +112,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                     width: 14
                 },
                 { text: label + ' : ', fontSize: 8.5 },
-                { text: otherValue || "__________________________", fontSize: 8.5, decoration: otherValue ? 'underline' : undefined }
+                { text: normalizeThai(otherValue) || "__________________________", fontSize: 8.5, decoration: otherValue ? 'underline' : undefined }
             ],
             margin: [0, 3, 0, 3]
         };
