@@ -243,22 +243,6 @@ export default function MyRequestsPage() {
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-col gap-1 mt-1">
-                                            <span className="text-[10px] uppercase font-bold text-gray-400">Activity Period</span>
-                                            <span className="text-sm text-gray-600">
-                                                {new Date(request.start_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} - {new Date(request.end_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                                            </span>
-                                        </div>
-
-                                        {(request.effective_date || request.booking_date) && (
-                                            <div className="flex flex-col gap-1 mt-1">
-                                                <span className="text-[10px] uppercase font-bold text-gray-400">Dates</span>
-                                                <div className="flex flex-wrap gap-x-3 text-xs text-gray-500">
-                                                    {request.booking_date && <span>Booking: {new Date(request.booking_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>}
-                                                    {request.effective_date && <span className="text-brand-600 font-medium">Effective: {new Date(request.effective_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>}
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                     {request.status === "CANCELLED" && (
                                         <p className="text-xs text-gray-400 mt-2 italic">This request has been cancelled</p>
@@ -399,12 +383,21 @@ export default function MyRequestsPage() {
 
                             {expandedRequests.includes(request.id) && (
                                 <div className="mt-5 pt-5 border-t border-gray-100/80 animate-slide-up space-y-5">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <div>
                                             <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold block mb-1">Requester Contact</span>
-                                            <div className="bg-white/80 backdrop-blur-sm p-3 rounded-xl border border-gray-100 text-xs shadow-sm space-y-1.5">
+                                            <div className="bg-white/80 backdrop-blur-sm p-3 rounded-xl border border-gray-100 text-xs shadow-sm space-y-1.5 h-full">
                                                 <div className="flex justify-between"><span className="text-gray-400">Contact:</span> <span className="font-medium text-gray-700">{request.contact_no || "N/A"}</span></div>
                                                 <div className="flex justify-between"><span className="text-gray-400">Email:</span> <span className="font-medium text-gray-700">{request.email || "N/A"}</span></div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold block mb-1">Period & Dates</span>
+                                            <div className="bg-white/80 backdrop-blur-sm p-3 rounded-xl border border-gray-100 text-xs shadow-sm space-y-1.5 h-full">
+                                                <div className="flex justify-between"><span className="text-gray-400">Activity:</span> <span className="font-medium text-gray-700">{new Date(request.start_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} - {new Date(request.end_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span></div>
+                                                {request.booking_date && <div className="flex justify-between"><span className="text-gray-400">Booking:</span> <span className="font-medium text-gray-700">{new Date(request.booking_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span></div>}
+                                                {request.effective_date && <div className="flex justify-between"><span className="text-gray-400 text-brand-600 font-bold">Effective:</span> <span className="font-bold text-brand-600">{new Date(request.effective_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span></div>}
                                             </div>
                                         </div>
 

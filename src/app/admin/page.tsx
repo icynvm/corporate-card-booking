@@ -280,7 +280,7 @@ export default function AdminPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="text-sm text-gray-600 truncate">{req.project_name || "No project"}</p>
+                                        <p className="text-sm text-gray-600 whitespace-normal break-words">{req.project_name || "No project"}</p>
                                         <p className="text-xs text-gray-400 mt-0.5">
                                             THB {req.amount?.toLocaleString()} - {req.billing_type?.replace("_", " ")} - {new Date(req.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                                         </p>
@@ -382,6 +382,10 @@ export default function AdminPage() {
                                                     <span className="text-gray-400 text-xs">Email</span>
                                                     <p className="font-medium text-gray-700">{req.email}</p>
                                                 </div>
+                                                <div>
+                                                    <span className="text-gray-400 text-xs">Contact Number</span>
+                                                    <p className="font-medium text-gray-700">{req.contact_no || "N/A"}</p>
+                                                </div>
                                                 <div className="col-span-2">
                                                     <span className="text-gray-400 text-xs">Objective</span>
                                                     <p className="font-medium text-gray-700">{req.objective}</p>
@@ -393,6 +397,24 @@ export default function AdminPage() {
                                                     </div>
                                                 )}
                                             </div>
+
+                                            {/* Promotional Channels */}
+                                            {req.promotional_channels && req.promotional_channels.length > 0 && (
+                                                <div>
+                                                    <span className="text-gray-400 text-xs block mb-1">Promotional Channels</span>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                                        {req.promotional_channels.map((chan: any, idx: number) => (
+                                                            <div key={idx} className="bg-white p-2 rounded-lg border border-gray-100 text-xs shadow-sm">
+                                                                <div className="font-bold text-brand-600 text-[11px] mb-0.5">{chan.channel}</div>
+                                                                <div className="text-gray-500 text-[10px] flex justify-between gap-2 flex-wrap">
+                                                                    <span>Acc: <span className="text-gray-700 font-medium">{chan.mediaAccountEmail}</span></span>
+                                                                    <span>Access: <span className="text-gray-700 font-medium">{chan.accessList}</span></span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
 
                                             {/* Approval File Preview */}
                                             {req.approval_file_url && (
