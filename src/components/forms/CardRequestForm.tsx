@@ -5,6 +5,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PostSubmissionActions } from "@/components/forms/PostSubmissionActions";
+import { normalizeThai } from "@/lib/thai-utils";
 import { supabase } from "@/lib/supabase";
 import {
     requestFormSchema,
@@ -99,17 +100,7 @@ export function CardRequestForm() {
         setSelectedChannels(newSelection);
     };
 
-    const normalizeThai = (text: string = "") => {
-        if (!text) return "";
-        return text
-            .normalize("NFC")
-            // reorder tone + vowel (ครอบคลุมมากขึ้น)
-            .replace(/([\u0E48-\u0E4C]+)([\u0E31-\u0E3A\u0E34-\u0E39]+)/g, "$2$1")
-            // fix นำา → นำ
-            .replace(/\u0E33\u0E32/g, "\u0E33")
-            // fix common broken patterns
-            .replace(/เ([่-๋])([ก-ฮ])/g, "เ$2$1");
-    };
+    // normalizeThai imported from thai-utils
 
     const onSubmit = async (data: RequestFormData) => {
         setSubmitError(null);
@@ -154,9 +145,9 @@ export function CardRequestForm() {
         }
     };
 
-    if (isSubmitted && submittedData) {
-        return <PostSubmissionActions formData={submittedData} />;
-    }
+    const { onChange: fullNameOnChange, ...fullNameProps } = register("fullName");
+    const { onChange: departmentOnChange, ...departmentProps } = register("department");
+    const { onChange: objectiveOnChange, ...objectiveProps } = register("objective");
 
     return (
         <div className="max-w-3xl mx-auto">
@@ -189,12 +180,22 @@ export function CardRequestForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label className="label-text">Full Name</label>
-                            <input {...register("fullName")} className="input-field" placeholder="Enter your full name" />
+                            <input 
+                                {...fullNameProps} 
+                                onChange={(e) => { e.target.value = normalizeThai(e.target.value); fullNameOnChange(e); }} 
+                                className="input-field" 
+                                placeholder="Enter your full name" 
+                            />
                             {errors.fullName && <p className="text-red-400 text-xs mt-1">{errors.fullName.message}</p>}
                         </div>
                         <div>
                             <label className="label-text">Team</label>
-                            <input {...register("department")} className="input-field" placeholder="e.g. Web Developer" />
+                            <input 
+                                {...departmentProps} 
+                                onChange={(e) => { e.target.value = normalizeThai(e.target.value); departmentOnChange(e); }} 
+                                className="input-field" 
+                                placeholder="e.g. Web Developer" 
+                            />
                             {errors.department && <p className="text-red-400 text-xs mt-1">{errors.department.message}</p>}
                         </div>
                         <div>
@@ -213,7 +214,7 @@ export function CardRequestForm() {
                                 type="text"
                                 value={projectSearch}
                                 onChange={(e) => {
-                                    setProjectSearch(e.target.value);
+                                    setProjectSearch(normalizeThai(e.target.value));
                                     setShowProjectDropdown(true);
                                     setSelectedProjectId(null);
                                 }}
@@ -261,7 +262,8 @@ export function CardRequestForm() {
                         <div>
                             <label className="label-text">Objective</label>
                             <textarea
-                                {...register("objective")}
+                                {...objectiveProps}
+                                onChange={(e) => { e.target.value = normalizeThai(e.target.value); objectiveOnChange(e); }}
                                 className="input-field min-h-[100px] resize-none"
                                 placeholder="Describe the purpose of this card request..."
                                 rows={3}
