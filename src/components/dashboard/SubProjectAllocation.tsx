@@ -14,14 +14,16 @@ interface SubProjectAllocationProps {
     requestId: string;
     totalAmount: number;
     isApproved: boolean;
+    addToast?: (message: string, type: "success" | "error") => void;
 }
 
-export default function SubProjectAllocation({ requestId, totalAmount, isApproved }: SubProjectAllocationProps) {
+export default function SubProjectAllocation({ requestId, totalAmount, isApproved, addToast }: SubProjectAllocationProps) {
     const [subProjects, setSubProjects] = useState<SubProject[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [namesInput, setNamesInput] = useState("");
+    const [suggestedNames, setSuggestedNames] = useState<string[]>([]);
 
     const fetchSubProjects = async () => {
         try {
@@ -50,6 +52,21 @@ export default function SubProjectAllocation({ requestId, totalAmount, isApprove
         }
     }, [requestId]);
 
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            try {
+                const res = await fetch("/api/sub-projects");
+                if (res.ok) {
+                    const data = await res.json();
+                    setSuggestedNames(data.names || []);
+                }
+            } catch (err) {
+                console.error("Error fetching suggestions:", err);
+            }
+        };
+        fetchSuggestions();
+    }, []);
+
     const handleSave = async () => {
         if (!namesInput.trim()) {
             // If empty, delete all
@@ -71,7 +88,11 @@ export default function SubProjectAllocation({ requestId, totalAmount, isApprove
 
             if (res.ok) {
                 await fetchSubProjects();
-                alert("Sub-projects allocated successfully!");
+                if (addToast) {
+                    addToast("Sub-projects allocated successfully!", "success");
+                } else {
+                    alert("Sub-projects allocated successfully!");
+                }
             } else {
                 const data = await res.json();
                 setError(data.error || "Failed to save sub-projects");
@@ -96,6 +117,9 @@ export default function SubProjectAllocation({ requestId, totalAmount, isApprove
             if (res.ok) {
                 setSubProjects([]);
                 setNamesInput("");
+                if (addToast) {
+                    addToast("Allocations cleared successfully!", "success");
+                }
             } else {
                 const data = await res.json();
                 setError(data.error || "Failed to delete sub-projects");
@@ -130,6 +154,27 @@ export default function SubProjectAllocation({ requestId, totalAmount, isApprove
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
                     />
                     <p className="text-[10px] text-gray-400 mt-1">Separate names with commas. Amount will be divided equally.</p>
+                    
+                    {suggestedNames.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                            <span className="text-[10px] text-gray-400 self-center mr-1">Quick Select:</span>
+                            {suggestedNames.map(name => (
+                                <button
+                                    key={name}
+                                    type="button"
+                                    onClick={() => {
+                                        const current = namesInput.split(",").map(n => n.trim()).filter(Boolean);
+                                        if (!current.includes(name)) {
+                                            setNamesInput([...current, name].join(", "));
+                                        }
+                                    }}
+                                    className="px-2 py-0.5 bg-gray-50 hover:bg-brand-50 hover:text-brand-600 text-gray-600 rounded-full text-[11px] font-medium transition-colors border border-gray-200"
+                                >
+                                    + {name}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 <button
                     onClick={handleSave}

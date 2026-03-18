@@ -16,6 +16,7 @@ export function SignedUploadModal({ isOpen, onClose, request, onSuccess }: Signe
     const [notes, setNotes] = useState("");
     const [uploading, setUploading] = useState(false);
     const [uploaded, setUploaded] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
 
 
@@ -23,8 +24,19 @@ export function SignedUploadModal({ isOpen, onClose, request, onSuccess }: Signe
         if (!file || !request) return;
 
         setUploading(true);
+        setUploadProgress(10); // Start at 10%
+
+        const progressInterval = setInterval(() => {
+            setUploadProgress((prev) => {
+                if (prev >= 90) {
+                    clearInterval(progressInterval);
+                    return 90;
+                }
+                return prev + Math.floor(Math.random() * 15 + 5);
+            });
+        }, 400);
+
         try {
-            // Upload file
             const formData = new FormData();
             formData.append("file", file);
             if (notes.trim()) {
@@ -36,6 +48,9 @@ export function SignedUploadModal({ isOpen, onClose, request, onSuccess }: Signe
                 body: formData,
             });
 
+            clearInterval(progressInterval);
+            setUploadProgress(100);
+
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
                 throw new Error(errData.error || "Upload failed");
@@ -43,7 +58,6 @@ export function SignedUploadModal({ isOpen, onClose, request, onSuccess }: Signe
 
             setUploaded(true);
             
-            // Invoke success callback if available
             if (onSuccess) onSuccess();
 
             setTimeout(() => {
@@ -51,8 +65,11 @@ export function SignedUploadModal({ isOpen, onClose, request, onSuccess }: Signe
                 setFile(null);
                 setNotes("");
                 setUploaded(false);
+                setUploadProgress(0);
             }, 1500);
         } catch (err: any) {
+            clearInterval(progressInterval);
+            setUploadProgress(0);
             console.error(err);
             alert(err.message || "Failed to upload signed document. Please try again.");
         } finally {
@@ -64,16 +81,40 @@ export function SignedUploadModal({ isOpen, onClose, request, onSuccess }: Signe
         <Modal isOpen={isOpen} onClose={onClose} title="Upload Signed Document">
             <>
                 {uploaded ? (
-                <div className="text-center py-8 animate-slide-up">
-                    <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                        </svg>
+                    <div className="text-center py-8 animate-slide-up">
+                        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </div>
+                        <h3 className="font-semibold text-gray-800 mb-1">Upload Successful!</h3>
+                        <p className="text-sm text-gray-500">The signed document has been saved.</p>
                     </div>
-                    <h3 className="font-semibold text-gray-800 mb-1">Upload Successful!</h3>
-                    <p className="text-sm text-gray-500">The signed document has been saved.</p>
-                </div>
-            ) : (
+                ) : uploading ? (
+                    <div className="text-center py-10 animate-slide-up">
+                        <div className="w-16 h-16 rounded-full bg-brand-50 flex items-center justify-center mx-auto mb-5">
+                            <svg className="animate-spin w-8 h-8 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                        </div>
+                        <h3 className="font-semibold text-gray-800 mb-2">Uploading Document...</h3>
+                        <div className="max-w-xs mx-auto mb-4">
+                            <div className="w-full bg-gray-100 rounded-full h-2">
+                                <div 
+                                    className="bg-brand-600 h-2 rounded-full transition-all duration-300" 
+                                    style={{ width: `${uploadProgress}%` }}
+                                />
+                            </div>
+                            <p className="text-xs text-brand-600 mt-2 font-mono font-bold">{Math.floor(uploadProgress)}%</p>
+                        </div>
+                        <p className="text-sm text-gray-400">
+                            {uploadProgress < 40 ? "Reading file contents..." : 
+                             uploadProgress < 80 ? "Uploading to secured storage..." : 
+                             "Filing approval records..."}
+                        </p>
+                    </div>
+                ) : (
                 <div className="space-y-5">
                     {/* Request Info / Editable Fields */}
                     {request && (
