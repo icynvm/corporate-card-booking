@@ -207,7 +207,6 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                         </div>
                         
                         <div>
-                            <p className="text-sm font-medium text-gray-500 mb-1 truncate">{request.project_name || "No Project Attached"}</p>
                             <h3 className="font-bold text-gray-800 text-xl break-words">{request.objective}</h3>
                         </div>
 
@@ -331,10 +330,14 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                             {/* Project Details */}
                             <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                                 <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
-                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Timeline Mapping</h4>
+                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Project Details</h4>
                                 </div>
                                 <div className="p-5 space-y-3 text-sm">
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <span className="text-gray-400 text-xs block mb-1">Project Name</span>
+                                        <p className="font-semibold text-gray-800 text-sm break-words">{request.project_name || "N/A"}</p>
+                                    </div>
+                                    <div className="pt-2 border-t border-gray-50 grid grid-cols-2 gap-4">
                                         <div>
                                             <span className="text-gray-400 text-xs block mb-1">Start Date</span>
                                             <p className="font-semibold text-gray-800 text-sm">{fmtDate(request.start_date)}</p>
