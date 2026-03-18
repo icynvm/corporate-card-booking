@@ -16,32 +16,11 @@ export const normalizeThai = (text: string = "") => {
 };
 
 /**
- * Inserts zero-width spaces between Thai words to enable accurate word-wrapping in pdfmake and other rigid layouts.
+ * Inserts Zero-Width Spaces (ZWSP) after Thai characters
+ * to allow proper line wrapping in environments like pdfmake
+ * that lack dictionary-based Thai word breaking.
  */
-export const wrapThaiText = (text: string = "") => {
+export const insertZeroWidthSpaces = (text: string = ""): string => {
     if (!text) return "";
-    
-    // Normalize first
-    const normalized = normalizeThai(text);
-
-    // If no Intl.Segmenter available (older environments), return as is
-    if (typeof Intl === 'undefined' || !Intl.Segmenter) return normalized;
-
-    try {
-        const segmenter = new Intl.Segmenter('th', { granularity: 'word' });
-        const segments = segmenter.segment(normalized);
-        let wrapped = '';
-        
-        for (const segment of segments) {
-            wrapped += segment.segment;
-            // Add zero-width space after the word ends if it's a Thai sequence
-            // but don't add if it's whitespace to avoid double spacing issues
-            if (segment.isWordLike && !/\s/.test(segment.segment)) {
-                wrapped += '\u200B';
-            }
-        }
-        return wrapped;
-    } catch (e) {
-        return normalized;
-    }
+    return text.replace(/([\u0E00-\u0E7F])/g, "$1\u200B");
 };

@@ -150,7 +150,7 @@ export function CardRequestForm() {
     const { onChange: objectiveOnChange, ...objectiveProps } = register("objective");
 
     if (isSubmitted && submittedData) {
-        return <PostSubmissionActions formData={submittedData} />;
+        return <div className="max-w-3xl mx-auto"><PostSubmissionActions formData={submittedData} /></div>;
     }
 
     return (

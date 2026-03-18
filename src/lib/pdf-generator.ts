@@ -1,6 +1,6 @@
 import pdfMake from "./pdfmake-fonts";
 import { IMPACT_LOGO_BASE64 } from "./logo-base64";
-import { normalizeThai, wrapThaiText } from "./thai-utils";
+import { normalizeThai, insertZeroWidthSpaces } from "./thai-utils";
 
 export interface RequestPdfData {
     eventId: string;
@@ -167,8 +167,8 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
             { text: 'REQUESTER STAFF / พนักงานผู้ขอใช้', style: 'sectionHeader' },
             { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
 
-            getUnderlinedField('Full Name/ ชื่อ  :', normalizeThai(formData.fullName), 100),
-            getUnderlinedField('Department / แผนก  :', normalizeThai(formData.department), 100),
+            getUnderlinedField('Full Name/ ชื่อ  :', insertZeroWidthSpaces(normalizeThai(formData.fullName)), 100),
+            getUnderlinedField('Department / แผนก  :', insertZeroWidthSpaces(normalizeThai(formData.department)), 100),
             getTwoColumnUnderlinedField('Contact No. / เบอร์ติดต่อ  :', formData.contactNo, 100, 'E-Mail  :', formData.email, 40),
 
             { text: '', margin: [0, 10] },
@@ -176,7 +176,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
             { text: 'REQUEST DETAILS / รายละเอียดการขอใช้', style: 'sectionHeader' },
             { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
 
-            ...getMultiLineUnderlinedField('Objective / วัตถุประสงค์  :', wrapThaiText(formData.objective), 120, 3),
+            ...getMultiLineUnderlinedField('Objective / วัตถุประสงค์  :', insertZeroWidthSpaces(normalizeThai(formData.objective)), 120, 3),
             
             { text: '', margin: [0, 5] },
             { text: 'Promotional Channels / ช่องทางในการโฆษณา', style: 'labelSub', bold: true },
