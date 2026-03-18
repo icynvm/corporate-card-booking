@@ -9,6 +9,39 @@ function getSession(req: NextRequest) {
     return parseSessionToken(token);
 }
 
+export async function GET(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    try {
+        const session = getSession(req);
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const requestId = params.id;
+        if (!requestId) return NextResponse.json({ error: "Request ID is required" }, { status: 400 });
+
+        const supabase = createServerSupabase();
+        const { data, error } = await supabase
+            .from("requests")
+            .select("*, profiles(*), projects(*), receipts(*), request_payments(*)")
+            .eq("id", requestId)
+            .single();
+
+        if (error) throw error;
+        if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+        // Ensure user can only see their own request, unless admin
+        if (session.role !== "admin" && data.user_id !== session.pid) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        return NextResponse.json(data);
+    } catch (error: any) {
+        console.error("Failed to fetch request:", error);
+        return NextResponse.json({ error: "Failed to fetch request" }, { status: 500 });
+    }
+}
+
 export async function DELETE(
     req: NextRequest,
     { params }: { params: { id: string } }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import {
     useReactTable,
     getCoreRowModel,
@@ -11,7 +12,6 @@ import {
     createColumnHelper,
     SortingState,
     ColumnFiltersState,
-    ExpandedState,
 } from "@tanstack/react-table";
 import { RequestRecord } from "@/lib/types";
 import SubProjectAllocation from "./SubProjectAllocation";
@@ -25,7 +25,6 @@ const downloadFile = async (url: string) => {
         const urlBlob = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = urlBlob;
-        // Extract filename from URL
         const filename = url.split("/").pop()?.split("?")[0] || "document.pdf";
         a.download = filename;
         document.body.appendChild(a);
@@ -93,7 +92,6 @@ const RowActions = ({ row, onUploadReceipt, onUploadSigned }: { row: RequestReco
 export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: RequestsTableProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-    const [expanded, setExpanded] = useState<ExpandedState>({});
 
     const columns = useMemo(
         () => [
@@ -101,26 +99,14 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                 header: "Event ID",
                 cell: (info: any) => (
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => info.row.toggleExpanded()}
-                            className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 transition-colors"
+                        <Link
+                            href={`/request/${info.row.original.id}`}
+                            className="font-mono text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1"
+                            title="View Request Details"
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className={`w-3 h-3 text-gray-400 transition-transform ${info.row.getIsExpanded() ? "rotate-180" : "rotate-90"}`}
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="3"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <polyline points="18 15 12 9 6 15" />
-                            </svg>
-                        </button>
-                        <span className="font-mono text-xs font-semibold text-brand-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                             {info.getValue()}
-                        </span>
+                        </Link>
                     </div>
                 ),
             }),
@@ -203,15 +189,13 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
     const table = useReactTable({
         data,
         columns,
-        state: { sorting, columnFilters, expanded },
+        state: { sorting, columnFilters },
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
-        onExpandedChange: setExpanded,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
-        getRowCanExpand: () => true,
         initialState: {
             pagination: { pageSize: 10 },
         },
@@ -260,69 +244,13 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                             </tr>
                         ) : (
                             table.getRowModel().rows.map((row) => (
-                                <React.Fragment key={row.id}>
-                                    <tr className="border-b border-gray-50 hover:bg-brand-50/30 transition-colors">
-                                        {row.getVisibleCells().map((cell) => (
-                                            <td key={cell.id} className="px-5 py-4">
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                    {row.getIsExpanded() && (
-                                        <tr>
-                                            <td colSpan={columns.length} className="px-5 py-6 bg-gray-50/50">
-                                                <div className="max-w-4xl">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                                        <div>
-                                                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 font-mono">Requestor Info</h4>
-                                                            <div className="space-y-2 bg-white/80 backdrop-blur-sm p-3.5 rounded-xl border border-gray-100 shadow-sm text-xs">
-                                                                <div className="flex justify-between"><span className="text-gray-400">Name:</span> <span className="font-semibold text-gray-700">{row.original.full_name || row.original.profiles?.name || "N/A"}</span></div>
-                                                                <div className="flex justify-between"><span className="text-gray-400">Dept:</span> <span className="font-semibold text-gray-700">{row.original.department || row.original.profiles?.department || "N/A"}</span></div>
-                                                                <div className="flex justify-between"><span className="text-gray-400">Contact:</span> <span className="font-medium text-gray-600">{row.original.contact_no || "N/A"}</span></div>
-                                                                <div className="flex justify-between"><span className="text-gray-400">Email:</span> <span className="font-medium text-gray-600 truncate max-w-[150px]">{row.original.email || "N/A"}</span></div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div>
-                                                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 font-mono">Request Details</h4>
-                                                            <div className="space-y-2 bg-white/80 backdrop-blur-sm p-3.5 rounded-xl border border-gray-100 shadow-sm text-xs">
-                                                                <div>
-                                                                    <span className="text-gray-400 block mb-1">Objective:</span>
-                                                                    <p className="font-medium text-gray-700 break-all leading-relaxed bg-gray-50/80 p-2 rounded-lg">{row.original.objective}</p>
-                                                                </div>
-                                                                <div className="flex justify-between pt-1">
-                                                                    <span className="text-gray-400">Dates:</span> 
-                                                                    <span className="font-medium text-gray-700">
-                                                                        {new Date(row.original.start_date).toLocaleDateString("en-GB")} - {new Date(row.original.end_date).toLocaleDateString("en-GB")}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {row.original.promotional_channels && row.original.promotional_channels.length > 0 && (
-                                                            <div className="md:col-span-2">
-                                                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 font-mono">Promotional Channels</h4>
-                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                                    {row.original.promotional_channels.map((chan, idx) => (
-                                                                        <div key={idx} className="bg-white/80 p-3 rounded-xl border border-gray-100 shadow-sm text-xs">
-                                                                            <div className="font-bold text-brand-600 mb-1 border-b border-gray-50 pb-1 flex justify-between">
-                                                                                <span>{chan.channel}</span>
-                                                                                <span className="text-[10px] text-gray-400 font-normal">Channel #{idx+1}</span>
-                                                                            </div>
-                                                                            <div className="flex justify-between mt-1.5"><span className="text-gray-400">Account:</span> <span className="text-gray-700 font-medium truncate max-w-[160px]">{chan.mediaAccountEmail || "N/A"}</span></div>
-                                                                            <div className="flex justify-between mt-1"><span className="text-gray-400">Access:</span> <span className="text-gray-700 font-medium truncate max-w-[160px]">{chan.accessList || "N/A"}</span></div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <SubProjectAllocation requestId={row.original.id} totalAmount={row.original.amount} isApproved={row.original.status === "APPROVED"} />
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </React.Fragment>
+                                <tr key={row.id} className="border-b border-gray-50 hover:bg-brand-50/30 transition-colors">
+                                    {row.getVisibleCells().map((cell) => (
+                                        <td key={cell.id} className="px-5 py-4">
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </td>
+                                    ))}
+                                </tr>
                             ))
                         )}
                     </tbody>
@@ -337,7 +265,13 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                     table.getRowModel().rows.map((row) => (
                         <div key={row.original.id} className="glass-card-hover p-4 space-y-3 relative border border-gray-100/50 rounded-xl bg-white shadow-sm">
                             <div className="flex justify-between items-center">
-                                <span className="font-mono text-xs font-bold text-brand-600">{row.original.event_id}</span>
+                                <Link
+                                    href={`/request/${row.original.id}`}
+                                    className="font-mono text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    {row.original.event_id}
+                                </Link>
                                 <span className="text-xs text-gray-400">
                                     {new Date(row.original.created_at).toLocaleDateString("en-GB", { day: '2-digit', month: 'short' })}
                                 </span>
