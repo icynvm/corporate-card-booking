@@ -149,6 +149,10 @@ export function CardRequestForm() {
     const { onChange: departmentOnChange, ...departmentProps } = register("department");
     const { onChange: objectiveOnChange, ...objectiveProps } = register("objective");
 
+    if (isSubmitted && submittedData) {
+        return <PostSubmissionActions formData={submittedData} />;
+    }
+
     return (
         <div className="max-w-3xl mx-auto">
             <div className="mb-8">
