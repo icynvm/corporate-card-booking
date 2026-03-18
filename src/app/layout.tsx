@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import { Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import { AppLayout } from "@/components/layout/AppLayout";
+
+const noto_sans_thai = Noto_Sans_Thai({
+    preload: false,
+    variable: "--font-noto-sans-thai",
+    display: "swap",
+});
 
 export const metadata: Metadata = {
     title: "Corporate Card Booking System | IMPACT",
@@ -20,7 +27,7 @@ export default function RootLayout({
             <head>
                 {/* Favicon removed due to broken link */}
             </head>
-            <body className="bg-[#f0f4f8] text-gray-800 font-sans min-h-screen view-height-fix selection:bg-brand-500/30">
+            <body className={`${noto_sans_thai.className} bg-[#f0f4f8] text-gray-800 min-h-screen view-height-fix selection:bg-brand-500/30`}>
                 <div className="fixed inset-0 -z-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]"></div>
 
                 {/* Soft ambient background blobs */}
