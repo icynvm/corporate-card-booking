@@ -40,8 +40,55 @@ const downloadFile = async (url: string) => {
 interface RequestsTableProps {
     data: RequestRecord[];
     onUploadReceipt: (request: RequestRecord) => void;
-    onUploadSigned?: (request: RequestRecord) => void;
+    onUploadSigned: (request: RequestRecord) => void;
 }
+
+const RowActions = ({ row, onUploadReceipt, onUploadSigned }: { row: RequestRecord; onUploadReceipt: any; onUploadSigned: any }) => {
+    const canUploadReceipt = ["APPROVED", "ACTIVE", "COMPLETED"].includes(row.status);
+    const canUploadSigned = row.status === "PENDING_APPROVAL";
+    const hasReceipt = row.receipts && row.receipts.length > 0;
+    const latestReceipt = hasReceipt ? row.receipts![row.receipts!.length - 1] : null;
+
+    return (
+        <div className="flex gap-2 flex-wrap">
+            {canUploadSigned && (
+                <button
+                    onClick={() => onUploadSigned(row)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-50 text-purple-600 border border-purple-200 hover:bg-purple-100 transition-all flex items-center gap-1.5"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    Upload Signed PDF
+                </button>
+            )}
+            
+            {row.status === "APPROVED" && !row.approval_file_url && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                    Email Approved
+                </span>
+            )}
+
+            {canUploadReceipt && (
+                <button
+                    onClick={() => onUploadReceipt(row)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${latestReceipt
+                        ? "bg-brand-50 text-brand-600 border-brand-200"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-brand-200 hover:text-brand-600"
+                        }`}
+                >
+                    {latestReceipt ? " Manage Receipts" : " Upload Receipt"}
+                </button>
+            )}
+        </div>
+    );
+};
 
 export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: RequestsTableProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -147,55 +194,7 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
             columnHelper.display({
                 id: "actions",
                 header: "Actions",
-                cell: (info) => {
-                    const row = info.row.original;
-                    const canUploadReceipt = ["APPROVED", "ACTIVE", "COMPLETED"].includes(row.status);
-                    const canUploadSigned = row.status === "PENDING_APPROVAL";
-                    const hasReceipt = row.receipts && row.receipts.length > 0;
-                    const latestReceipt = hasReceipt ? row.receipts![row.receipts!.length - 1] : null;
-
-                    return (
-                        <div className="flex gap-2">
-                            {canUploadSigned && (
-                                <button
-                                    onClick={() => onUploadSigned(row)}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-50 text-purple-600 border border-purple-200 hover:bg-purple-100 transition-all flex items-center gap-1.5"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="17 8 12 3 7 8" />
-                                        <line x1="12" y1="3" x2="12" y2="15" />
-                                    </svg>
-                                    Upload Signed PDF
-                                </button>
-                            )}
-                            
-                            {row.status === "APPROVED" && !row.approval_file_url && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                                        <polyline points="22,6 12,13 2,6" />
-                                    </svg>
-                                    Email Approved
-                                 </span>
-                             )}
-                             
-
-                             
-                             {canUploadReceipt && (
-                                <button
-                                    onClick={() => onUploadReceipt(row)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${latestReceipt
-                                        ? "bg-brand-50 text-brand-600 border-brand-200"
-                                        : "bg-white text-gray-600 border-gray-200 hover:border-brand-200 hover:text-brand-600"
-                                        }`}
-                                >
-                                    {latestReceipt ? " Manage Receipts" : " Upload Receipt"}
-                                </button>
-                            )}
-                        </div>
-                    );
-                },
+                cell: (info) => <RowActions row={info.row.original} onUploadReceipt={onUploadReceipt} onUploadSigned={onUploadSigned} />,
             }),
         ],
         [onUploadReceipt, onUploadSigned]
@@ -220,7 +219,8 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
 
     return (
         <div className="glass-card overflow-hidden">
-            <div className="overflow-x-auto scrollbar-thin">
+            {/* Desktop View */}
+            <div className="hidden md:block overflow-x-auto scrollbar-thin">
                 <table className="w-full">
                     <thead>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -261,9 +261,7 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                         ) : (
                             table.getRowModel().rows.map((row) => (
                                 <React.Fragment key={row.id}>
-                                    <tr
-                                        className="border-b border-gray-50 hover:bg-brand-50/30 transition-colors"
-                                    >
+                                    <tr className="border-b border-gray-50 hover:bg-brand-50/30 transition-colors">
                                         {row.getVisibleCells().map((cell) => (
                                             <td key={cell.id} className="px-5 py-4">
                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -277,7 +275,7 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                                                     <div className="flex gap-8 mb-6">
                                                         <div>
                                                             <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Objective</span>
-                                                            <p className="text-sm text-gray-700 font-medium">{row.original.objective}</p>
+                                                            <p className="text-sm text-gray-700 font-medium break-all">{row.original.objective}</p>
                                                         </div>
                                                         <div>
                                                             <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Dates</span>
@@ -286,12 +284,7 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                                                             </p>
                                                         </div>
                                                     </div>
-
-                                                    <SubProjectAllocation
-                                                        requestId={row.original.id}
-                                                        totalAmount={row.original.amount}
-                                                        isApproved={row.original.status === "APPROVED"}
-                                                    />
+                                                    <SubProjectAllocation requestId={row.original.id} totalAmount={row.original.amount} isApproved={row.original.status === "APPROVED"} />
                                                 </div>
                                             </td>
                                         </tr>
@@ -301,6 +294,43 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                         )}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden space-y-4 px-4 pt-4 pb-2">
+                {table.getRowModel().rows.length === 0 ? (
+                    <p className="text-center text-gray-400 py-8 text-sm">No requests found</p>
+                ) : (
+                    table.getRowModel().rows.map((row) => (
+                        <div key={row.original.id} className="glass-card-hover p-4 space-y-3 relative border border-gray-100/50 rounded-xl bg-white shadow-sm">
+                            <div className="flex justify-between items-center">
+                                <span className="font-mono text-xs font-bold text-brand-600">{row.original.event_id}</span>
+                                <span className="text-xs text-gray-400">
+                                    {new Date(row.original.created_at).toLocaleDateString("en-GB", { day: '2-digit', month: 'short' })}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-0.5">Project</span>
+                                <p className="text-sm font-medium text-gray-700 truncate">{row.original.project_name || "N/A"}</p>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-0.5">Amount</span>
+                                    <p className="text-sm font-bold text-gray-800">THB {row.original.amount?.toLocaleString()}</p>
+                                </div>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    row.original.status === "APPROVED" ? "bg-green-100 text-green-700" :
+                                    row.original.status === "PENDING" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"
+                                }`}>
+                                    {row.original.status}
+                                </span>
+                            </div>
+                            <div className="pt-2 border-t border-gray-100/50">
+                                <RowActions row={row.original} onUploadReceipt={onUploadReceipt} onUploadSigned={onUploadSigned} />
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
 
             <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100/50">
@@ -313,20 +343,8 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                     of {data.length} results
                 </p>
                 <div className="flex gap-2">
-                    <button
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/80 border border-gray-200 text-gray-600 hover:bg-white disabled:opacity-40 transition-all"
-                    >
-                        Previous
-                    </button>
-                    <button
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/80 border border-gray-200 text-gray-600 hover:bg-white disabled:opacity-40 transition-all"
-                    >
-                        Next
-                    </button>
+                    <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/80 border border-gray-200 text-gray-600 hover:bg-white disabled:opacity-40 transition-all">Previous</button>
+                    <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/80 border border-gray-200 text-gray-600 hover:bg-white disabled:opacity-40 transition-all">Next</button>
                 </div>
             </div>
         </div>

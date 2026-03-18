@@ -43,10 +43,34 @@ export default function AuditLogsPage() {
 
     const getEntityIcon = (entityType: string) => {
         switch (entityType) {
-            case "REQUEST": return "📋";
-            case "PROJECT": return "📁";
-            case "RECEIPT": return "🧾";
-            default: return "📄";
+            case "REQUEST": 
+                return (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                    </svg>
+                );
+            case "PROJECT": 
+                return (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                    </svg>
+                );
+            case "RECEIPT": 
+                return (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z" />
+                        <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+                        <path d="M12 17.5v-11" />
+                    </svg>
+                );
+            default: 
+                return (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                );
         }
     };
 
@@ -103,7 +127,7 @@ export default function AuditLogsPage() {
                                         <span className="text-xs text-gray-300">•</span>
                                         <span className="text-xs text-gray-400 font-mono">{log.entity_id?.substring(0, 8)}...</span>
                                     </div>
-                                    <p className="text-sm text-gray-600">
+                                    <p className="text-sm text-gray-600 break-all">
                                         {log.user_name && <span className="font-medium">{log.user_name}</span>}
                                         {log.user_name && " — "}
                                         {log.changes && typeof log.changes === "object" && (

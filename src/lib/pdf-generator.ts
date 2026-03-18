@@ -158,7 +158,8 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 columns: [
                     { text: '', width: '*' },
                     { text: 'CARD NO. ', bold: true, width: 'auto', fontSize: 10 },
-                    { text: '_______________________', width: 120, fontSize: 10 }
+                    { text: '_______________________', width: 120, fontSize: 10 },
+                    { text: '', width: '*' }
                 ],
                 margin: [0, 0, 0, 15]
             },
