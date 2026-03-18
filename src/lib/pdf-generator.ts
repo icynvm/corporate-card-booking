@@ -91,27 +91,68 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
     };
 
     const getMultiLineUnderlinedField = (label: string, value: string, width1: number = 80, linesCount: number = 3) => {
+        const lines: string[] = [];
+        let currentLine = "";
+        const maxFirstLine = 75; 
+        const maxOtherLine = 95; 
+
+        if (typeof Intl !== "undefined" && (Intl as any).Segmenter) {
+            try {
+                const segmenter = new (Intl as any).Segmenter("th", { granularity: "word" });
+                const segments = Array.from(segmenter.segment(value || "")) as any[];
+                for (let i = 0; i < segments.length; i++) {
+                    const word = segments[i].segment;
+                    const limit = lines.length === 0 ? maxFirstLine : maxOtherLine;
+                    if ((currentLine + word).length > limit) {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    } else {
+                        currentLine += word;
+                    }
+                }
+            } catch (err) {
+                console.error("Segmenter failed in PDF generation", err);
+            }
+        }
+        if (currentLine) lines.push(currentLine);
+
+        // Fallback or pad
+        if (lines.length === 0 && value) {
+            lines.push(value.slice(0, maxFirstLine));
+            let rem = value.slice(maxFirstLine);
+            while (rem.length > 0) {
+                lines.push(rem.slice(0, maxOtherLine));
+                rem = rem.slice(maxOtherLine);
+            }
+        }
+
         const parts: any[] = [
             {
                 table: {
                     widths: [width1, '*'],
                     body: [[
                         { text: label, style: 'label', border: [false, false, false, false] },
-                        { text: value || '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
+                        { text: lines[0] || '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
                     ]]
                 },
                 margin: [0, 3, 0, 1]
             }
         ];
-        for (let i = 0; i < linesCount - 1; i++) {
+
+        for (let i = 1; i < linesCount; i++) {
             parts.push({
                 table: {
                     widths: ['*'],
                     body: [[
-                        { text: '', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
+                        { 
+                            text: lines[i] || '', 
+                            style: 'value', 
+                            border: [false, false, false, true], 
+                            borderColor: ['', '', '', '#6d4c41'] 
+                        }
                     ]]
                 },
-                margin: [0, 5, 0, 1]
+                margin: [0, 5, 0, 1] // spacing for underline
             });
         }
         return parts;
@@ -167,8 +208,8 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
             { text: 'REQUESTER STAFF / พนักงานผู้ขอใช้', style: 'sectionHeader' },
             { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
 
-            getUnderlinedField('Full Name/ ชื่อ  :', insertZeroWidthSpaces(normalizeThai(formData.fullName)), 100),
-            getUnderlinedField('Department / แผนก  :', insertZeroWidthSpaces(normalizeThai(formData.department)), 100),
+            getUnderlinedField('Full Name/ ชื่อ  :', normalizeThai(formData.fullName), 100),
+            getUnderlinedField('Department / แผนก  :', normalizeThai(formData.department), 100),
             getTwoColumnUnderlinedField('Contact No. / เบอร์ติดต่อ  :', formData.contactNo, 100, 'E-Mail  :', formData.email, 40),
 
             { text: '', margin: [0, 10] },
@@ -176,7 +217,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
             { text: 'REQUEST DETAILS / รายละเอียดการขอใช้', style: 'sectionHeader' },
             { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
 
-            ...getMultiLineUnderlinedField('Objective / วัตถุประสงค์  :', insertZeroWidthSpaces(normalizeThai(formData.objective)), 120, 3),
+            ...getMultiLineUnderlinedField('Objective / วัตถุประสงค์  :', normalizeThai(formData.objective), 120, 3),
             
             { text: '', margin: [0, 5] },
             { text: 'Promotional Channels / ช่องทางในการโฆษณา', style: 'labelSub', bold: true },
