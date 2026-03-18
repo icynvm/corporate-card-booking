@@ -5,11 +5,12 @@ export default function HomePage() {
         <div className="flex flex-col items-center justify-center min-h-[80vh] text-center">
             {/* Hero Section */}
             <div className="animate-slide-up">
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shadow-xl shadow-brand-500/30 mb-8 mx-auto">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                        <line x1="1" y1="10" x2="23" y2="10" />
-                    </svg>
+                <div className="w-20 h-20 mb-8 mx-auto">
+                    <img 
+                        src="https://wxxaazwykroptrnuaotk.supabase.co/storage/v1/object/public/Image/logo-impactorganizer-square.png" 
+                        alt="Logo" 
+                        className="w-full h-full object-contain rounded-2xl shadow-xl shadow-brand-500/20"
+                    />
                 </div>
                 <h1 className="text-4xl font-bold text-gray-800 mb-3">
                     Corporate Card <span className="gradient-text">Booking System</span>

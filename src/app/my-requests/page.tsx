@@ -9,6 +9,7 @@ import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
 import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
 import { RequestEditModal } from "@/components/dashboard/RequestEditModal";
 import { SignedUploadModal } from "@/components/dashboard/SignedUploadModal";
+import { SubProjectAllocation } from "@/components/dashboard/SubProjectAllocation";
 
 export default function MyRequestsPage() {
     const [requests, setRequests] = useState<RequestRecord[]>([]);
@@ -17,6 +18,11 @@ export default function MyRequestsPage() {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [signedModalOpen, setSignedModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<RequestRecord | null>(null);
+    const [expandedRequests, setExpandedRequests] = useState<string[]>([]);
+
+    const toggleExpand = (id: string) => {
+        setExpandedRequests(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
 
     const [toasts, setToasts] = useState<{ id: string; message: string; severity: AlertSeverity }[]>([]);
     const addToast = (message: string, severity: AlertSeverity = "info") => {
@@ -258,6 +264,18 @@ export default function MyRequestsPage() {
                                     {request.status === "CANCELLED" && (
                                         <p className="text-xs text-gray-400 mt-2 italic">This request has been cancelled</p>
                                     )}
+
+                                    <div className="mt-3">
+                                        <button
+                                            onClick={() => toggleExpand(request.id)}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100/80 hover:bg-gray-200 text-gray-600 hover:text-gray-700 transition-all shadow-sm"
+                                        >
+                                            {expandedRequests.includes(request.id) ? "Collapse" : "Expand All Data"}
+                                            <svg xmlns="http://www.w3.org/2000/svg" className={`w-3.5 h-3.5 transition-transform duration-200 ${expandedRequests.includes(request.id) ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                                 
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -380,12 +398,42 @@ export default function MyRequestsPage() {
                                 </div>
                             </div>
 
-                            {/* Sub-Project Allocation for approved requests */}
-                            <SubProjectAllocation
-                                requestId={request.id}
-                                totalAmount={request.amount}
-                                isApproved={request.status === 'APPROVED'}
-                            />
+                            {expandedRequests.includes(request.id) && (
+                                <div className="mt-5 pt-5 border-t border-gray-100/80 animate-slide-up space-y-5">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold block mb-1">Requester Contact</span>
+                                            <div className="bg-white/80 backdrop-blur-sm p-3 rounded-xl border border-gray-100 text-xs shadow-sm space-y-1.5">
+                                                <div className="flex justify-between"><span className="text-gray-400">Contact:</span> <span className="font-medium text-gray-700">{request.contact_no || "N/A"}</span></div>
+                                                <div className="flex justify-between"><span className="text-gray-400">Email:</span> <span className="font-medium text-gray-700">{request.email || "N/A"}</span></div>
+                                            </div>
+                                        </div>
+
+                                        {request.promotional_channels && request.promotional_channels.length > 0 && (
+                                            <div>
+                                                <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold block mb-1">Promotional Channels</span>
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    {request.promotional_channels.map((chan: any, idx: number) => (
+                                                        <div key={idx} className="bg-white/80 p-2 rounded-lg border border-gray-100 text-xs shadow-sm">
+                                                            <div className="font-bold text-brand-600 text-[11px] mb-0.5">{chan.channel}</div>
+                                                            <div className="text-gray-500 text-[10px] flex justify-between">
+                                                                <span>Acc: <span className="text-gray-700 font-medium">{chan.mediaAccountEmail}</span></span>
+                                                                <span>Access: <span className="text-gray-700 font-medium">{chan.accessList}</span></span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <SubProjectAllocation
+                                        requestId={request.id}
+                                        totalAmount={request.amount}
+                                        isApproved={request.status === 'APPROVED'}
+                                    />
+                                </div>
+                            )}
                         </GlassCard>
                     ))}
                 </div>
