@@ -8,12 +8,14 @@ import { RequestRecord, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
 import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
 import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
 import { RequestEditModal } from "@/components/dashboard/RequestEditModal";
+import { SignedUploadModal } from "@/components/dashboard/SignedUploadModal";
 
 export default function MyRequestsPage() {
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [receiptModalOpen, setReceiptModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
+    const [signedModalOpen, setSignedModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<RequestRecord | null>(null);
 
     const [toasts, setToasts] = useState<{ id: string; message: string; severity: AlertSeverity }[]>([]);
@@ -125,33 +127,9 @@ export default function MyRequestsPage() {
         }
     };
 
-    const handleUploadSigned = async (requestId: string) => {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".pdf,.jpg,.jpeg,.png";
-        input.onchange = async (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0];
-            if (!file) return;
-            const formData = new FormData();
-            formData.append("file", file);
-            try {
-                const res = await fetch(`/api/requests/${requestId}/upload-approval`, {
-                    method: "POST",
-                    body: formData,
-                });
-                if (res.ok) {
-                    await fetchRequests(); // Refresh actual data from db
-                    addToast("Signed file uploaded successfully!", "success");
-                } else {
-                    const data = await res.json();
-                    addToast(data.error || "Upload failed", "error");
-                }
-            } catch (err: any) {
-                console.error(err);
-                addToast("Upload failed", "error");
-            }
-        };
-        input.click();
+    const handleUploadSigned = (request: RequestRecord) => {
+        setSelectedRequest(request);
+        setSignedModalOpen(true);
     };
 
     const handleSendEmail = async (requestId: string) => {
@@ -308,7 +286,7 @@ export default function MyRequestsPage() {
                                     {/* Upload Signed PDF */}
                                     {canUploadSigned(request.status) && (
                                         <button
-                                            onClick={() => handleUploadSigned(request.id)}
+                                            onClick={() => handleUploadSigned(request)}
                                             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200 transition-colors"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -431,6 +409,17 @@ export default function MyRequestsPage() {
                     fetchRequests(); // Refresh data on close
                 }}
                 request={selectedRequest}
+            />
+
+            <SignedUploadModal
+                isOpen={signedModalOpen}
+                onClose={() => {
+                    setSignedModalOpen(false);
+                    setSelectedRequest(null);
+                    fetchRequests(); // Refresh data on close
+                }}
+                request={selectedRequest}
+                onSuccess={fetchRequests}
             />
         </div>
     );

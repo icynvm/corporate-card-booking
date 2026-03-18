@@ -272,17 +272,50 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                                         <tr>
                                             <td colSpan={columns.length} className="px-5 py-6 bg-gray-50/50">
                                                 <div className="max-w-4xl">
-                                                    <div className="flex gap-8 mb-6">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                                         <div>
-                                                            <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Objective</span>
-                                                            <p className="text-sm text-gray-700 font-medium break-all">{row.original.objective}</p>
+                                                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 font-mono">Requestor Info</h4>
+                                                            <div className="space-y-2 bg-white/80 backdrop-blur-sm p-3.5 rounded-xl border border-gray-100 shadow-sm text-xs">
+                                                                <div className="flex justify-between"><span className="text-gray-400">Name:</span> <span className="font-semibold text-gray-700">{row.original.full_name || row.original.profiles?.name || "N/A"}</span></div>
+                                                                <div className="flex justify-between"><span className="text-gray-400">Dept:</span> <span className="font-semibold text-gray-700">{row.original.department || row.original.profiles?.department || "N/A"}</span></div>
+                                                                <div className="flex justify-between"><span className="text-gray-400">Contact:</span> <span className="font-medium text-gray-600">{row.original.contact_no || "N/A"}</span></div>
+                                                                <div className="flex justify-between"><span className="text-gray-400">Email:</span> <span className="font-medium text-gray-600 truncate max-w-[150px]">{row.original.email || "N/A"}</span></div>
+                                                            </div>
                                                         </div>
+
                                                         <div>
-                                                            <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Dates</span>
-                                                            <p className="text-sm text-gray-700">
-                                                                {new Date(row.original.start_date).toLocaleDateString()} - {new Date(row.original.end_date).toLocaleDateString()}
-                                                            </p>
+                                                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 font-mono">Request Details</h4>
+                                                            <div className="space-y-2 bg-white/80 backdrop-blur-sm p-3.5 rounded-xl border border-gray-100 shadow-sm text-xs">
+                                                                <div>
+                                                                    <span className="text-gray-400 block mb-1">Objective:</span>
+                                                                    <p className="font-medium text-gray-700 break-all leading-relaxed bg-gray-50/80 p-2 rounded-lg">{row.original.objective}</p>
+                                                                </div>
+                                                                <div className="flex justify-between pt-1">
+                                                                    <span className="text-gray-400">Dates:</span> 
+                                                                    <span className="font-medium text-gray-700">
+                                                                        {new Date(row.original.start_date).toLocaleDateString("en-GB")} - {new Date(row.original.end_date).toLocaleDateString("en-GB")}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
                                                         </div>
+
+                                                        {row.original.promotional_channels && row.original.promotional_channels.length > 0 && (
+                                                            <div className="md:col-span-2">
+                                                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 font-mono">Promotional Channels</h4>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                    {row.original.promotional_channels.map((chan, idx) => (
+                                                                        <div key={idx} className="bg-white/80 p-3 rounded-xl border border-gray-100 shadow-sm text-xs">
+                                                                            <div className="font-bold text-brand-600 mb-1 border-b border-gray-50 pb-1 flex justify-between">
+                                                                                <span>{chan.channel}</span>
+                                                                                <span className="text-[10px] text-gray-400 font-normal">Channel #{idx+1}</span>
+                                                                            </div>
+                                                                            <div className="flex justify-between mt-1.5"><span className="text-gray-400">Account:</span> <span className="text-gray-700 font-medium truncate max-w-[160px]">{chan.mediaAccountEmail || "N/A"}</span></div>
+                                                                            <div className="flex justify-between mt-1"><span className="text-gray-400">Access:</span> <span className="text-gray-700 font-medium truncate max-w-[160px]">{chan.accessList || "N/A"}</span></div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <SubProjectAllocation requestId={row.original.id} totalAmount={row.original.amount} isApproved={row.original.status === "APPROVED"} />
                                                 </div>

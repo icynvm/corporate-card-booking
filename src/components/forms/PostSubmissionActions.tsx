@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { RequestFormData } from "@/lib/validations/schema";
 
@@ -9,6 +10,7 @@ interface PostSubmissionActionsProps {
 }
 
 export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) {
+    const router = useRouter();
     const [isSending, setIsSending] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [sent, setSent] = useState(false);
@@ -46,6 +48,11 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+
+            // Redirect to My Requests page after download
+            setTimeout(() => {
+                router.push("/my-requests");
+            }, 1000);
         } catch (err: any) {
             console.error("PDF generation error:", err);
             alert(`Failed to generate PDF: ${err.message || String(err)}`);
