@@ -220,9 +220,11 @@ export default function MyRequestsPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-3 p-3 bg-gray-50/50 rounded-xl border border-gray-100 mt-2">
+                                        <h3 className="font-bold text-gray-800 text-base mb-2 break-words">{request.objective}</h3>
+    
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-4 p-3 bg-gray-50/50 rounded-xl border border-gray-100">
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] uppercase font-bold text-gray-400">Project Detail</span>
+                                                <span className="text-[10px] uppercase font-bold text-gray-400">Project Details</span>
                                                 <span className="text-sm text-gray-700 break-words">{request.project_name || "N/A"}</span>
                                             </div>
                                             <div className="flex flex-col gap-1">
@@ -235,8 +237,6 @@ export default function MyRequestsPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        
-                                        <h3 className="font-bold text-gray-800 text-base mb-4 break-words">{request.objective}</h3>
     
                                         {request.status === "CANCELLED" && (
                                             <p className="text-xs text-gray-400 mt-2 italic">This request has been cancelled</p>
