@@ -16,11 +16,25 @@ export const normalizeThai = (text: string = "") => {
 };
 
 /**
- * Inserts Zero-Width Spaces (ZWSP) after Thai characters
- * to allow proper line wrapping in environments like pdfmake
- * that lack dictionary-based Thai word breaking.
+ * Inserts Zero-Width Spaces (ZWSP) at Thai word boundaries
+ * using the browser-native Intl.Segmenter API, preventing
+ * broken/detached marks while supporting word wrapping in `pdfmake`.
  */
 export const insertZeroWidthSpaces = (text: string = ""): string => {
     if (!text) return "";
-    return text.replace(/([\u0E00-\u0E7F])/g, "$1\u200B");
+    
+    // Check if browser supports Intl.Segmenter
+    if (typeof Intl !== "undefined" && (Intl as any).Segmenter) {
+        try {
+            const segmenter = new (Intl as any).Segmenter("th", { granularity: "word" });
+            const segments = Array.from(segmenter.segment(text)) as any[];
+            return segments.map(s => s.segment).join("\u200B");
+        } catch (err) {
+            console.error("Intl.Segmenter failed:", err);
+        }
+    }
+    
+    // Safe fallback regex that breaks strictly after complete Thai cluster elements
+    // [ก-ฮ] base consonant + [\u0E30-\u0E4E]* zero or more stacking vowels / tone marks
+    return text.replace(/([ก-ฮ][\u0E30-\u0E4E]*)/g, "$1\u200B");
 };
