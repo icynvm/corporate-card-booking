@@ -207,8 +207,8 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                         </div>
                         
                         <div>
+                            <p className="text-sm font-medium text-gray-500 mb-1 truncate">{request.project_name || "No Project Attached"}</p>
                             <h3 className="font-bold text-gray-800 text-xl break-words">{request.objective}</h3>
-                            <p className="text-sm font-medium text-gray-500 mt-1 truncate">{request.project_name || "No Project Attached"}</p>
                         </div>
 
                         {request.status === "CANCELLED" && (
