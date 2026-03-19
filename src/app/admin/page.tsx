@@ -7,6 +7,8 @@ import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
 import SubProjectAllocation from "@/components/dashboard/SubProjectAllocation";
 import { RequestRecord, AuditLog, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
 import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
+import { AnalyticsTab } from "@/components/admin/AnalyticsTab";
+import { UserRolesTab } from "@/components/admin/UserRolesTab";
 
 /* ── helpers ────────────────────────────────────── */
 const downloadFile = async (url: string) => {
@@ -99,6 +101,7 @@ const fmtDate = (d: string | null) =>
 
 /* ── component ──────────────────────────────────── */
 export default function AdminPage() {
+    const [activeTab, setActiveTab] = useState<"requests" | "analytics" | "roles">("requests");
     const [requests, setRequests] = useState<RequestRecord[]>([]);
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
@@ -319,8 +322,35 @@ export default function AdminPage() {
                 </GlassCard>
             )}
 
-            {/* KPI Row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-2 border-b border-gray-200 overflow-x-auto scrollbar-hide -mx-2 px-2 pb-2">
+                <button
+                    onClick={() => setActiveTab("requests")}
+                    className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${activeTab === "requests" ? "bg-brand-50 text-brand-700" : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"}`}
+                >
+                    All Requests
+                </button>
+                <button
+                    onClick={() => setActiveTab("analytics")}
+                    className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${activeTab === "analytics" ? "bg-brand-50 text-brand-700" : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"}`}
+                >
+                    Data Analytics
+                </button>
+                <button
+                    onClick={() => setActiveTab("roles")}
+                    className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${activeTab === "roles" ? "bg-brand-50 text-brand-700" : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"}`}
+                >
+                    User Roles
+                </button>
+            </div>
+
+            {/* Active Tab Content */}
+            {activeTab === "analytics" && <AnalyticsTab requests={requests} />}
+            {activeTab === "roles" && <UserRolesTab addToast={addToast} />}
+            {activeTab === "requests" && (
+                <>
+                    {/* KPI Row */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                 {Object.entries(STATUS_LABELS).map(([status, label]) => {
                     const count = requests.filter((r: RequestRecord) => r.status === status).length;
                     return (
@@ -667,6 +697,8 @@ export default function AdminPage() {
                     })
                 )}
             </div>
+                </>
+            )}
 
             {/* Modals */}
             <ApprovalUploadModal

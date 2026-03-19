@@ -174,7 +174,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                             <p className="text-sm font-medium text-gray-800 truncate">{file.name}</p>
                                             <p className="text-xs text-gray-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                                         </div>
-                                        <button onClick={(e) => { e.stopPropagation(); setFile(null); }} className="text-gray-400 hover:text-red-500">โ•</button>
+                                        <button onClick={(e) => { e.stopPropagation(); setFile(null); }} className="text-gray-400 hover:text-red-500">.</button>
                                     </div>
                                 ) : (
                                     <div>
