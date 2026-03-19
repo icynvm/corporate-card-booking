@@ -60,7 +60,7 @@ const RowActions = ({ row, onUploadReceipt, onUploadSigned }: { row: RequestReco
                         <polyline points="17 8 12 3 7 8" />
                         <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
-                    Upload Signed PDF
+                    Upload Signed
                 </button>
             )}
             
