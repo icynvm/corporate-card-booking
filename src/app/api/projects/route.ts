@@ -73,8 +73,6 @@ export async function POST(req: NextRequest) {
             .from("projects")
             .insert({
                 project_name: body.projectName,
-                description: body.description || "",
-                created_by: userId,
             })
             .select()
             .single();
