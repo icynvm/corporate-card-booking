@@ -75,7 +75,7 @@ export default function MyRequestsPage() {
             if (!request) throw new Error("Request not found");
 
             const formData = {
-                eventId: request.event_id,
+                reqId: request.req_id || request.event_id || "",
                 fullName: request.full_name || request.profiles?.name || "",
                 department: request.department || request.profiles?.department || "",
                 contactNo: request.contact_no || "",
@@ -88,6 +88,8 @@ export default function MyRequestsPage() {
                 startDate: request.start_date,
                 endDate: request.end_date,
                 amount: request.amount,
+                creditCardNo: request.credit_card_no,
+                eventDetails: request.event_details || [],
             };
 
             const { generateRequestPdf } = await import("@/lib/pdf-generator");
@@ -100,7 +102,7 @@ export default function MyRequestsPage() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `card-request-${formData.eventId}.pdf`;
+            a.download = `card-request-${formData.reqId}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
