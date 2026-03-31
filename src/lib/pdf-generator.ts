@@ -85,13 +85,13 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
         };
     };
 
-    const getUnderlinedField = (label: string, value: string, width1: number = 80) => {
+    const getUnderlinedField = (label: string, value: string) => {
         return {
             table: {
-                widths: [width1, '*'],
+                widths: ['auto', '*'],
                 body: [
                     [
-                        { text: label, style: 'label', border: [false, false, false, false] },
+                        { text: label, style: 'label', border: [false, false, false, false], margin: [0, 0, 5, 0] },
                         { text: value, style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
                     ]
                 ]
@@ -100,15 +100,15 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
         };
     };
 
-    const getTwoColumnUnderlinedField = (label1: string, value1: string, width1: number, label2: string, value2: string, width2: number = 60) => {
+    const getTwoColumnUnderlinedField = (label1: string, value1: string, label2: string, value2: string) => {
         return {
             table: {
-                widths: [width1, '*', width2, '*'], // stretched weights
+                widths: ['auto', '*', 'auto', '*'],
                 body: [
                     [
-                        { text: label1, style: 'label', border: [false, false, false, false] },
+                        { text: label1, style: 'label', border: [false, false, false, false], margin: [0, 0, 5, 0] },
                         { text: value1, style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
-                        { text: label2, style: 'label', border: [false, false, false, false] },
+                        { text: label2, style: 'label', border: [false, false, false, false], margin: [15, 0, 5, 0] },
                         { text: value2, style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
                     ]
                 ]
@@ -216,57 +216,103 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
             { text: 'REQUESTER STAFF / พนักงานผู้ขอใช้', style: 'sectionHeader' },
             { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
 
-            getUnderlinedField('Full Name/ ชื่อ  :', normalizeThai(formData.fullName), 100),
-            getUnderlinedField('Department / แผนก  :', normalizeThai(formData.department), 100),
-            getTwoColumnUnderlinedField('Contact No. / เบอร์ติดต่อ  :', formData.contactNo, 100, 'E-Mail  :', formData.email, 40),
+            getUnderlinedField('Full Name/ ชื่อ  :', normalizeThai(formData.fullName)),
+            getUnderlinedField('Department / แผนก  :', normalizeThai(formData.department)),
+            getTwoColumnUnderlinedField('Contact No. / เบอร์ติดต่อ  :', formData.contactNo, 'E-Mail  :', formData.email),
 
-            {
-                table: {
-                    widths: ['*', '*'],
-                    body: [
+            (() => {
+                const details = formData.eventDetails || [];
+                const isCompact = details.length > 10;
+                
+                if (isCompact) {
+                    // 4-column layout (2 pairs per row)
+                    const body = [
                         [
-                            { text: 'Event ID / รหัสอีเว้นท์', style: 'sectionHeader', border: [false, false, false, true] },
-                            { text: 'Account Code / รหัสบัญชี', style: 'sectionHeader', border: [false, false, false, true] }
-                        ],
-                        ...(formData.eventDetails && formData.eventDetails.length > 0
-                            ? formData.eventDetails.map(ed => [
-                                { text: ed.eventId || (ed as any).reqId || 'N/A', style: 'value', margin: [0, 2] },
-                                { text: ed.accountCode || 'N/A', style: 'value', margin: [0, 2] }
-                            ])
-                            : [[{ text: 'N/A', style: 'value' }, { text: 'N/A', style: 'value' }]]
-                        )
-                    ]
-                },
-                layout: 'lightHorizontalLines',
-                margin: [0, 5, 0, 10]
-            },
+                            { text: 'Event ID', style: 'sectionHeader', border: [false, false, false, true] },
+                            { text: 'Account Code', style: 'sectionHeader', border: [false, false, false, true] },
+                            { text: 'Event ID', style: 'sectionHeader', border: [false, false, false, true], margin: [10, 0, 0, 0] },
+                            { text: 'Account Code', style: 'sectionHeader', border: [false, false, false, true] }
+                        ]
+                    ];
+
+                    for (let i = 0; i < details.length; i += 2) {
+                        const pair1 = details[i];
+                        const pair2 = details[i + 1];
+                        body.push([
+                            { text: pair1.eventId || (pair1 as any).reqId || 'N/A', style: 'value', margin: [0, 2], border: [false, false, false, false] },
+                            { text: pair1.accountCode || 'N/A', style: 'value', margin: [0, 2], border: [false, false, false, false] },
+                            { text: pair2 ? (pair2.eventId || (pair2 as any).reqId || 'N/A') : '', style: 'value', margin: [10, 2, 0, 2], border: [false, false, false, false] },
+                            { text: pair2 ? (pair2.accountCode || 'N/A') : '', style: 'value', margin: [0, 2], border: [false, false, false, false] }
+                        ]);
+                    }
+
+                    return {
+                        table: {
+                            headerRows: 1,
+                            dontBreakRows: true,
+                            widths: ['*', '*', '*', '*'],
+                            body: body
+                        },
+                        layout: 'lightHorizontalLines',
+                        margin: [0, 5, 0, 10]
+                    };
+                } else {
+                    // Standard 2-column layout
+                    return {
+                        table: {
+                            headerRows: 1,
+                            dontBreakRows: true,
+                            widths: ['*', '*'],
+                            body: [
+                                [
+                                    { text: 'Event ID / รหัสอีเว้นท์', style: 'sectionHeader', border: [false, false, false, true] },
+                                    { text: 'Account Code / รหัสบัญชี', style: 'sectionHeader', border: [false, false, false, true] }
+                                ],
+                                ...(details.length > 0
+                                    ? details.map(ed => [
+                                        { text: ed.eventId || (ed as any).reqId || 'N/A', style: 'value', margin: [0, 2] },
+                                        { text: ed.accountCode || 'N/A', style: 'value', margin: [0, 2] }
+                                    ])
+                                    : [[{ text: 'N/A', style: 'value' }, { text: 'N/A', style: 'value' }]]
+                                )
+                            ]
+                        },
+                        layout: 'lightHorizontalLines',
+                        margin: [0, 5, 0, 10]
+                    };
+                }
+            })(),
             { text: 'REQUEST DETAILS / รายละเอียดการขอใช้', style: 'sectionHeader' },
             { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
 
             ...getMultiLineUnderlinedField('Objective / วัตถุประสงค์  :', normalizeThai(formData.objective), 120, 3),
 
             { text: '', margin: [0, 5] },
-            { text: 'Promotional Channels / ช่องทางในการโฆษณา', style: 'labelSub', bold: true },
-            { text: '*Choose your type of Promotional Channels', fontSize: 6.5, color: '#666666', margin: [0, 1, 0, 4] },
-
             {
-                columns: [
-                    [
-                        getCheckbox("Facebook"),
-                        getCheckbox("IG"),
-                        getCheckbox("Tiktok")
-                    ],
-                    [
-                        getCheckbox("Youtube"),
-                        getCheckbox("Line"),
-                        getCheckbox("WeChat")
-                    ],
-                    [
-                        getCheckbox("Google"),
-                        checkboxOther("Other", otherMedia)
-                    ]
+                stack: [
+                    { text: 'Promotional Channels / ช่องทางในการโฆษณา', style: 'labelSub', bold: true },
+                    { text: '*Choose your type of Promotional Channels', fontSize: 6.5, color: '#666666', margin: [0, 1, 0, 4] },
+                    {
+                        columns: [
+                            [
+                                getCheckbox("Facebook"),
+                                getCheckbox("IG"),
+                                getCheckbox("Tiktok")
+                            ],
+                            [
+                                getCheckbox("Youtube"),
+                                getCheckbox("Line"),
+                                getCheckbox("WeChat")
+                            ],
+                            [
+                                getCheckbox("Google"),
+                                checkboxOther("Other", otherMedia)
+                            ]
+                        ],
+                        margin: [5, 0, 0, 10]
+                    },
                 ],
-                margin: [5, 0, 0, 10]
+                unbreakable: true
             },
 
             {
@@ -306,52 +352,64 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 margin: [0, 5, 0, 5]
             },
 
-            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#8E5A34' }] },
-            { text: 'REQUESTER SIGNATURE / ลงชื่อผู้ขอใช้', style: 'sectionHeader', margin: [0, 8, 0, 8] },
-
             {
-                table: {
-                    widths: ['auto', '*', 'auto', '*'],
-                    body: [[
-                        { text: 'Signature  :', style: 'label', border: [false, false, false, false] },
-                        { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
-                        { text: 'Date  :', style: 'label', border: [false, false, false, false], margin: [15, 0, 0, 0] },
-                        { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
-                    ]]
-                },
-                margin: [0, 10, 0, 20]
+                stack: [
+                    { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#8E5A34' }] },
+                    { text: 'REQUESTER SIGNATURE / ลงชื่อผู้ขอใช้', style: 'sectionHeader', margin: [0, 8, 0, 8] },
+                    {
+                        table: {
+                            widths: ['auto', '*', 'auto', '*'],
+                            body: [[
+                                { text: 'Signature  :', style: 'label', border: [false, false, false, false] },
+                                { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
+                                { text: 'Date  :', style: 'label', border: [false, false, false, false], margin: [15, 0, 0, 0] },
+                                { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
+                            ]]
+                        },
+                        margin: [0, 10, 0, 20]
+                    },
+                ],
+                unbreakable: true
             },
 
-            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#8E5A34' }] },
-            { text: 'AUTHORIZER / ลงชื่อผู้อนุมัติ', style: 'sectionHeader', margin: [0, 8, 0, 8] },
-
             {
-                table: {
-                    widths: ['auto', '*', 'auto', '*'],
-                    body: [[
-                        { text: 'Signature  :', style: 'label', border: [false, false, false, false] },
-                        { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
-                        { text: 'Date  :', style: 'label', border: [false, false, false, false], margin: [15, 0, 0, 0] },
-                        { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
-                    ]]
-                },
-                margin: [0, 10, 0, 20]
+                stack: [
+                    { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#8E5A34' }] },
+                    { text: 'AUTHORIZER / ลงชื่อผู้อนุมัติ', style: 'sectionHeader', margin: [0, 8, 0, 8] },
+                    {
+                        table: {
+                            widths: ['auto', '*', 'auto', '*'],
+                            body: [[
+                                { text: 'Signature  :', style: 'label', border: [false, false, false, false] },
+                                { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
+                                { text: 'Date  :', style: 'label', border: [false, false, false, false], margin: [15, 0, 0, 0] },
+                                { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
+                            ]]
+                        },
+                        margin: [0, 10, 0, 20]
+                    },
+                ],
+                unbreakable: true
             },
 
-            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#8E5A34' }] },
-            { text: 'FA  DEPARTMENT USE ONLY', style: 'sectionHeader', margin: [0, 8, 0, 8] },
-
             {
-                table: {
-                    widths: ['auto', '*', 'auto', '*'],
-                    body: [[
-                        { text: 'Verified By / ตรวจสอบโดย  :', style: 'label', border: [false, false, false, false] },
-                        { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
-                        { text: 'Date  :', style: 'label', border: [false, false, false, false], margin: [15, 0, 0, 0] },
-                        { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
-                    ]]
-                },
-                margin: [0, 10, 0, 10]
+                stack: [
+                    { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#8E5A34' }] },
+                    { text: 'FA  DEPARTMENT USE ONLY', style: 'sectionHeader', margin: [0, 8, 0, 8] },
+                    {
+                        table: {
+                            widths: ['auto', '*', 'auto', '*'],
+                            body: [[
+                                { text: 'Verified By / ตรวจสอบโดย  :', style: 'label', border: [false, false, false, false] },
+                                { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
+                                { text: 'Date  :', style: 'label', border: [false, false, false, false], margin: [15, 0, 0, 0] },
+                                { text: '', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
+                            ]]
+                        },
+                        margin: [0, 10, 0, 10]
+                    },
+                ],
+                unbreakable: true
             }
         ],
         images: {
