@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
             .from("event_master")
             .insert({
                 event_id: body.eventId,
-                account_code: body.accountCode,
-                description: body.description
+                account_code: body.accountCode || null,
+                description: body.description || "Quick Added"
             })
             .select()
             .single();

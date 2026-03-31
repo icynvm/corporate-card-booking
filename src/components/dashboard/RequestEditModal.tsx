@@ -145,8 +145,11 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
                 setSelectedProjectId(added.id);
                 setIsAddingProject(false);
                 setNewProjectName("");
+            } else {
+                const errData = await res.json();
+                alert(`Failed to add project: ${errData.error || "Unknown error"}`);
             }
-        } catch (error) { console.error(error); }
+        } catch (error: any) { alert(`Error: ${error.message}`); console.error(error); }
     };
 
     const handleQuickAddEvent = async () => {
@@ -163,8 +166,11 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
                 setEventId(added.event_id);
                 setIsAddingEvent(false);
                 setNewEventId("");
+            } else {
+                const errData = await res.json();
+                alert(`Failed to add Event ID: ${errData.error || "Unknown error"}`);
             }
-        } catch (error) { console.error(error); }
+        } catch (error: any) { alert(`Error: ${error.message}`); console.error(error); }
     };
 
     const handleQuickAddAccount = async () => {
@@ -181,8 +187,11 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
                 setAccountCode(added.code);
                 setIsAddingAccount(false);
                 setNewAccountCode("");
+            } else {
+                const errData = await res.json();
+                alert(`Failed to add Account Code: ${errData.error || "Unknown error"}`);
             }
-        } catch (error) { console.error(error); }
+        } catch (error: any) { alert(`Error: ${error.message}`); console.error(error); }
     };
 
     const handleQuickAddCard = async () => {
@@ -200,8 +209,11 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
                 setIsAddingCard(false);
                 setNewCardNo("");
                 setNewCardName("");
+            } else {
+                const errData = await res.json();
+                alert(`Failed to add Credit Card: ${errData.error || "Unknown error"}`);
             }
-        } catch (error) { console.error(error); }
+        } catch (error: any) { alert(`Error: ${error.message}`); console.error(error); }
     };
 
     // Close dropdown on outside click
