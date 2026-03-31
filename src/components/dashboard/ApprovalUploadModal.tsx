@@ -72,7 +72,7 @@ export function ApprovalUploadModal({ isOpen, onClose, requestId, eventId, onSuc
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={handleClose} title={`Upload Approval โ€” ${eventId}`}>
+        <Modal isOpen={isOpen} onClose={handleClose} title={`Upload Approval — ${eventId}`}>
             <div className="space-y-5">
                 {error && (
                     <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">

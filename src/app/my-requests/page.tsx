@@ -12,7 +12,7 @@ import { SignedUploadModal } from "@/components/dashboard/SignedUploadModal";
 
 /* โ”€โ”€ helpers โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€ */
 const fmtDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "โ€”";
+    d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 export default function MyRequestsPage() {
     const [requests, setRequests] = useState<RequestRecord[]>([]);
@@ -173,7 +173,7 @@ export default function MyRequestsPage() {
     return (
         <div className="space-y-8 relative">
             <ToastContainer toasts={toasts} removeToast={removeToast} />
-            
+
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-1">
                     My <span className="gradient-text">Requests</span>
@@ -228,7 +228,7 @@ export default function MyRequestsPage() {
                                             )}
                                         </div>
                                         <h3 className="font-bold text-gray-800 dark:text-gray-100 text-base mb-2 break-words">{request.project_name || "N/A"}</h3>
-    
+
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-4 p-3 bg-gray-50 dark:bg-gray-900/50/50 rounded-xl border border-gray-100">
                                             <div className="flex flex-col gap-1">
                                                 <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">Objective</span>
@@ -244,11 +244,11 @@ export default function MyRequestsPage() {
                                                 </div>
                                             </div>
                                         </div>
-    
+
                                         {request.status === "CANCELLED" && (
                                             <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-2 italic">This request has been cancelled</p>
                                         )}
-    
+
                                         <div className="mt-3">
                                             <button
                                                 onClick={() => toggleExpand(request.id)}
@@ -261,7 +261,7 @@ export default function MyRequestsPage() {
                                             </button>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex items-center gap-2 flex-wrap md:justify-end md:max-w-[280px]">
                                         {/* Download Approved Signed File */}
                                         {request.status === "APPROVED" && request.approval_file_url && !request.approval_file_url.startsWith("data-ref:") && (
@@ -279,7 +279,7 @@ export default function MyRequestsPage() {
                                                 Approved File
                                             </a>
                                         )}
-    
+
                                         {/* Edit Button */}
                                         {canEdit(request.status) && (
                                             <button
@@ -293,7 +293,7 @@ export default function MyRequestsPage() {
                                                 Edit
                                             </button>
                                         )}
-    
+
                                         {/* Upload Signed PDF */}
                                         {canUploadSigned(request.status) && (
                                             <button
@@ -308,7 +308,7 @@ export default function MyRequestsPage() {
                                                 Upload Signed
                                             </button>
                                         )}
-                                        
+
                                         {/* Send Email */}
                                         {canSendEmail(request.status) && (
                                             <button
@@ -330,7 +330,7 @@ export default function MyRequestsPage() {
                                                 {sendingEmails[request.id] ? "Sending..." : "Send Email"}
                                             </button>
                                         )}
-                                        
+
                                         {/* Upload Receipt */}
                                         {canUploadReceipt(request.status) && (
                                             <button
@@ -347,7 +347,7 @@ export default function MyRequestsPage() {
                                                 Upload Receipt
                                             </button>
                                         )}
-    
+
                                         {/* Download Generated Request PDF */}
                                         {canDownloadPDF(request.status) && (
                                             <button
@@ -371,7 +371,7 @@ export default function MyRequestsPage() {
                                                 {downloadingPDFs[request.id] ? "Downloading..." : "Generated PDF"}
                                             </button>
                                         )}
-                                        
+
                                         {/* Cancel Button */}
                                         {canCancel(request.status) && (
                                             <button
@@ -386,18 +386,18 @@ export default function MyRequestsPage() {
                                                 Cancel
                                             </button>
                                         )}
-                                        
+
                                         <div className="text-right text-[10px] text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 w-full mt-1">
                                             Created: {fmtDate(request.created_at)}
                                         </div>
                                     </div>
                                 </div>
-    
+
                                 {/* โ”€โ”€โ”€ Expanded Details โ”€โ”€โ”€ */}
                                 {isExpanded && (
                                     <div className="border-t border-gray-100 bg-gradient-to-b from-gray-50/80 to-white">
                                         <div className="p-4 sm:p-5 space-y-5">
-                                            
+
                                             {/* Row 1: My Info + Project */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 {/* My Info */}
@@ -424,7 +424,7 @@ export default function MyRequestsPage() {
                                                         </div>
                                                     </div>
                                                 </div>
-    
+
                                                 {/* Project Details */}
                                                 <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                                                     <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100">
@@ -470,7 +470,7 @@ export default function MyRequestsPage() {
                                                     </div>
                                                 </div>
                                             </div>
-    
+
                                             {/* Row 2: Objective */}
                                             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                                                 <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100">
@@ -480,7 +480,7 @@ export default function MyRequestsPage() {
                                                     <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap break-words leading-relaxed">{request.objective || "No objective specified"}</p>
                                                 </div>
                                             </div>
-    
+
                                             {/* Row 3: Approval Notes (if any) */}
                                             {request.approval_notes && (
                                                 <div className="bg-white dark:bg-gray-800 rounded-xl border border-amber-100 shadow-sm overflow-hidden">
@@ -492,7 +492,7 @@ export default function MyRequestsPage() {
                                                     </div>
                                                 </div>
                                             )}
-    
+
                                             {/* Row 4: Promotional Channels */}
                                             {request.promotional_channels && request.promotional_channels.length > 0 && (
                                                 <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -523,7 +523,7 @@ export default function MyRequestsPage() {
                                                     </div>
                                                 </div>
                                             )}
-    
+
                                             {/* Row 5: Approval File Preview (If any file is attached, especially BEFORE approval or DURING) */}
                                             {request.approval_file_url && (
                                                 <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -533,7 +533,7 @@ export default function MyRequestsPage() {
                                                     <div className="p-4 flex items-center gap-4 flex-wrap">
                                                         <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
                                                             <span className="text-purple-600 text-lg font-bold">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
                                                             </span>
                                                         </div>
                                                         <div className="flex-1 min-w-0">
@@ -555,7 +555,7 @@ export default function MyRequestsPage() {
                                                     </div>
                                                 </div>
                                             )}
-    
+
                                             {/* Row 6: Sub-Project Allocation */}
                                             <SubProjectAllocation
                                                 requestId={request.id}
@@ -571,7 +571,7 @@ export default function MyRequestsPage() {
                     })}
                 </div>
             )}
-            
+
             {/* Modals */}
             <ReceiptUploadModal
                 isOpen={receiptModalOpen}

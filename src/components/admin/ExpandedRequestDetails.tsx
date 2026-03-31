@@ -245,7 +245,7 @@ export default function ExpandedRequestDetails({ req, reqLogs, addToast }: Expan
                                                 </div>
                                                 <p className="text-xs text-gray-600 dark:text-gray-300 break-words whitespace-pre-wrap">
                                                     <span className="font-medium">{log.user_name || "System"}</span>
-                                                    {" โ€” "}
+                                                    {"  — "}
                                                     {describeAuditChange(log.action, log.changes)}
                                                 </p>
                                             </div>

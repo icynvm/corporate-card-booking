@@ -11,7 +11,7 @@ import { STATUS_COLORS } from "./types";
  * Format a Date string into a readable format (e.g. "01 Jan 2024")
  */
 export const fmtDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "โ€”";
+    d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 const STATUS_LABEL_MAP: Record<string, string> = {
     DRAFT: "Draft",
@@ -49,25 +49,25 @@ export const describeAuditChange = (action: string, changes: Record<string, unkn
         case "STATUS_CHANGE": {
             const from = STATUS_LABEL_MAP[changes.old_status as string] || (changes.old_status as string);
             const to = STATUS_LABEL_MAP[changes.new_status as string] || (changes.new_status as string);
-            let msg = `Changed status: ${from} โ’ ${to}`;
-            if (changes.notes) msg += ` โ€” "${changes.notes}"`;
+            let msg = `Changed status: ${from} 🆕 ${to}`;
+            if (changes.notes) msg += ` 🔄 "${changes.notes}"`;
             return msg;
         }
         case "APPROVE": {
             const from = STATUS_LABEL_MAP[changes.old_status as string] || "";
             let msg = "Approved this request";
             if (from) msg += ` (was ${from})`;
-            if (changes.notes) msg += ` โ€” "${changes.notes}"`;
+            if (changes.notes) msg += ` ✅ "${changes.notes}"`;
             return msg;
         }
         case "REJECT": {
             let msg = "Rejected this request";
-            if (changes.notes) msg += ` โ€” "${changes.notes}"`;
+            if (changes.notes) msg += ` ❌ "${changes.notes}"`;
             return msg;
         }
         case "CANCEL": {
             let msg = "Cancelled this request";
-            if (changes.notes) msg += ` โ€” "${changes.notes}"`;
+            if (changes.notes) msg += ` 🚫 "${changes.notes}"`;
             return msg;
         }
         case "CREATE":

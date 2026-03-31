@@ -231,8 +231,8 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                         ],
                         ...(formData.eventDetails && formData.eventDetails.length > 0 
                             ? formData.eventDetails.map(ed => [
-                                { text: ed.eventId, style: 'value', margin: [0, 2] },
-                                { text: ed.accountCode, style: 'value', margin: [0, 2] }
+                                { text: ed.eventId || (ed as any).reqId || 'N/A', style: 'value', margin: [0, 2] },
+                                { text: ed.accountCode || 'N/A', style: 'value', margin: [0, 2] }
                             ])
                             : [[{ text: 'N/A', style: 'value' }, { text: 'N/A', style: 'value' }]]
                         )
@@ -301,10 +301,12 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
 
             {
                 table: {
-                    widths: [110, 160],
+                    widths: [110, '*', 110, '*'],
                     body: [[
                         { text: 'Amount / จำนวนเงิน  :', style: 'label', border: [false, false, false, false] },
-                        { text: formData.amount ? `${parseFloat(String(formData.amount)).toLocaleString()} THB` : "", style: 'value', bold: true, border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
+                        { text: formData.amount ? `${parseFloat(String(formData.amount)).toLocaleString()} THB` : "0", style: 'value', bold: true, border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
+                        { text: 'Credit Card No  :', style: 'label', border: [false, false, false, false], margin: [15, 0, 0, 0] },
+                        { text: formData.creditCardNo || 'N/A', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
                     ]]
                 },
                 margin: [0, 5, 0, 5]

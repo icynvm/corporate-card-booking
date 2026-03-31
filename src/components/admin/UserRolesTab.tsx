@@ -86,7 +86,7 @@ export function UserRolesTab({ addToast }: { addToast: (msg: string, sev: AlertS
                                         <p className="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[200px]">{user.email}</p>
                                     </td>
                                     <td className="px-5 py-4">
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">{user.department || "โ€”"}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">{user.department || "—"}</p>
                                     </td>
                                     <td className="px-5 py-4">
                                         <select

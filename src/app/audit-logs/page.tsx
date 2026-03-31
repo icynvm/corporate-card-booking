@@ -35,8 +35,8 @@ const describeAuditChange = (action: string, changes: Record<string, unknown> | 
         case "STATUS_CHANGE": {
             const from = STATUS_LABEL_MAP[changes.old_status as string] || (changes.old_status as string);
             const to = STATUS_LABEL_MAP[changes.new_status as string] || (changes.new_status as string);
-            let msg = `Changed status: ${from} ✅ ${to}`;
-            if (changes.notes) msg += ` ✅ "${changes.notes}"`;
+            let msg = `Changed status: ${from} 🔄 ${to}`;
+            if (changes.notes) msg += ` 🆕 "${changes.notes}"`;
             return msg;
         }
         case "APPROVE": {
