@@ -210,7 +210,14 @@ export default function MyRequestsPage() {
                                 <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start justify-between gap-4">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                            <span className="font-mono text-xs font-bold text-brand-600">{request.event_id}</span>
+                                            <span className="font-mono text-xs font-bold text-brand-600">
+                                                {request.req_id || request.event_id}
+                                            </span>
+                                            {request.event_id && (
+                                                <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    Event: {request.event_id}
+                                                </span>
+                                            )}
                                             <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${STATUS_COLORS[request.status] || "bg-gray-100 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300"}`}>
                                                 {STATUS_LABELS[request.status] || request.status}
                                             </span>

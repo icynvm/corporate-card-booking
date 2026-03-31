@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
           amount: latestReq.amount,
           billingType: latestReq.billing_type,
           objective: latestReq.objective,
-          eventId: latestReq.event_id
+          reqId: latestReq.req_id
         };
       }
     } else {
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
           amount: dbReq.amount,
           billingType: dbReq.billing_type,
           objective: dbReq.objective,
-          eventId: dbReq.event_id
+          reqId: dbReq.req_id
         };
       }
     }
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
       const resendResponse = await activeResend.emails.send({
         from: senderEmail,
         to: managerEmail,
-        subject: `[Notification] New Card Request: ${requestData.eventId || "Request"}`,
+        subject: `[Notification] New Card Request: ${requestData.reqId || "Request"}`,
         html: `
           <!DOCTYPE html>
           <html>

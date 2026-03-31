@@ -101,7 +101,7 @@ export default function ExpandedRequestDetails({ req, reqLogs, addToast }: Expan
                                     <div key={idx} className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg border border-gray-100 text-xs">
                                         <div className="font-bold text-brand-600 mb-1.5 pb-1.5 border-b border-gray-100 flex justify-between items-center">
                                             <span>Event #{idx + 1}</span>
-                                            <span className="font-mono">{ed.eventId}</span>
+                                            <span className="font-mono text-[10px] text-gray-400">ID: {ed.reqId || ed.eventId}</span>
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <span className="text-gray-400 uppercase text-[10px] font-bold">Account Code</span>
@@ -113,7 +113,7 @@ export default function ExpandedRequestDetails({ req, reqLogs, addToast }: Expan
                                 <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg border border-gray-100 text-xs">
                                     <div className="font-bold text-brand-600 mb-1.5 pb-1.5 border-b border-gray-100 flex justify-between items-center">
                                         <span>Event</span>
-                                        <span className="font-mono">{req.event_id || "N/A"}</span>
+                                        <span className="font-mono text-[10px] text-gray-400">ID: {req.event_id || "N/A"}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-gray-400 uppercase text-[10px] font-bold">Account Code</span>

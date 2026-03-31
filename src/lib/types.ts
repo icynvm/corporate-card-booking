@@ -23,7 +23,8 @@ export type RequestStatus = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTE
 
 export interface RequestRecord {
     id: string;
-    event_id: string;
+    req_id: string; // The REQ-XXXX-XXXX identifier
+    event_id: string | null; // The master event ID (e.g. E-001)
     user_id: string;
     project_id: string | null;
     project_name: string;
@@ -64,7 +65,8 @@ export interface ChannelDetail {
 }
 
 export interface EventDetail {
-    eventId: string;
+    reqId: string; // This is the identifier in the detail (could be Master Event ID)
+    eventId?: string; // Legacy field name
     accountCode: string;
 }
 

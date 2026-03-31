@@ -41,7 +41,7 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const projectRef = useRef<HTMLDivElement>(null);
 
-    const [eventId, setEventId] = useState("");
+    const [requestId, setRequestId] = useState("");
     const [accountCode, setAccountCode] = useState("");
     const [creditCardNo, setCreditCardNo] = useState("");
 
@@ -83,15 +83,19 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
             setStartDate(request.start_date ? request.start_date.substring(0, 10) : "");
             setEndDate(request.end_date ? request.end_date.substring(0, 10) : "");
             setBookingDate(request.booking_date ? request.booking_date.substring(0, 10) : "");
-            setEventId(request.event_id || "");
+            setRequestId(request.req_id || "");
             setAccountCode(request.account_code || "");
             setCreditCardNo(request.credit_card_no || "");
             
             // Map event details
             if (Array.isArray(request.event_details) && request.event_details.length > 0) {
-                setEventDetails(request.event_details);
+                setEventDetails(request.event_details.map((ed: any) => ({
+                    eventId: ed.eventId || ed.reqId || "",
+                    accountCode: ed.accountCode || ""
+                })));
             } else {
-                setEventDetails([{ eventId: request.event_id || "", accountCode: request.account_code || "" }]);
+                // Fallback to single Master ID from event_id column
+                setEventDetails([{ eventId: (request as any).event_id || "", accountCode: request.account_code || "" }]);
             }
             
             // Map promotional channels
@@ -172,7 +176,7 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
             if (res.ok) {
                 const added = await res.json();
                 setEventOptions([added, ...eventOptions]);
-                setEventId(added.event_id);
+                // No need to setRequestId here, as this is for the Master Event ID
                 setIsAddingEvent(false);
                 setNewEventId("");
             } else {
@@ -279,16 +283,18 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
     };
 
     const updateEventDetail = (index: number, field: "eventId" | "accountCode", value: string) => {
-        const updated = [...eventDetails];
-        updated[index] = { ...updated[index], [field]: value };
+        const newDetails = [...eventDetails];
+        newDetails[index][field] = value;
         
-        // Auto-populate account code if eventId changes
+        // Auto-match account code if eventId changes
         if (field === "eventId") {
             const ev = eventOptions.find(opt => opt.event_id === value);
-            if (ev) updated[index].accountCode = ev.account_code || "";
+            if (ev && ev.account_code) {
+                newDetails[index].accountCode = ev.account_code;
+            }
         }
         
-        setEventDetails(updated);
+        setEventDetails(newDetails);
     };
 
     const handleSave = async () => {
@@ -296,29 +302,31 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
         setSaving(true);
         setError("");
         try {
+            const body = {
+                full_name: fullName,
+                department,
+                objective,
+                project_id: selectedProjectId,
+                project_name: projectSearch,
+                amount: parseFloat(amount),
+                contact_no: contactNo,
+                email,
+                billing_type: billingType,
+                start_date: startDate,
+                end_date: endDate,
+                booking_date: bookingDate,
+                effective_date: effectiveDate,
+                promotional_channels: promotionalChannels,
+                account_code: eventDetails[0]?.accountCode || "",
+                event_id: eventDetails[0]?.eventId || "",
+                event_details: eventDetails,
+                credit_card_no: creditCardNo
+            };
+
             const res = await fetch(`/api/requests/${request.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    fullName,
-                    department, // Will only save if the column exists or is handled accordingly.
-                    objective,
-                    project_name: projectSearch,
-                    projectId: selectedProjectId,
-                    amount: amount ? parseFloat(amount) : 0,
-                    contact_no: contactNo,
-                    email,
-                    billing_type: billingType,
-                    start_date: startDate,
-                    end_date: endDate,
-                    bookingDate,
-                    effectiveDate,
-                    promotional_channels: promotionalChannels,
-                    event_id: eventDetails[0]?.eventId || "",
-                    account_code: eventDetails[0]?.accountCode || "",
-                    event_details: eventDetails,
-                    credit_card_no: creditCardNo,
-                })
+                body: JSON.stringify(body)
             });
 
             if (res.ok) {
@@ -356,6 +364,14 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
                         <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 tracking-tight">Requester Information</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5 flex-1">
+                            <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Request ID (Read-only)</label>
+                            <input
+                                value={requestId}
+                                disabled
+                                className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2.5 text-sm font-mono text-gray-500 cursor-not-allowed"
+                            />
+                        </div>
                         <div className="space-y-1.5">
                             <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
                             <input
@@ -528,7 +544,7 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
                                         )}
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div className="space-y-1">
-                                                <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-tight ml-1">Event ID #{idx + 1}</label>
+                                                <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-tight ml-1">Event (Master) ID #{idx + 1}</label>
                                                 <select
                                                     value={ed.eventId}
                                                     onChange={(e) => updateEventDetail(idx, "eventId", e.target.value)}

@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         if (request.status !== "PENDING") {
             return NextResponse.redirect(
                 new URL(
-                    `/approval-result?status=info&message=This+request+has+already+been+${request.status.toLowerCase()}&eventId=${request.event_id}`,
+                    `/approval-result?status=info&message=This+request+has+already+been+${request.status.toLowerCase()}&reqId=${request.req_id}`,
                     req.url
                 )
             );
@@ -68,12 +68,12 @@ export async function GET(req: NextRequest) {
             entity_id: request.id,
             action: action === "approve" ? "APPROVE" : "REJECT",
             user_name: "Manager (via email link)",
-            changes: { event_id: request.event_id, new_status: newStatus },
+            changes: { req_id: request.req_id, new_status: newStatus },
         });
 
         return NextResponse.redirect(
             new URL(
-                `/approval-result?status=success&action=${action}&eventId=${request.event_id}&requester=${encodeURIComponent(request.profiles?.name || "")}&amount=${request.amount}`,
+                `/approval-result?status=success&action=${action}&reqId=${request.req_id}&requester=${encodeURIComponent(request.profiles?.name || "")}&amount=${request.amount}`,
                 req.url
             )
         );

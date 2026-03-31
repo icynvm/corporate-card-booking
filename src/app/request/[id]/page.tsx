@@ -88,7 +88,7 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
         setDownloadingPDF(true);
         try {
             const formData = {
-                eventId: request.event_id,
+                reqId: request.req_id,
                 fullName: request.full_name || request.profiles?.name || "",
                 department: request.department || request.profiles?.department || "",
                 contactNo: request.contact_no || "",
@@ -101,7 +101,10 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                 startDate: request.start_date,
                 endDate: request.end_date,
                 amount: request.amount,
-                eventDetails: request.event_details || [{ eventId: request.event_id || "", accountCode: request.account_code || "" }],
+                eventDetails: (request.event_details as any)?.map((ed: any) => ({
+                    reqId: ed.reqId || ed.eventId || "",
+                    accountCode: ed.accountCode || ""
+                })) || [{ reqId: (request as any).event_id || "", accountCode: request.account_code || "" }],
             };
 
             const { generateRequestPdf } = await import("@/lib/pdf-generator");
@@ -113,7 +116,7 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `card-request-${formData.eventId}.pdf`;
+            a.download = `card-request-${formData.reqId}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -181,7 +184,7 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                 </button>
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                        Request <span className="gradient-text">{request.event_id}</span>
+                        Request <span className="gradient-text">{request.req_id}</span>
                     </h1>
                 </div>
             </div>
@@ -374,8 +377,8 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                                                     request.event_details.map((ed, idx) => (
                                                         <div key={idx} className="flex justify-between items-center p-2.5 rounded-lg bg-gray-50/50 dark:bg-gray-900/10 border border-gray-100/50">
                                                             <div className="flex flex-col">
-                                                                <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Event ID</span>
-                                                                <span className="text-sm font-mono font-bold text-brand-600">{ed.eventId}</span>
+                                                                <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Event (Master) ID</span>
+                                                                <span className="text-sm font-mono font-bold text-brand-600">{ed.reqId || ed.eventId}</span>
                                                             </div>
                                                             <div className="flex flex-col text-right">
                                                                 <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Account Code</span>
@@ -386,7 +389,7 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                                                 ) : (
                                                     <div className="flex justify-between items-center p-2.5 rounded-lg bg-gray-50/50 dark:bg-gray-900/10 border border-gray-100/50">
                                                         <div className="flex flex-col">
-                                                            <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Event ID</span>
+                                                            <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Event (Master) ID</span>
                                                             <span className="text-sm font-mono font-bold text-brand-600">{request.event_id}</span>
                                                         </div>
                                                         <div className="flex flex-col text-right">

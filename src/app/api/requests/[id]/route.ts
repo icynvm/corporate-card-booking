@@ -127,7 +127,7 @@ export async function PUT(
             promotional_channels, 
             bookingDate, 
             effectiveDate,
-            event_id,
+            req_id,
             account_code,
             event_details,
             credit_card_no
@@ -148,13 +148,13 @@ export async function PUT(
         if (promotional_channels !== undefined) updatePayload.promotional_channels = promotional_channels;
         if (bookingDate !== undefined) updatePayload.booking_date = bookingDate;
         if (effectiveDate !== undefined) updatePayload.effective_date = effectiveDate;
-        if (event_id !== undefined) updatePayload.event_id = event_id;
+        if (req_id !== undefined) updatePayload.req_id = req_id; // This is the REQ-XXXX identifier
         if (account_code !== undefined) updatePayload.account_code = account_code;
         if (event_details !== undefined) {
             updatePayload.event_details = event_details;
-            // Also update single columns for backwards compatibility/sorting
+            // Map the first one to event_id (Master ID) and account_code for indexing
             if (Array.isArray(event_details) && event_details.length > 0) {
-                updatePayload.event_id = event_details[0].eventId;
+                updatePayload.event_id = event_details[0].reqId; // Master ID from form field 'reqId'
                 updatePayload.account_code = event_details[0].accountCode;
             }
         }

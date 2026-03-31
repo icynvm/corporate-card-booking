@@ -10,7 +10,7 @@ interface AdminRequestRowProps {
     isExpanded: boolean;
     statusUpdating: string | null;
     handleStatusChange: (requestId: string, newStatus: string) => Promise<void>;
-    handleDeleteRequest: (requestId: string, eventId: string) => Promise<void>;
+    handleDeleteRequest: (requestId: string, reqId: string) => Promise<void>;
     setSelectedRequest: (req: RequestRecord) => void;
     setApprovalModalOpen: (open: boolean) => void;
     setReceiptModalOpen: (open: boolean) => void;
@@ -44,11 +44,16 @@ export default function AdminRequestRow({
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="font-mono text-xs font-bold text-brand-600">
-                            {req.event_id}
-                            {req.event_details && req.event_details.length > 1 && (
-                                <span className="ml-1 text-[10px] text-gray-400 font-normal">(+{req.event_details.length - 1})</span>
-                            )}
+                            {req.req_id || req.event_id}
                         </span>
+                        {req.event_id && (
+                            <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                                Event: {req.event_id}
+                                {req.event_details && req.event_details.length > 1 && (
+                                    <span className="ml-0.5 text-gray-400 font-normal">(+{req.event_details.length - 1})</span>
+                                )}
+                            </span>
+                        )}
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getStatusColor(req.status)}`}>
                             {(STATUS_LABELS as Record<string, string>)[req.status] || req.status}
                         </span>
@@ -130,7 +135,7 @@ export default function AdminRequestRow({
                     {/* Delete Admin Button */}
                     {role !== "manager" && (
                         <button
-                            onClick={() => handleDeleteRequest(req.id, req.event_id)}
+                            onClick={() => handleDeleteRequest(req.id, req.req_id || req.event_id || "N/A")}
                             className="p-2 rounded-lg text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all"
                             title="Delete Request"
                         >

@@ -140,15 +140,15 @@ export default function AdminPage() {
         }
     };
 
-    const handleDeleteRequest = async (requestId: string, eventId: string) => {
+    const handleDeleteRequest = async (requestId: string, reqId: string) => {
         // Built-in browser confirmation prompt
-        if (!window.confirm(`Are you sure you want to delete request ${eventId}? This action cannot be undone.`)) {
+        if (!window.confirm(`Are you sure you want to delete request ${reqId}? This action cannot be undone.`)) {
             return;
         }
         try {
             const res = await fetch(`/api/requests/${requestId}`, { method: "DELETE" });
             if (res.ok) {
-                addToast(`Request ${eventId} deleted successfully`, "success");
+                addToast(`Request ${reqId} deleted successfully`, "success");
                 await fetchData();
             } else {
                 const data = await res.json();

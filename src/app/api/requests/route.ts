@@ -80,23 +80,23 @@ export async function POST(req: NextRequest) {
         if (body.email) body.email = cleanText(body.email);
         if (body.fullName) body.fullName = cleanText(body.fullName);
 
-        let eventId = body.eventId;
-        if (!eventId) {
+        let reqId = body.reqId;
+        if (!reqId) {
             const year = new Date().getFullYear();
             const { data: existingIds } = await supabase
                 .from("requests")
-                .select("event_id")
-                .like("event_id", `REQ-${year}%`);
+                .select("req_id")
+                .like("req_id", `REQ-${year}%`);
 
             let nextNumber = 1;
             if (existingIds && existingIds.length > 0) {
                 const numbers = existingIds.map(req => {
-                    const parts = req.event_id.split("-");
+                    const parts = req.req_id.split("-");
                     return parseInt(parts[parts.length - 1]) || 0;
                 });
                 nextNumber = Math.max(...numbers) + 1;
             }
-            eventId = `REQ-${year}-${String(nextNumber).padStart(4, "0")}`;
+            reqId = `REQ-${year}-${String(nextNumber).padStart(4, "0")}`;
         }
         const userId = session.pid;
 
@@ -135,7 +135,8 @@ export async function POST(req: NextRequest) {
         const { data: request, error: insertError } = await supabase
             .from("requests")
             .insert({
-                event_id: body.eventDetails?.[0]?.eventId || eventId,
+                req_id: reqId, // The REQ-XXXX identifier
+                event_id: body.eventDetails?.[0]?.eventId || null, // The Master Event ID
                 user_id: userId,
                 full_name: cleanText(body.fullName || ""),
                 project_id: projectId || null,
@@ -144,6 +145,7 @@ export async function POST(req: NextRequest) {
                 objective: cleanText(body.objective || ""),
                 contact_no: cleanText(body.contactNo || ""),
                 email: body.email || "dev@company.com",
+                department: body.department || "",
                 billing_type: body.billingType,
                 start_date: body.startDate,
                 end_date: body.endDate,
@@ -194,7 +196,7 @@ export async function POST(req: NextRequest) {
             try {
                 const { generateRequestPdf } = await import("@/lib/pdf-generator");
                 const pdfBytes = await generateRequestPdf({
-                    eventId: eventId,
+                    reqId: reqId,
                     fullName: body.fullName,
                     department: body.department,
                     contactNo: body.contactNo,
@@ -231,11 +233,11 @@ export async function POST(req: NextRequest) {
         // Audit log
         await supabase.from("audit_logs").insert({
             entity_type: "REQUEST",
-            entity_id: request?.id || eventId,
+            entity_id: request?.id || reqId,
             action: "CREATE",
             user_id: userId,
             user_name: body.fullName || "Developer Admin",
-            changes: { event_id: eventId, amount: body.amount, project_name: body.projectName, billing_type: body.billingType },
+            changes: { req_id: reqId, amount: body.amount, project_name: body.projectName, billing_type: body.billingType },
         });
 
         // LINE Notification

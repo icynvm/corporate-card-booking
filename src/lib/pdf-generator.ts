@@ -3,7 +3,7 @@ import { IMPACT_LOGO_BASE64 } from "./logo-base64";
 import { normalizeThai, insertZeroWidthSpaces } from "./thai-utils";
 
 export interface RequestPdfData {
-    eventId: string;
+    reqId: string;
     fullName: string;
     department: string;
     contactNo: string;
@@ -206,8 +206,8 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
             {
                 columns: [
                     { text: '', width: '*' },
-                    { text: 'CARD NO. ', bold: true, width: 'auto', fontSize: 10 },
-                    { text: formData.creditCardNo || '_______________________', width: 120, fontSize: 10, decoration: formData.creditCardNo ? 'underline' : undefined },
+                    { text: 'REQ NO. ', bold: true, width: 'auto', fontSize: 10 },
+                    { text: formData.reqId || '_______________________', width: 120, fontSize: 10, decoration: formData.reqId ? 'underline' : undefined },
                     { text: '', width: '*' }
                 ],
                 margin: [0, 0, 0, 15]
