@@ -1,13 +1,14 @@
-import React from "react";
+import * as React from "react";
 
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
     title: string;
     children: React.ReactNode;
+    maxWidth?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-lg" }: ModalProps) {
     if (!isOpen) return null;
 
     return (
@@ -18,7 +19,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
                 onClick={onClose}
             />
             {/* Content */}
-            <div className="relative glass-card p-0 w-full max-w-lg mx-4 animate-slide-up shadow-2xl">
+            <div className={`relative glass-card p-0 w-full ${maxWidth} mx-4 animate-slide-up shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}>
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-100/50">
                     <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{title}</h3>
@@ -33,7 +34,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
                     </button>
                 </div>
                 {/* Body */}
-                <div className="p-6">
+                <div className="p-6 overflow-y-auto min-h-0 relative z-10">
                     {children}
                 </div>
             </div>
