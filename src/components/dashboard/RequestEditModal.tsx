@@ -45,6 +45,25 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
     const [accountCode, setAccountCode] = useState("");
     const [creditCardNo, setCreditCardNo] = useState("");
 
+    // Master Data Options
+    const [eventOptions, setEventOptions] = useState<any[]>([]);
+    const [accountOptions, setAccountOptions] = useState<any[]>([]);
+    const [cardOptions, setCardOptions] = useState<any[]>([]);
+
+    // Inline Add States (to match CardRequestForm)
+    const [isAddingProject, setIsAddingProject] = useState(false);
+    const [newProjectName, setNewProjectName] = useState("");
+
+    const [isAddingEvent, setIsAddingEvent] = useState(false);
+    const [newEventId, setNewEventId] = useState("");
+
+    const [isAddingAccount, setIsAddingAccount] = useState(false);
+    const [newAccountCode, setNewAccountCode] = useState("");
+
+    const [isAddingCard, setIsAddingCard] = useState(false);
+    const [newCardNo, setNewCardNo] = useState("");
+    const [newCardName, setNewCardName] = useState("");
+
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
@@ -92,6 +111,98 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
         const timer = setTimeout(fetchProjects, 300);
         return () => clearTimeout(timer);
     }, [projectSearch]);
+
+    // Fetch other Master Data on mount
+    useEffect(() => {
+        if (!isOpen) return;
+        const fetchMasterData = async () => {
+            try {
+                const resEvents = await fetch("/api/master-data/events");
+                if (resEvents.ok) setEventOptions(await resEvents.json());
+
+                const resAccounts = await fetch("/api/master-data/accounts");
+                if (resAccounts.ok) setAccountOptions(await resAccounts.json());
+
+                const resCards = await fetch("/api/master-data/cards");
+                if (resCards.ok) setCardOptions(await resCards.json());
+            } catch (err) { console.error("Master data fetch failed:", err); }
+        };
+        fetchMasterData();
+    }, [isOpen]);
+
+    // Quick Add Handlers
+    const handleQuickAddProject = async () => {
+        if (!newProjectName.trim()) return;
+        try {
+            const res = await fetch("/api/projects", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ projectName: newProjectName.trim() }),
+            });
+            if (res.ok) {
+                const added = await res.json();
+                setProjectSearch(added.project_name);
+                setSelectedProjectId(added.id);
+                setIsAddingProject(false);
+                setNewProjectName("");
+            }
+        } catch (error) { console.error(error); }
+    };
+
+    const handleQuickAddEvent = async () => {
+        if (!newEventId.trim()) return;
+        try {
+            const res = await fetch("/api/master-data/events", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ eventId: newEventId.trim(), description: "Quick Added" }),
+            });
+            if (res.ok) {
+                const added = await res.json();
+                setEventOptions([added, ...eventOptions]);
+                setEventId(added.event_id);
+                setIsAddingEvent(false);
+                setNewEventId("");
+            }
+        } catch (error) { console.error(error); }
+    };
+
+    const handleQuickAddAccount = async () => {
+        if (!newAccountCode.trim()) return;
+        try {
+            const res = await fetch("/api/master-data/accounts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: newAccountCode.trim(), description: "Quick Added" }),
+            });
+            if (res.ok) {
+                const added = await res.json();
+                setAccountOptions([added, ...accountOptions]);
+                setAccountCode(added.code);
+                setIsAddingAccount(false);
+                setNewAccountCode("");
+            }
+        } catch (error) { console.error(error); }
+    };
+
+    const handleQuickAddCard = async () => {
+        if (!newCardNo.trim() || !newCardName.trim()) return;
+        try {
+            const res = await fetch("/api/master-data/cards", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cardNo: newCardNo.trim(), cardName: newCardName.trim(), description: "Quick Added" }),
+            });
+            if (res.ok) {
+                const added = await res.json();
+                setCardOptions([added, ...cardOptions]);
+                setCreditCardNo(added.card_no);
+                setIsAddingCard(false);
+                setNewCardNo("");
+                setNewCardName("");
+            }
+        } catch (error) { console.error(error); }
+    };
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -245,39 +356,59 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Project Autocomplete */}
+                        {/* Project Autocomplete & Quick Add */}
                         <div className="col-span-full md:col-span-1" ref={projectRef}>
-                            <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Project Name</label>
-                            <div className="relative">
-                                <input
-                                    value={projectSearch}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                        setProjectSearch(e.target.value);
-                                        setShowProjectDropdown(true);
-                                    }}
-                                    onFocus={() => setShowProjectDropdown(true)}
-                                    className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
-                                    placeholder="Search project..."
-                                />
-                                {showProjectDropdown && projectOptions.length > 0 && (
-                                    <div className="absolute z-50 w-full mt-2 glass-card border border-white/20 shadow-2xl rounded-2xl overflow-hidden max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
-                                        {projectOptions.map(p => (
-                                            <button
-                                                key={p.id}
-                                                type="button"
-                                                onClick={() => {
-                                                    setProjectSearch(p.project_name);
-                                                    setSelectedProjectId(p.id);
-                                                    setShowProjectDropdown(false);
-                                                }}
-                                                className="w-full text-left px-4 py-3 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors border-b border-gray-50 dark:border-gray-800/30 last:border-0"
-                                            >
-                                                {p.project_name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                            <label className="flex items-center justify-between text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">
+                                Project Name
+                                <button type="button" onClick={() => setIsAddingProject(!isAddingProject)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded ml-2">
+                                    {isAddingProject ? "Cancel" : "+ New"}
+                                </button>
+                            </label>
+                            {isAddingProject ? (
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        autoFocus
+                                        className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none" 
+                                        placeholder="Type new project name..." 
+                                        value={newProjectName}
+                                        onChange={(e) => setNewProjectName(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddProject(); } }}
+                                    />
+                                    <button type="button" onClick={handleQuickAddProject} className="px-3 py-2 min-w-[70px] text-xs font-semibold rounded-xl bg-brand-500 text-white shadow hover:bg-brand-600">Save</button>
+                                </div>
+                            ) : (
+                                <div className="relative">
+                                    <input
+                                        value={projectSearch}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                            setProjectSearch(e.target.value);
+                                            setShowProjectDropdown(true);
+                                        }}
+                                        onFocus={() => setShowProjectDropdown(true)}
+                                        className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
+                                        placeholder="Search project..."
+                                    />
+                                    {showProjectDropdown && projectOptions.length > 0 && (
+                                        <div className="absolute z-50 w-full mt-2 glass-card border border-white/20 shadow-2xl rounded-2xl overflow-hidden max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
+                                            {projectOptions.map(p => (
+                                                <button
+                                                    key={p.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setProjectSearch(p.project_name);
+                                                        setSelectedProjectId(p.id);
+                                                        setShowProjectDropdown(false);
+                                                    }}
+                                                    className="w-full text-left px-4 py-3 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors border-b border-gray-50 dark:border-gray-800/30 last:border-0"
+                                                >
+                                                    {p.project_name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* Amount */}
@@ -294,35 +425,118 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
 
                         {/* Event ID */}
                         <div className="md:col-span-1">
-                            <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Event ID</label>
-                            <input
-                                value={eventId}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEventId(e.target.value)}
-                                className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
-                                placeholder="Event ID"
-                            />
+                            <label className="flex items-center justify-between text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">
+                                Event ID
+                                <button type="button" onClick={() => setIsAddingEvent(!isAddingEvent)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded ml-2">
+                                    {isAddingEvent ? "Cancel" : "+ New"}
+                                </button>
+                            </label>
+                            {isAddingEvent ? (
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        autoFocus
+                                        className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none" 
+                                        placeholder="e.g. REQ-2026-0001" 
+                                        value={newEventId}
+                                        onChange={(e) => setNewEventId(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddEvent(); } }}
+                                    />
+                                    <button type="button" onClick={handleQuickAddEvent} className="px-3 py-2 min-w-[70px] text-xs font-semibold rounded-xl bg-brand-500 text-white shadow hover:bg-brand-600">Save</button>
+                                </div>
+                            ) : (
+                                <select
+                                    value={eventId}
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                        setEventId(e.target.value);
+                                        const ev = eventOptions.find(opt => opt.event_id === e.target.value);
+                                        if (ev) setAccountCode(ev.account_code || "");
+                                    }}
+                                    className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
+                                >
+                                    <option value="">Select an Event ID...</option>
+                                    {eventOptions.map((ev: any) => (
+                                        <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
 
                         {/* Account Code */}
                         <div className="md:col-span-1">
-                            <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Account Code</label>
-                            <input
-                                value={accountCode}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAccountCode(e.target.value)}
-                                className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
-                                placeholder="Account Code"
-                            />
+                            <label className="flex items-center justify-between text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">
+                                Account Code
+                                <button type="button" onClick={() => setIsAddingAccount(!isAddingAccount)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded ml-2">
+                                    {isAddingAccount ? "Cancel" : "+ New"}
+                                </button>
+                            </label>
+                            {isAddingAccount ? (
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        autoFocus
+                                        className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none" 
+                                        placeholder="e.g. ACC-001" 
+                                        value={newAccountCode}
+                                        onChange={(e) => setNewAccountCode(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddAccount(); } }}
+                                    />
+                                    <button type="button" onClick={handleQuickAddAccount} className="px-3 py-2 min-w-[70px] text-xs font-semibold rounded-xl bg-brand-500 text-white shadow hover:bg-brand-600">Save</button>
+                                </div>
+                            ) : (
+                                <select
+                                    value={accountCode}
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAccountCode(e.target.value)}
+                                    className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
+                                >
+                                    <option value="">Select Account Code...</option>
+                                    {accountOptions.map((acc: any) => (
+                                        <option key={acc.id} value={acc.code}>{acc.code} - {acc.description}</option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
 
                         {/* Credit Card No */}
-                        <div className="md:col-span-2">
-                            <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Credit Card No</label>
-                            <input
-                                value={creditCardNo}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCreditCardNo(e.target.value)}
-                                className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
-                                placeholder="Credit Card Number"
-                            />
+                        <div className="col-span-full md:col-span-2">
+                            <label className="flex items-center justify-between text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">
+                                Credit Card No
+                                <button type="button" onClick={() => setIsAddingCard(!isAddingCard)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded ml-2">
+                                    {isAddingCard ? "Cancel" : "+ New"}
+                                </button>
+                            </label>
+                            {isAddingCard ? (
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        autoFocus
+                                        className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none" 
+                                        placeholder="Name (e.g. AMEX)" 
+                                        value={newCardName}
+                                        onChange={(e) => setNewCardName(e.target.value)}
+                                    />
+                                    <input 
+                                        type="text" 
+                                        className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none" 
+                                        placeholder="Card No (e.g. 1234)" 
+                                        value={newCardNo}
+                                        onChange={(e) => setNewCardNo(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddCard(); } }}
+                                    />
+                                    <button type="button" onClick={handleQuickAddCard} className="px-3 py-2 min-w-[70px] text-xs font-semibold rounded-xl bg-brand-500 text-white shadow hover:bg-brand-600">Save</button>
+                                </div>
+                            ) : (
+                                <select
+                                    value={creditCardNo}
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCreditCardNo(e.target.value)}
+                                    className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
+                                >
+                                    <option value="">Select Corporate Card...</option>
+                                    {cardOptions.map((card: any) => (
+                                        <option key={card.id} value={card.card_no}>{card.card_name} ({card.card_no.slice(-4)})</option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
 
                         {/* Objective */}

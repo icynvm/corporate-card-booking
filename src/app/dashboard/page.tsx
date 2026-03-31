@@ -93,7 +93,7 @@ export default function DashboardPage() {
     return (
         <div className="space-y-8 relative">
             <ToastContainer toasts={toasts} removeToast={removeToast} />
-            
+
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-1">
                     Dashboard
@@ -207,7 +207,7 @@ export default function DashboardPage() {
                             }}
                             className="text-xs text-brand-500 hover:text-brand-700 font-medium transition-colors"
                         >
-                            Clear All โ•
+                            Clear All
                         </button>
                     )}
                 </div>

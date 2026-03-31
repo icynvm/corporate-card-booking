@@ -30,6 +30,20 @@ export function CardRequestForm() {
     const [customChannelName, setCustomChannelName] = useState<string>("");
     const [showCustomInput, setShowCustomInput] = useState<boolean>(false);
 
+    // Inline Add States
+    const [isAddingProject, setIsAddingProject] = useState(false);
+    const [newProjectName, setNewProjectName] = useState("");
+
+    const [isAddingEvent, setIsAddingEvent] = useState(false);
+    const [newEventId, setNewEventId] = useState("");
+
+    const [isAddingAccount, setIsAddingAccount] = useState(false);
+    const [newAccountCode, setNewAccountCode] = useState("");
+
+    const [isAddingCard, setIsAddingCard] = useState(false);
+    const [newCardNo, setNewCardNo] = useState("");
+    const [newCardName, setNewCardName] = useState("");
+
     const {
         register,
         handleSubmit,
@@ -109,6 +123,79 @@ export function CardRequestForm() {
         }
         setCustomChannelName("");
         setShowCustomInput(false);
+    };
+
+    // Quick Add Handlers
+    const handleQuickAddProject = async () => {
+        if (!newProjectName.trim()) return;
+        try {
+            const res = await fetch("/api/projects", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ projectName: newProjectName.trim() }),
+            });
+            if (res.ok) {
+                const added = await res.json();
+                setProjectOptions([added, ...projectOptions]);
+                setValue("projectId", added.id);
+                setIsAddingProject(false);
+                setNewProjectName("");
+            }
+        } catch (error) { console.error(error); }
+    };
+
+    const handleQuickAddEvent = async () => {
+        if (!newEventId.trim()) return;
+        try {
+            const res = await fetch("/api/master-data/events", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ eventId: newEventId.trim(), description: "Quick Added" }),
+            });
+            if (res.ok) {
+                const added = await res.json();
+                setEventOptions([added, ...eventOptions]);
+                setIsAddingEvent(false);
+                setNewEventId("");
+            }
+        } catch (error) { console.error(error); }
+    };
+
+    const handleQuickAddAccount = async () => {
+        if (!newAccountCode.trim()) return;
+        try {
+            const res = await fetch("/api/master-data/accounts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: newAccountCode.trim(), description: "Quick Added" }),
+            });
+            if (res.ok) {
+                const added = await res.json();
+                setAccountOptions([added, ...accountOptions]);
+                setValue("accountCode", added.code);
+                setIsAddingAccount(false);
+                setNewAccountCode("");
+            }
+        } catch (error) { console.error(error); }
+    };
+
+    const handleQuickAddCard = async () => {
+        if (!newCardNo.trim() || !newCardName.trim()) return;
+        try {
+            const res = await fetch("/api/master-data/cards", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cardNo: newCardNo.trim(), cardName: newCardName.trim(), description: "Quick Added" }),
+            });
+            if (res.ok) {
+                const added = await res.json();
+                setCardOptions([added, ...cardOptions]);
+                setValue("creditCardNo", added.card_no);
+                setIsAddingCard(false);
+                setNewCardNo("");
+                setNewCardName("");
+            }
+        } catch (error) { console.error(error); }
     };
 
     const onSubmit = async (data: RequestFormData): Promise<void> => {
@@ -230,54 +317,136 @@ export function CardRequestForm() {
                     </h2>
                     <div className="space-y-4">
                         <div>
-                            <label className="label-text">Project Name</label>
-                            <select
-                                {...register("projectId")}
-                                className="select-field"
-                            >
-                                <option value="">Select a project...</option>
-                                {projectOptions.map((p: any) => (
-                                    <option key={p.id} value={p.id}>{p.project_name}</option>
-                                ))}
-                            </select>
-                            {errors.projectId && <p className="text-red-400 text-xs mt-1">{errors.projectId.message}</p>}
+                            <label className="label-text flex items-center justify-between">
+                                Project Name
+                                <button type="button" onClick={() => setIsAddingProject(!isAddingProject)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded">
+                                    {isAddingProject ? "Cancel" : "+ New"}
+                                </button>
+                            </label>
+                            {isAddingProject ? (
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        autoFocus
+                                        className="input-field py-2 text-sm" 
+                                        placeholder="Type new project name..." 
+                                        value={newProjectName}
+                                        onChange={(e) => setNewProjectName(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddProject(); } }}
+                                    />
+                                    <button type="button" onClick={handleQuickAddProject} className="btn-primary px-3 py-2 min-w-[70px] text-xs">Save</button>
+                                </div>
+                            ) : (
+                                <select {...register("projectId")} className="select-field">
+                                    <option value="">Select a project...</option>
+                                    {projectOptions.map((p: any) => (
+                                        <option key={p.id} value={p.id}>{p.project_name}</option>
+                                    ))}
+                                </select>
+                            )}
+                            {errors.projectId && !isAddingProject && <p className="text-red-400 text-xs mt-1">{errors.projectId.message}</p>}
                         </div>
 
                         <div>
-                            <label className="label-text">Linked Event ID</label>
-                            <select
-                                className="select-field"
-                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                    const ev = eventOptions.find(opt => opt.event_id === e.target.value);
-                                    if (ev) {
-                                        setValue("accountCode", ev.account_code || "");
-                                    }
-                                }}
-                            >
-                                <option value="">Select an Event ID...</option>
-                                {eventOptions.map((ev: any) => (
-                                    <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
-                                ))}
-                            </select>
+                            <label className="label-text flex items-center justify-between">
+                                Linked Event ID
+                                <button type="button" onClick={() => setIsAddingEvent(!isAddingEvent)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded">
+                                    {isAddingEvent ? "Cancel" : "+ New"}
+                                </button>
+                            </label>
+                            {isAddingEvent ? (
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        autoFocus
+                                        className="input-field py-2 text-sm" 
+                                        placeholder="e.g. REQ-2026-0001" 
+                                        value={newEventId}
+                                        onChange={(e) => setNewEventId(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddEvent(); } }}
+                                    />
+                                    <button type="button" onClick={handleQuickAddEvent} className="btn-primary px-3 py-2 min-w-[70px] text-xs">Save</button>
+                                </div>
+                            ) : (
+                                <select
+                                    className="select-field"
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                        const ev = eventOptions.find(opt => opt.event_id === e.target.value);
+                                        if (ev) setValue("accountCode", ev.account_code || "");
+                                    }}
+                                >
+                                    <option value="">Select an Event ID...</option>
+                                    {eventOptions.map((ev: any) => (
+                                        <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
+                                    ))}
+                                </select>
+                            )}
                             <p className="text-[10px] text-gray-400 mt-1">Populates account code automatically.</p>
                         </div>
                         <div>
-                            <label className="label-text">Account Code</label>
-                            <select {...register("accountCode")} className="select-field">
-                                <option value="">Select Account Code...</option>
-                                {accountOptions.map((acc: any) => (
-                                    <option key={acc.id} value={acc.code}>{acc.code} - {acc.description}</option>
-                                ))}
-                            </select>
+                            <label className="label-text flex items-center justify-between">
+                                Account Code
+                                <button type="button" onClick={() => setIsAddingAccount(!isAddingAccount)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded">
+                                    {isAddingAccount ? "Cancel" : "+ New"}
+                                </button>
+                            </label>
+                            {isAddingAccount ? (
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        autoFocus
+                                        className="input-field py-2 text-sm" 
+                                        placeholder="e.g. ACC-001" 
+                                        value={newAccountCode}
+                                        onChange={(e) => setNewAccountCode(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddAccount(); } }}
+                                    />
+                                    <button type="button" onClick={handleQuickAddAccount} className="btn-primary px-3 py-2 min-w-[70px] text-xs">Save</button>
+                                </div>
+                            ) : (
+                                <select {...register("accountCode")} className="select-field">
+                                    <option value="">Select Account Code...</option>
+                                    {accountOptions.map((acc: any) => (
+                                        <option key={acc.id} value={acc.code}>{acc.code} - {acc.description}</option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
                         <div>
-                            <label className="label-text">Select Credit Card</label>
-                            <select {...register("creditCardNo")} className="select-field">
-                                <option value="">Select Corporate Card...</option>
-                                {cardOptions.map((card: any) => (
-                                    <option key={card.id} value={card.card_no}>{card.card_name} ({card.card_no.slice(-4)})</option>
-                                ))}
-                            </select>
+                            <label className="label-text flex items-center justify-between">
+                                Select Credit Card
+                                <button type="button" onClick={() => setIsAddingCard(!isAddingCard)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded">
+                                    {isAddingCard ? "Cancel" : "+ New"}
+                                </button>
+                            </label>
+                            {isAddingCard ? (
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        autoFocus
+                                        className="input-field py-2 text-sm w-1/2" 
+                                        placeholder="Name (e.g. AMEX)" 
+                                        value={newCardName}
+                                        onChange={(e) => setNewCardName(e.target.value)}
+                                    />
+                                    <input 
+                                        type="text" 
+                                        className="input-field py-2 text-sm w-1/2" 
+                                        placeholder="Card No (e.g. 1234)" 
+                                        value={newCardNo}
+                                        onChange={(e) => setNewCardNo(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddCard(); } }}
+                                    />
+                                    <button type="button" onClick={handleQuickAddCard} className="btn-primary px-3 py-2 min-w-[70px] text-xs">Save</button>
+                                </div>
+                            ) : (
+                                <select {...register("creditCardNo")} className="select-field">
+                                    <option value="">Select Corporate Card...</option>
+                                    {cardOptions.map((card: any) => (
+                                        <option key={card.id} value={card.card_no}>{card.card_name} ({card.card_no.slice(-4)})</option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
                     </div>
                 </GlassCard>
