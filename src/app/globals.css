@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
+    --gradient-start: #667eea;
+    --gradient-end: #764ba2;
+  }
+
+  body {
+    @apply bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen text-gray-800 antialiased;
+  }
+
+  * {
+    border-color: rgba(229, 231, 235, 1);
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    @apply rounded-2xl;
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300;
+  }
+
+  .glass-card-hover:hover {
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-500 to-purple-600 bg-clip-text text-transparent;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent transition-all duration-200 placeholder:text-gray-400;
+  }
+
+  .input-field:hover {
+    @apply border-brand-200;
+  }
+
+  .select-field {
+    @apply input-field appearance-none cursor-pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25rem 1.25rem;
+    padding-right: 2.5rem;
+  }
+
+  .label-text {
+    @apply block text-sm font-medium text-gray-600 mb-1.5;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium rounded-xl shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-white/80 backdrop-blur-sm text-gray-700 font-medium rounded-xl border border-gray-200 hover:bg-white hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm;
+  }
+
+  .btn-success {
+    @apply px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm;
+  }
+
+  .btn-danger {
+    @apply px-6 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white font-medium rounded-xl shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm;
+  }
+
+  .status-badge {
+    @apply px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1;
+  }
+
+  .status-pending {
+    @apply status-badge bg-amber-100 text-amber-700;
+  }
+
+  .status-approved {
+    @apply status-badge bg-emerald-100 text-emerald-700;
+  }
+
+  .status-rejected {
+    @apply status-badge bg-red-100 text-red-700;
+  }
+
+  .status-completed {
+    @apply status-badge bg-blue-100 text-blue-700;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #c7d2fe transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #c7d2fe;
+    border-radius: 20px;
+  }
+}
