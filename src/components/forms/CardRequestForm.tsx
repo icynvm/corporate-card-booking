@@ -22,13 +22,13 @@ export function CardRequestForm() {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [submittedData, setSubmittedData] = useState<RequestFormData | null>(null);
     const [selectedChannels, setSelectedChannels] = useState<Set<string>>(new Set());
-    const [projectSearch, setProjectSearch] = useState("");
     const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
-    const [showProjectDropdown, setShowProjectDropdown] = useState(false);
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const [eventOptions, setEventOptions] = useState<EventMaster[]>([]);
-    const projectRef = useRef<HTMLDivElement>(null);
+    const [eventOptions, setEventOptions] = useState<any[]>([]);
+    const [accountOptions, setAccountOptions] = useState<any[]>([]);
+    const [cardOptions, setCardOptions] = useState<any[]>([]);
+    const [customChannelName, setCustomChannelName] = useState("");
+    const [showCustomInput, setShowCustomInput] = useState(false);
 
     const {
         register,
@@ -62,49 +62,30 @@ export function CardRequestForm() {
         name: "promotionalChannels",
     });
 
-    // Fetch projects for autocomplete
+    // Fetch Master Data
     useEffect(() => {
-        const fetchProjects = async () => {
+        const fetchMasterData = async () => {
             try {
-                const res = await fetch(`/api/projects?search=${encodeURIComponent(projectSearch)}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setProjectOptions(data);
-                }
-            } catch {
-                // Ignore
+                // Fetch Projects
+                const resProjects = await fetch("/api/projects");
+                if (resProjects.ok) setProjectOptions(await resProjects.json());
+
+                // Fetch Events
+                const resEvents = await fetch("/api/master-data/events");
+                if (resEvents.ok) setEventOptions(await resEvents.json());
+
+                // Fetch Account Codes
+                const resAccounts = await fetch("/api/master-data/accounts");
+                if (resAccounts.ok) setAccountOptions(await resAccounts.json());
+
+                // Fetch Credit Cards
+                const resCards = await fetch("/api/master-data/cards");
+                if (resCards.ok) setCardOptions(await resCards.json());
+            } catch (err) {
+                console.error("Master data fetch failed:", err);
             }
         };
-
-        const timer = setTimeout(fetchProjects, 300);
-        return () => clearTimeout(timer);
-    }, [projectSearch]);
-
-    // Fetch Event Master data
-    useEffect(() => {
-        const fetchEvents = async () => {
-            try {
-                const res = await fetch("/api/master-data");
-                if (res.ok) {
-                    const data = await res.json();
-                    setEventOptions(data);
-                }
-            } catch {
-                // Ignore
-            }
-        };
-        fetchEvents();
-    }, []);
-
-    // Close dropdown on outside click
-    useEffect(() => {
-        const handleClick = (e: MouseEvent) => {
-            if (projectRef.current && !projectRef.current.contains(e.target as Node)) {
-                setShowProjectDropdown(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClick);
-        return () => document.removeEventListener("mousedown", handleClick);
+        fetchMasterData();
     }, []);
 
     const handleChannelToggle = (channel: string) => {
@@ -118,6 +99,16 @@ export function CardRequestForm() {
             append({ channel, mediaAccountEmail: "", accessList: "" });
         }
         setSelectedChannels(newSelection);
+    };
+
+    const handleAddCustomChannel = () => {
+        if (!customChannelName.trim()) return;
+        const channel = customChannelName.trim();
+        if (!selectedChannels.has(channel)) {
+            handleChannelToggle(channel);
+        }
+        setCustomChannelName("");
+        setShowCustomInput(false);
     };
 
     // normalizeThai imported from thai-utils
@@ -139,11 +130,13 @@ export function CardRequestForm() {
 
         const cleanData = sanitize(data);
 
+        // Get project name from options
+        const selectedProject = projectOptions.find((p: any) => p.id === cleanData.projectId);
+
         const requestBody = {
             ...cleanData,
-            projectName: normalizeThai(projectSearch),
+            projectName: selectedProject?.project_name || "",
             userId: null,
-            projectId: selectedProjectId,
         };
 
         try {
@@ -204,21 +197,21 @@ export function CardRequestForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label className="label-text">Full Name</label>
-                            <input 
-                                {...fullNameProps} 
-                                onChange={(e) => { e.target.value = normalizeThai(e.target.value); fullNameOnChange(e); }} 
-                                className="input-field" 
-                                placeholder="Enter your full name" 
+                            <input
+                                {...fullNameProps}
+                                onChange={(e) => { e.target.value = normalizeThai(e.target.value); fullNameOnChange(e); }}
+                                className="input-field"
+                                placeholder="Enter your full name"
                             />
                             {errors.fullName && <p className="text-red-400 text-xs mt-1">{errors.fullName.message}</p>}
                         </div>
                         <div>
                             <label className="label-text">Team</label>
-                            <input 
-                                {...departmentProps} 
-                                onChange={(e) => { e.target.value = normalizeThai(e.target.value); departmentOnChange(e); }} 
-                                className="input-field" 
-                                placeholder="e.g. Web Developer" 
+                            <input
+                                {...departmentProps}
+                                onChange={(e) => { e.target.value = normalizeThai(e.target.value); departmentOnChange(e); }}
+                                className="input-field"
+                                placeholder="e.g. Web Developer"
                             />
                             {errors.department && <p className="text-red-400 text-xs mt-1">{errors.department.message}</p>}
                         </div>
@@ -236,21 +229,52 @@ export function CardRequestForm() {
                             <label className="label-text">Project Name</label>
                             <select
                                 {...register("projectId")}
-                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                    const p = projectOptions.find(opt => opt.id === e.target.value);
-                                    if (p) {
-                                        setProjectSearch(p.project_name);
-                                        setSelectedProjectId(p.id);
-                                    }
-                                }}
                                 className="select-field"
                             >
                                 <option value="">Select a project...</option>
-                                {projectOptions.map((p) => (
+                                {projectOptions.map((p: any) => (
                                     <option key={p.id} value={p.id}>{p.project_name}</option>
                                 ))}
                             </select>
                             {errors.projectId && <p className="text-red-400 text-xs mt-1">{errors.projectId.message}</p>}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-4 border-t border-gray-100 dark:border-gray-800/50 mt-4">
+                            <div>
+                                <label className="label-text">Linked Event ID</label>
+                                <select
+                                    className="select-field"
+                                    onChange={(e: any) => {
+                                        const ev = eventOptions.find(opt => opt.event_id === e.target.value);
+                                        if (ev) {
+                                            setValue("accountCode", ev.account_code || "");
+                                        }
+                                    }}
+                                >
+                                    <option value="">Select an Event ID...</option>
+                                    {eventOptions.map((ev: any) => (
+                                        <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
+                                    ))}
+                                </select>
+                                <p className="text-[10px] text-gray-400 mt-1">Populates account code automatically.</p>
+                            </div>
+                            <div>
+                                <label className="label-text">Account Code</label>
+                                <select {...register("accountCode")} className="select-field">
+                                    <option value="">Select Account Code...</option>
+                                    {accountOptions.map((acc: any) => (
+                                        <option key={acc.id} value={acc.code}>{acc.code} - {acc.description}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="label-text">Select Credit Card</label>
+                                <select {...register("creditCardNo")} className="select-field">
+                                    <option value="">Select Corporate Card...</option>
+                                    {cardOptions.map((card: any) => (
+                                        <option key={card.id} value={card.card_no}>{card.card_name} ({card.card_no.slice(-4)})</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </GlassCard>
@@ -320,34 +344,7 @@ export function CardRequestForm() {
                                 {errors.billingType && <p className="text-red-400 text-xs mt-1">{errors.billingType.message}</p>}
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-4 border-t border-gray-100 dark:border-gray-800/50 mt-4">
-                            <div>
-                                <label className="label-text">Linked Event ID (Optional)</label>
-                                <select 
-                                    className="select-field"
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                        const ev = eventOptions.find(opt => opt.event_id === e.target.value);
-                                        if (ev) {
-                                            setValue("accountCode", ev.account_code || "");
-                                        }
-                                    }}
-                                >
-                                    <option value="">Select an Event ID...</option>
-                                    {eventOptions.map((ev) => (
-                                        <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
-                                    ))}
-                                </select>
-                                <p className="text-[10px] text-gray-400 mt-1">Selecting an event will auto-fill the account code if available.</p>
-                            </div>
-                            <div>
-                                <label className="label-text">Account Code (Optional)</label>
-                                <input {...register("accountCode")} className="input-field" placeholder="e.g. AC-XXX" />
-                            </div>
-                            <div>
-                                <label className="label-text">Credit Card No. (Optional)</label>
-                                <input {...register("creditCardNo")} className="input-field" placeholder="e.g. XXXX-XXXX-XXXX-XXXX" />
-                            </div>
-                        </div>
+
                     </div>
                 </GlassCard>
 
@@ -369,13 +366,12 @@ export function CardRequestForm() {
                                     key={channel}
                                     type="button"
                                     onClick={() => handleChannelToggle(channel)}
-                                    className={`px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-200 flex items-center gap-2
-                                    ${isChecked
-                                            ? "bg-brand-50 border-brand-300 text-brand-700 shadow-sm"
-                                            : "bg-white dark:bg-gray-800/60 border-gray-200 text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:border-brand-200 hover:text-brand-500"
-                                        }`}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border
+                                    ${isChecked 
+                                        ? "bg-brand-50 border-brand-200 text-brand-700 shadow-sm" 
+                                        : "bg-white dark:bg-gray-800/30 border-gray-100 dark:border-gray-800/50 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:border-brand-100"}`}
                                 >
-                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all
+                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors
                                     ${isChecked ? "bg-brand-500 border-brand-500" : "border-gray-300"}`}>
                                         {isChecked && (
                                             <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -387,6 +383,65 @@ export function CardRequestForm() {
                                 </button>
                             );
                         })}
+
+                        {/* Custom Channels that were added */}
+                        {Array.from(selectedChannels).filter(c => !PROMOTIONAL_CHANNELS.includes(c)).map((channel) => (
+                            <button
+                                key={channel}
+                                type="button"
+                                onClick={() => handleChannelToggle(channel)}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border bg-brand-50 border-brand-200 text-brand-700 shadow-sm"
+                            >
+                                <div className="w-4 h-4 rounded border flex items-center justify-center transition-colors bg-brand-500 border-brand-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                </div>
+                                {channel}
+                            </button>
+                        ))}
+
+                        {showCustomInput ? (
+                            <div className="flex items-center gap-2 animate-fade-in">
+                                <input 
+                                    type="text" 
+                                    className="input-field !py-1.5 !px-3 !text-sm w-32" 
+                                    placeholder="Channel name..."
+                                    value={customChannelName}
+                                    onChange={(e) => setCustomChannelName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            handleAddCustomChannel();
+                                        }
+                                    }}
+                                    autoFocus
+                                />
+                                <button 
+                                    type="button" 
+                                    onClick={handleAddCustomChannel}
+                                    className="p-1.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setShowCustomInput(false)}
+                                    className="p-1.5 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setShowCustomInput(true)}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border border-dashed border-gray-300 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-brand-500 hover:text-brand-500"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                Add Other
+                            </button>
+                        )}
                     </div>
 
                     {fields.length > 0 && (

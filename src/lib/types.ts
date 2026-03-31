@@ -128,6 +128,22 @@ export interface EventMaster {
     updated_at: string;
 }
 
+export interface AccountCodeMaster {
+    id: string;
+    code: string;
+    description: string | null;
+    created_at: string;
+}
+
+export interface CreditCardMaster {
+    id: string;
+    card_no: string;
+    card_name: string;
+    bank: string | null;
+    description: string | null;
+    created_at: string;
+}
+
 // Status display helpers
 export const STATUS_LABELS: Record<RequestStatus, string> = {
     DRAFT: "Draft",
