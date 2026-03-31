@@ -43,6 +43,7 @@ export interface RequestRecord {
     approval_notes: string;
     approval_token: string | null;
     account_code: string | null;
+    event_details?: EventDetail[] | null;
     credit_card_no: string | null;
     created_at: string;
     updated_at: string;
@@ -60,6 +61,11 @@ export interface ChannelDetail {
     channel: string;
     mediaAccountEmail: string;
     accessList: string;
+}
+
+export interface EventDetail {
+    eventId: string;
+    accountCode: string;
 }
 
 export interface ReceiptRecord {

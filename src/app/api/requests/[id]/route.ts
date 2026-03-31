@@ -129,6 +129,7 @@ export async function PUT(
             effectiveDate,
             event_id,
             account_code,
+            event_details,
             credit_card_no
         } = await req.json();
 
@@ -149,6 +150,14 @@ export async function PUT(
         if (effectiveDate !== undefined) updatePayload.effective_date = effectiveDate;
         if (event_id !== undefined) updatePayload.event_id = event_id;
         if (account_code !== undefined) updatePayload.account_code = account_code;
+        if (event_details !== undefined) {
+            updatePayload.event_details = event_details;
+            // Also update single columns for backwards compatibility/sorting
+            if (Array.isArray(event_details) && event_details.length > 0) {
+                updatePayload.event_id = event_details[0].eventId;
+                updatePayload.account_code = event_details[0].accountCode;
+            }
+        }
         if (credit_card_no !== undefined) updatePayload.credit_card_no = credit_card_no;
 
         const { error: updateError } = await supabase

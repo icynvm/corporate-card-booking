@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, ChangeEvent } from "react";
 import { Modal } from "@/components/ui/Modal";
-import { RequestRecord } from "@/lib/types";
+import { RequestRecord, Project, EventMaster, AccountCodeMaster, CreditCardMaster } from "@/lib/types";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PROMOTIONAL_CHANNELS } from "@/lib/validations/schema";
 
@@ -36,7 +36,7 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
     
     // Project Search States
     const [projectSearch, setProjectSearch] = useState("");
-    const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
+    const [projectOptions, setProjectOptions] = useState<Project[]>([]);
     const [showProjectDropdown, setShowProjectDropdown] = useState(false);
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const projectRef = useRef<HTMLDivElement>(null);
@@ -46,9 +46,9 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
     const [creditCardNo, setCreditCardNo] = useState("");
 
     // Master Data Options
-    const [eventOptions, setEventOptions] = useState<any[]>([]);
-    const [accountOptions, setAccountOptions] = useState<any[]>([]);
-    const [cardOptions, setCardOptions] = useState<any[]>([]);
+    const [eventOptions, setEventOptions] = useState<EventMaster[]>([]);
+    const [accountOptions, setAccountOptions] = useState<AccountCodeMaster[]>([]);
+    const [cardOptions, setCardOptions] = useState<CreditCardMaster[]>([]);
 
     // Inline Add States (to match CardRequestForm)
     const [isAddingProject, setIsAddingProject] = useState(false);
@@ -63,6 +63,8 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
     const [isAddingCard, setIsAddingCard] = useState(false);
     const [newCardNo, setNewCardNo] = useState("");
     const [newCardName, setNewCardName] = useState("");
+
+    const [eventDetails, setEventDetails] = useState<{ eventId: string, accountCode: string }[]>([{ eventId: "", accountCode: "" }]);
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
@@ -84,6 +86,13 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
             setEventId(request.event_id || "");
             setAccountCode(request.account_code || "");
             setCreditCardNo(request.credit_card_no || "");
+            
+            // Map event details
+            if (Array.isArray(request.event_details) && request.event_details.length > 0) {
+                setEventDetails(request.event_details);
+            } else {
+                setEventDetails([{ eventId: request.event_id || "", accountCode: request.account_code || "" }]);
+            }
             
             // Map promotional channels
             const channels = Array.isArray(request.promotional_channels) ? request.promotional_channels : [];
@@ -257,6 +266,31 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
         setShowCustomInput(false);
     };
 
+    const addEventRow = () => {
+        if (eventDetails.length < 20) {
+            setEventDetails([...eventDetails, { eventId: "", accountCode: "" }]);
+        }
+    };
+
+    const removeEventRow = (index: number) => {
+        if (eventDetails.length > 1) {
+            setEventDetails(eventDetails.filter((_, i) => i !== index));
+        }
+    };
+
+    const updateEventDetail = (index: number, field: "eventId" | "accountCode", value: string) => {
+        const updated = [...eventDetails];
+        updated[index] = { ...updated[index], [field]: value };
+        
+        // Auto-populate account code if eventId changes
+        if (field === "eventId") {
+            const ev = eventOptions.find(opt => opt.event_id === value);
+            if (ev) updated[index].accountCode = ev.account_code || "";
+        }
+        
+        setEventDetails(updated);
+    };
+
     const handleSave = async () => {
         if (!request) return;
         setSaving(true);
@@ -280,8 +314,9 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
                     bookingDate,
                     effectiveDate,
                     promotional_channels: promotionalChannels,
-                    event_id: eventId,
-                    account_code: accountCode,
+                    event_id: eventDetails[0]?.eventId || "",
+                    account_code: eventDetails[0]?.accountCode || "",
+                    event_details: eventDetails,
                     credit_card_no: creditCardNo,
                 })
             });
@@ -435,78 +470,103 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
                             />
                         </div>
 
-                        {/* Event ID */}
-                        <div className="md:col-span-1">
-                            <label className="flex items-center justify-between text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">
-                                Event ID
-                                <button type="button" onClick={() => setIsAddingEvent(!isAddingEvent)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded ml-2">
-                                    {isAddingEvent ? "Cancel" : "+ New"}
-                                </button>
-                            </label>
-                            {isAddingEvent ? (
+                        {/* Event & Account Details Section */}
+                        <div className="col-span-full space-y-4 pt-2">
+                            <div className="flex items-center justify-between">
+                                <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Event & Account Details</h4>
                                 <div className="flex gap-2">
+                                    <button type="button" onClick={() => setIsAddingEvent(!isAddingEvent)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded">
+                                        {isAddingEvent ? "Close Event Add" : "+ Quick Event"}
+                                    </button>
+                                    <button type="button" onClick={() => setIsAddingAccount(!isAddingAccount)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded">
+                                        {isAddingAccount ? "Close Account Add" : "+ Quick Account"}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {isAddingEvent && (
+                                <div className="flex gap-2 p-3 bg-brand-50/50 rounded-xl border border-brand-100 animate-slide-down">
                                     <input 
                                         type="text" 
                                         autoFocus
-                                        className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none" 
-                                        placeholder="e.g. REQ-2026-0001" 
+                                        className="w-full bg-white dark:bg-gray-900 border border-gray-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:border-brand-500" 
+                                        placeholder="New Event ID..." 
                                         value={newEventId}
                                         onChange={(e) => setNewEventId(e.target.value)}
                                         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddEvent(); } }}
                                     />
-                                    <button type="button" onClick={handleQuickAddEvent} className="px-3 py-2 min-w-[70px] text-xs font-semibold rounded-xl bg-brand-500 text-white shadow hover:bg-brand-600">Save</button>
+                                    <button type="button" onClick={handleQuickAddEvent} className="bg-brand-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold">Save</button>
                                 </div>
-                            ) : (
-                                <select
-                                    value={eventId}
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                        setEventId(e.target.value);
-                                        const ev = eventOptions.find(opt => opt.event_id === e.target.value);
-                                        if (ev) setAccountCode(ev.account_code || "");
-                                    }}
-                                    className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
-                                >
-                                    <option value="">Select an Event ID...</option>
-                                    {eventOptions.map((ev: any) => (
-                                        <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
-                                    ))}
-                                </select>
                             )}
-                        </div>
 
-                        {/* Account Code */}
-                        <div className="md:col-span-1">
-                            <label className="flex items-center justify-between text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">
-                                Account Code
-                                <button type="button" onClick={() => setIsAddingAccount(!isAddingAccount)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded ml-2">
-                                    {isAddingAccount ? "Cancel" : "+ New"}
-                                </button>
-                            </label>
-                            {isAddingAccount ? (
-                                <div className="flex gap-2">
+                            {isAddingAccount && (
+                                <div className="flex gap-2 p-3 bg-brand-50/50 rounded-xl border border-brand-100 animate-slide-down">
                                     <input 
                                         type="text" 
                                         autoFocus
-                                        className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none" 
-                                        placeholder="e.g. ACC-001" 
+                                        className="w-full bg-white dark:bg-gray-900 border border-gray-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:border-brand-500" 
+                                        placeholder="New Account Code..." 
                                         value={newAccountCode}
                                         onChange={(e) => setNewAccountCode(e.target.value)}
                                         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddAccount(); } }}
                                     />
-                                    <button type="button" onClick={handleQuickAddAccount} className="px-3 py-2 min-w-[70px] text-xs font-semibold rounded-xl bg-brand-500 text-white shadow hover:bg-brand-600">Save</button>
+                                    <button type="button" onClick={handleQuickAddAccount} className="bg-brand-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold">Save</button>
                                 </div>
-                            ) : (
-                                <select
-                                    value={accountCode}
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAccountCode(e.target.value)}
-                                    className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
-                                >
-                                    <option value="">Select Account Code...</option>
-                                    {accountOptions.map((acc: any) => (
-                                        <option key={acc.id} value={acc.code}>{acc.code} - {acc.description}</option>
-                                    ))}
-                                </select>
                             )}
+
+                            <div className="space-y-3">
+                                {eventDetails.map((ed, idx) => (
+                                    <div key={idx} className="p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/10 relative group">
+                                        {eventDetails.length > 1 && (
+                                            <button 
+                                                type="button" 
+                                                onClick={() => removeEventRow(idx)}
+                                                className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                            </button>
+                                        )}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-tight ml-1">Event ID #{idx + 1}</label>
+                                                <select
+                                                    value={ed.eventId}
+                                                    onChange={(e) => updateEventDetail(idx, "eventId", e.target.value)}
+                                                    className="w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all"
+                                                >
+                                                    <option value="">Select Event...</option>
+                                                    {eventOptions.map((ev: EventMaster) => (
+                                                        <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-tight ml-1">Account Code #{idx + 1}</label>
+                                                <select
+                                                    value={ed.accountCode}
+                                                    onChange={(e) => updateEventDetail(idx, "accountCode", e.target.value)}
+                                                    className="w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all"
+                                                >
+                                                    <option value="">Select Account...</option>
+                                                    {accountOptions.map((acc: any) => (
+                                                        <option key={acc.id} value={acc.code}>{acc.code} - {acc.description}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {eventDetails.length < 20 && (
+                                    <button 
+                                        type="button" 
+                                        onClick={addEventRow}
+                                        className="w-full py-2.5 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-xl text-[10px] font-bold text-gray-400 hover:border-brand-500 hover:text-brand-500 hover:bg-brand-50/10 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                                        Add Another Event / Account Pair ({eventDetails.length}/20)
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Credit Card No */}

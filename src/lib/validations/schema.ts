@@ -24,7 +24,12 @@ export const requestFormSchema = z.object({
     endDate: z.string().min(1, "End date is required"),
     amount: z.coerce.number().positive("Amount must be greater than 0"),
     billingType: z.enum(["ONE_TIME", "MONTHLY", "YEARLY", "YEARLY_MONTHLY"]),
-    accountCode: z.string().optional(),
+    eventDetails: z.array(
+        z.object({
+            eventId: z.string().min(1, "Event ID is required"),
+            accountCode: z.string().min(1, "Account Code is required"),
+        })
+    ).min(1, "At least one Event ID / Account Code pair is required"),
     creditCardNo: z.string().optional(),
     promotionalChannels: z.array(
         z.object({

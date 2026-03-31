@@ -101,6 +101,7 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                 startDate: request.start_date,
                 endDate: request.end_date,
                 amount: request.amount,
+                eventDetails: request.event_details || [{ eventId: request.event_id || "", accountCode: request.account_code || "" }],
             };
 
             const { generateRequestPdf } = await import("@/lib/pdf-generator");
@@ -204,6 +205,12 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                             <span className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase font-semibold tracking-wider px-2 border-l border-gray-200">
                                 {getBillingLabel(request.billing_type)}
                             </span>
+                            {request.credit_card_no && (
+                                <span className="text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-1 rounded-lg border border-brand-100 flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                    Card: {request.credit_card_no}
+                                </span>
+                            )}
                         </div>
                         
                         <div>
@@ -357,6 +364,44 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                                                 <span className="text-brand-500 font-medium text-xs block mb-1">Effective Date</span>
                                                 <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{fmtDate(request.effective_date)}</p>
                                             </div>
+                                        </div>
+                                    )}
+                                    {((request.event_details && request.event_details.length > 0) || request.event_id) && (
+                                        <div className="pt-2 border-t border-gray-50 flex flex-col gap-3">
+                                            <span className="text-gray-400 dark:text-gray-500 text-xs block">Event & Account Details</span>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {(request.event_details && request.event_details.length > 0) ? (
+                                                    request.event_details.map((ed, idx) => (
+                                                        <div key={idx} className="flex justify-between items-center p-2.5 rounded-lg bg-gray-50/50 dark:bg-gray-900/10 border border-gray-100/50">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Event ID</span>
+                                                                <span className="text-sm font-mono font-bold text-brand-600">{ed.eventId}</span>
+                                                            </div>
+                                                            <div className="flex flex-col text-right">
+                                                                <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Account Code</span>
+                                                                <span className="text-sm font-mono font-bold text-gray-800">{ed.accountCode}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="flex justify-between items-center p-2.5 rounded-lg bg-gray-50/50 dark:bg-gray-900/10 border border-gray-100/50">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Event ID</span>
+                                                            <span className="text-sm font-mono font-bold text-brand-600">{request.event_id}</span>
+                                                        </div>
+                                                        <div className="flex flex-col text-right">
+                                                            <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Account Code</span>
+                                                            <span className="text-sm font-mono font-bold text-gray-800">{request.account_code || "N/A"}</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {request.credit_card_no && (
+                                        <div className="pt-2 border-t border-gray-50">
+                                            <span className="text-gray-400 dark:text-gray-500 text-xs block mb-1">Corporate Card No</span>
+                                            <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm font-mono">{request.credit_card_no}</p>
                                         </div>
                                     )}
                                 </div>

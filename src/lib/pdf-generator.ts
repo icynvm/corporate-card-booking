@@ -16,6 +16,8 @@ export interface RequestPdfData {
     startDate?: string;
     endDate?: string;
     amount?: string | number;
+    creditCardNo?: string | null;
+    eventDetails?: { eventId: string, accountCode: string }[];
 }
 
 const fmtDate = (d: string | null | undefined) => {
@@ -34,9 +36,13 @@ const fmtDate = (d: string | null | undefined) => {
 // normalizeThai imported from thai-utils
 
 export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint8Array> {
+    const standardChannels = ["Facebook", "IG", "Tiktok", "Youtube", "Line", "WeChat", "Google"];
+    
     const selectedChannels = Array.isArray(formData.promotionalChannels)
         ? formData.promotionalChannels.map((c: any) => typeof c === "string" ? c : c?.channel).filter(Boolean)
         : [];
+
+    const otherMedia = selectedChannels.find(c => !standardChannels.includes(c)) || "";
 
     const getCheckbox = (label: string) => {
         const isChecked = selectedChannels.includes(label);
@@ -53,6 +59,27 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                     width: 14
                 },
                 { text: label, fontSize: 8.5 }
+            ],
+            margin: [0, 3, 0, 3]
+        };
+    };
+
+    const checkboxOther = (label: string, otherValue: string) => {
+        const isChecked = !!otherValue;
+        return {
+            columns: [
+                {
+                    canvas: [
+                        { type: 'rect', x: 0, y: 1, w: 9, h: 9, lineWidth: 0.8, lineColor: '#555555' },
+                        ...(isChecked ? [
+                            { type: 'line', x1: 2, y1: 5, x2: 4, y2: 8, lineWidth: 1.5, lineColor: '#222222' },
+                            { type: 'line', x1: 4, y1: 8, x2: 8, y2: 2, lineWidth: 1.5, lineColor: '#222222' }
+                        ] : [])
+                    ],
+                    width: 14
+                },
+                { text: label + ' : ', fontSize: 8.5 },
+                { text: normalizeThai(otherValue) || "__________________________", fontSize: 8.5, decoration: otherValue ? 'underline' : undefined }
             ],
             margin: [0, 3, 0, 3]
         };
@@ -158,26 +185,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
         return parts;
     };
 
-    const checkboxOther = (label: string, otherValue: string) => {
-        const isChecked = selectedChannels.includes(label);
-        return {
-            columns: [
-                {
-                    canvas: [
-                        { type: 'rect', x: 0, y: 1, w: 9, h: 9, lineWidth: 0.8, lineColor: '#555555' },
-                        ...(isChecked ? [
-                            { type: 'line', x1: 2, y1: 5, x2: 4, y2: 8, lineWidth: 1.5, lineColor: '#222222' },
-                            { type: 'line', x1: 4, y1: 8, x2: 8, y2: 2, lineWidth: 1.5, lineColor: '#222222' }
-                        ] : [])
-                    ],
-                    width: 14
-                },
-                { text: label + ' : ', fontSize: 8.5 },
-                { text: normalizeThai(otherValue) || "__________________________", fontSize: 8.5, decoration: otherValue ? 'underline' : undefined }
-            ],
-            margin: [0, 3, 0, 3]
-        };
-    };
+
 
     const docDefinition: any = {
         pageSize: 'A4',
@@ -199,7 +207,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 columns: [
                     { text: '', width: '*' },
                     { text: 'CARD NO. ', bold: true, width: 'auto', fontSize: 10 },
-                    { text: '_______________________', width: 120, fontSize: 10 },
+                    { text: formData.creditCardNo || '_______________________', width: 120, fontSize: 10, decoration: formData.creditCardNo ? 'underline' : undefined },
                     { text: '', width: '*' }
                 ],
                 margin: [0, 0, 0, 15]
@@ -212,7 +220,29 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
             getUnderlinedField('Department / แผนก  :', normalizeThai(formData.department), 100),
             getTwoColumnUnderlinedField('Contact No. / เบอร์ติดต่อ  :', formData.contactNo, 100, 'E-Mail  :', formData.email, 40),
 
-            { text: '', margin: [0, 10] },
+            { text: '', margin: [0, 5] },
+            { 
+                table: {
+                    widths: ['*', '*'],
+                    body: [
+                        [
+                            { text: 'Event ID / รหัสอีเว้นท์', style: 'sectionHeader', border: [false, false, false, true] },
+                            { text: 'Account Code / รหัสบัญชี', style: 'sectionHeader', border: [false, false, false, true] }
+                        ],
+                        ...(formData.eventDetails && formData.eventDetails.length > 0 
+                            ? formData.eventDetails.map(ed => [
+                                { text: ed.eventId, style: 'value', margin: [0, 2] },
+                                { text: ed.accountCode, style: 'value', margin: [0, 2] }
+                            ])
+                            : [[{ text: 'N/A', style: 'value' }, { text: 'N/A', style: 'value' }]]
+                        )
+                    ]
+                },
+                layout: 'lightHorizontalLines',
+                margin: [0, 5, 0, 10]
+            },
+
+            { text: '', margin: [0, 5] },
 
             { text: 'REQUEST DETAILS / รายละเอียดการขอใช้', style: 'sectionHeader' },
             { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
@@ -237,7 +267,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                     ],
                     [
                         getCheckbox("Google"),
-                        checkboxOther("Other", "")
+                        checkboxOther("Other", otherMedia)
                     ]
                 ],
                 margin: [5, 0, 0, 10]

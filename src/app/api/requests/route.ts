@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
         const { data: request, error: insertError } = await supabase
             .from("requests")
             .insert({
-                event_id: eventId,
+                event_id: body.eventDetails?.[0]?.eventId || eventId,
                 user_id: userId,
                 full_name: cleanText(body.fullName || ""),
                 project_id: projectId || null,
@@ -150,7 +150,8 @@ export async function POST(req: NextRequest) {
                 booking_date: body.bookingDate || null,
                 effective_date: body.effectiveDate || null,
                 promotional_channels: body.promotionalChannels || [],
-                account_code: body.accountCode || null,
+                account_code: body.eventDetails?.[0]?.accountCode || null,
+                event_details: body.eventDetails || [],
                 credit_card_no: body.creditCardNo || null,
                 status: "PENDING_APPROVAL",
             })
@@ -205,7 +206,9 @@ export async function POST(req: NextRequest) {
                     effectiveDate: body.effectiveDate,
                     startDate: body.startDate,
                     endDate: body.endDate,
-                    amount: body.amount
+                    amount: body.amount,
+                    creditCardNo: body.creditCardNo,
+                    eventDetails: body.eventDetails || []
                 });
 
                 const now = new Date();

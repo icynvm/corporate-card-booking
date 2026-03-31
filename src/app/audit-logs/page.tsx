@@ -35,25 +35,25 @@ const describeAuditChange = (action: string, changes: Record<string, unknown> | 
         case "STATUS_CHANGE": {
             const from = STATUS_LABEL_MAP[changes.old_status as string] || (changes.old_status as string);
             const to = STATUS_LABEL_MAP[changes.new_status as string] || (changes.new_status as string);
-            let msg = `Changed status: ${from} โ’ ${to}`;
-            if (changes.notes) msg += ` โ€” "${changes.notes}"`;
+            let msg = `Changed status: ${from} ✅ ${to}`;
+            if (changes.notes) msg += ` ✅ "${changes.notes}"`;
             return msg;
         }
         case "APPROVE": {
             const from = STATUS_LABEL_MAP[changes.old_status as string] || "";
             let msg = "Approved this request";
             if (from) msg += ` (was ${from})`;
-            if (changes.notes) msg += ` โ€” "${changes.notes}"`;
+            if (changes.notes) msg += ` ✅ "${changes.notes}"`;
             return msg;
         }
         case "REJECT": {
             let msg = "Rejected this request";
-            if (changes.notes) msg += ` โ€” "${changes.notes}"`;
+            if (changes.notes) msg += ` ❌ "${changes.notes}"`;
             return msg;
         }
         case "CANCEL": {
             let msg = "Cancelled this request";
-            if (changes.notes) msg += ` โ€” "${changes.notes}"`;
+            if (changes.notes) msg += ` 🚫 "${changes.notes}"`;
             return msg;
         }
         case "CREATE":
@@ -84,7 +84,7 @@ const ACTION_OPTIONS = [
     { value: "VERIFY", label: "Verify" },
 ];
 
-/* โ”€โ”€ Component โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€ */
+
 export default function AuditLogsPage() {
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [filterEntity, setFilterEntity] = useState("");
@@ -173,7 +173,7 @@ export default function AuditLogsPage() {
         }
     };
 
-    /* โ”€โ”€ Filtering โ”€โ”€ */
+
     let filteredLogs = logs;
     if (filterAction) {
         filteredLogs = filteredLogs.filter((l: AuditLog) => l.action === filterAction);
@@ -266,12 +266,12 @@ export default function AuditLogsPage() {
                                             {log.action}
                                         </span>
                                         <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 font-mono">{log.entity_type}</span>
-                                        <span className="text-[10px] text-gray-300 hidden sm:inline">โ€ข</span>
+                                        <span className="text-[10px] text-gray-300 hidden sm:inline">✅</span>
                                         <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 font-mono break-all">{log.entity_id?.substring(0, 8)}...</span>
                                     </div>
                                     <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 break-words whitespace-pre-wrap leading-relaxed">
                                         {log.user_name && <span className="font-medium">{log.user_name}</span>}
-                                        {log.user_name && " โ€” "}
+                                        {log.user_name && " ✅ "}
                                         {describeAuditChange(log.action, log.changes)}
                                     </p>
                                 </div>

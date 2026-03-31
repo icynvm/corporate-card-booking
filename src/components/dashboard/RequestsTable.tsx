@@ -97,18 +97,23 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
         () => [
             columnHelper.accessor("event_id", {
                 header: "Event ID",
-                cell: (info: any) => (
-                    <div className="flex items-center gap-2">
-                        <Link
-                            href={`/request/${info.row.original.id}`}
-                            className="font-mono text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1"
-                            title="View Request Details"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-                            {info.getValue()}
-                        </Link>
-                    </div>
-                ),
+                cell: (info: any) => {
+                    const row = info.row.original;
+                    const hasMultiple = row.event_details && row.event_details.length > 1;
+                    return (
+                        <div className="flex items-center gap-2">
+                            <Link
+                                href={`/request/${row.id}`}
+                                className="font-mono text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1"
+                                title={hasMultiple ? "Multiple Events" : "View Request Details"}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                                {info.getValue()}
+                                {hasMultiple && <span className="ml-1 text-[10px] text-gray-400 font-normal">(+{row.event_details.length - 1})</span>}
+                            </Link>
+                        </div>
+                    );
+                },
             }),
             columnHelper.accessor("project_name", {
                 header: "Project",

@@ -1,32 +1,28 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PostSubmissionActions } from "@/components/forms/PostSubmissionActions";
 import { normalizeThai } from "@/lib/thai-utils";
 import { supabase } from "@/lib/supabase";
+import { Project, EventMaster, AccountCodeMaster, CreditCardMaster } from "@/lib/types";
 import {
     requestFormSchema,
     RequestFormData,
     PROMOTIONAL_CHANNELS,
 } from "@/lib/validations/schema";
 
-interface ProjectOption {
-    id: string;
-    project_name: string;
-}
-
 export function CardRequestForm() {
     const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
     const [submittedData, setSubmittedData] = useState<RequestFormData | null>(null);
     const [selectedChannels, setSelectedChannels] = useState<Set<string>>(new Set());
-    const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
+    const [projectOptions, setProjectOptions] = useState<Project[]>([]);
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const [eventOptions, setEventOptions] = useState<any[]>([]);
-    const [accountOptions, setAccountOptions] = useState<any[]>([]);
-    const [cardOptions, setCardOptions] = useState<any[]>([]);
+    const [eventOptions, setEventOptions] = useState<EventMaster[]>([]);
+    const [accountOptions, setAccountOptions] = useState<AccountCodeMaster[]>([]);
+    const [cardOptions, setCardOptions] = useState<CreditCardMaster[]>([]);
     const [customChannelName, setCustomChannelName] = useState<string>("");
     const [showCustomInput, setShowCustomInput] = useState<boolean>(false);
 
@@ -67,8 +63,18 @@ export function CardRequestForm() {
             billingType: "ONE_TIME",
             accountCode: "",
             creditCardNo: "",
+            eventDetails: [{ eventId: "", accountCode: "" }],
             promotionalChannels: [],
         },
+    });
+
+    const { 
+        fields: eventFields, 
+        append: appendEvent, 
+        remove: removeEvent 
+    } = useFieldArray({
+        control,
+        name: "eventDetails",
     });
 
     const { fields, append, remove } = useFieldArray({
@@ -226,7 +232,7 @@ export function CardRequestForm() {
 
         const cleanData = sanitize(data);
 
-        const selectedProject = projectOptions.find((p: any) => p.id === cleanData.projectId);
+        const selectedProject = projectOptions.find((p: Project) => p.id === cleanData.projectId);
 
         const requestBody = {
             ...cleanData,
@@ -327,7 +333,7 @@ export function CardRequestForm() {
                         <span className="w-6 h-6 rounded-lg bg-pastel-blue text-brand-700 flex items-center justify-center text-xs font-bold">2</span>
                         Project & Master Data
                     </h2>
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         <div>
                             <label className="label-text flex items-center justify-between">
                                 Project Name
@@ -343,15 +349,15 @@ export function CardRequestForm() {
                                         className="input-field py-2 text-sm" 
                                         placeholder="Type new project name..." 
                                         value={newProjectName}
-                                        onChange={(e) => setNewProjectName(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddProject(); } }}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewProjectName(e.target.value)}
+                                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddProject(); } }}
                                     />
                                     <button type="button" onClick={handleQuickAddProject} className="btn-primary px-3 py-2 min-w-[70px] text-xs">Save</button>
                                 </div>
                             ) : (
                                 <select {...register("projectId")} className="select-field">
                                     <option value="">Select a project...</option>
-                                    {projectOptions.map((p: any) => (
+                                    {projectOptions.map((p: Project) => (
                                         <option key={p.id} value={p.id}>{p.project_name}</option>
                                     ))}
                                 </select>
@@ -359,71 +365,112 @@ export function CardRequestForm() {
                             {errors.projectId && !isAddingProject && <p className="text-red-400 text-xs mt-1">{errors.projectId.message}</p>}
                         </div>
 
-                        <div>
-                            <label className="label-text flex items-center justify-between">
-                                Linked Event ID
-                                <button type="button" onClick={() => setIsAddingEvent(!isAddingEvent)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded">
-                                    {isAddingEvent ? "Cancel" : "+ New"}
-                                </button>
-                            </label>
-                            {isAddingEvent ? (
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <label className="label-text">Event & Account Details</label>
                                 <div className="flex gap-2">
+                                    <button type="button" onClick={() => setIsAddingEvent(!isAddingEvent)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded">
+                                        {isAddingEvent ? "Close Event Add" : "+ Quick Event"}
+                                    </button>
+                                    <button type="button" onClick={() => setIsAddingAccount(!isAddingAccount)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded">
+                                        {isAddingAccount ? "Close Account Add" : "+ Quick Account"}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {isAddingEvent && (
+                                <div className="flex gap-2 p-3 bg-brand-50/50 rounded-xl border border-brand-100 animate-slide-down">
                                     <input 
                                         type="text" 
                                         autoFocus
-                                        className="input-field py-2 text-sm" 
-                                        placeholder="e.g. REQ-2026-0001" 
+                                        className="input-field py-1.5 text-xs" 
+                                        placeholder="New Event ID..." 
                                         value={newEventId}
-                                        onChange={(e) => setNewEventId(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddEvent(); } }}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEventId(e.target.value)}
+                                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddEvent(); } }}
                                     />
-                                    <button type="button" onClick={handleQuickAddEvent} className="btn-primary px-3 py-2 min-w-[70px] text-xs">Save</button>
+                                    <button type="button" onClick={handleQuickAddEvent} className="btn-primary px-3 py-1.5 min-w-[60px] text-[10px]">Save Event</button>
                                 </div>
-                            ) : (
-                                <select
-                                    className="select-field"
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                        const ev = eventOptions.find(opt => opt.event_id === e.target.value);
-                                        if (ev) setValue("accountCode", ev.account_code || "");
-                                    }}
-                                >
-                                    <option value="">Select an Event ID...</option>
-                                    {eventOptions.map((ev: any) => (
-                                        <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
-                                    ))}
-                                </select>
                             )}
-                            <p className="text-[10px] text-gray-400 mt-1">Populates account code automatically.</p>
-                        </div>
-                        <div>
-                            <label className="label-text flex items-center justify-between">
-                                Account Code
-                                <button type="button" onClick={() => setIsAddingAccount(!isAddingAccount)} className="text-[10px] text-brand-600 font-bold hover:underline bg-brand-50 px-2 py-0.5 rounded">
-                                    {isAddingAccount ? "Cancel" : "+ New"}
-                                </button>
-                            </label>
-                            {isAddingAccount ? (
-                                <div className="flex gap-2">
+
+                            {isAddingAccount && (
+                                <div className="flex gap-2 p-3 bg-brand-50/50 rounded-xl border border-brand-100 animate-slide-down">
                                     <input 
                                         type="text" 
                                         autoFocus
-                                        className="input-field py-2 text-sm" 
-                                        placeholder="e.g. ACC-001" 
+                                        className="input-field py-1.5 text-xs" 
+                                        placeholder="New Account Code..." 
                                         value={newAccountCode}
-                                        onChange={(e) => setNewAccountCode(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddAccount(); } }}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewAccountCode(e.target.value)}
+                                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddAccount(); } }}
                                     />
-                                    <button type="button" onClick={handleQuickAddAccount} className="btn-primary px-3 py-2 min-w-[70px] text-xs">Save</button>
+                                    <button type="button" onClick={handleQuickAddAccount} className="btn-primary px-3 py-1.5 min-w-[60px] text-[10px]">Save Account</button>
                                 </div>
-                            ) : (
-                                <select {...register("accountCode")} className="select-field">
-                                    <option value="">Select Account Code...</option>
-                                    {accountOptions.map((acc: any) => (
-                                        <option key={acc.id} value={acc.code}>{acc.code} - {acc.description}</option>
-                                    ))}
-                                </select>
                             )}
+
+                            <div className="space-y-3">
+                                {eventFields.map((field: any, index: number) => (
+                                    <div key={field.id} className="p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 relative group shadow-sm transition-all hover:shadow-md">
+                                        {eventFields.length > 1 && (
+                                            <button 
+                                                type="button"
+                                                onClick={() => removeEvent(index)}
+                                                className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                            </button>
+                                        )}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1 block">Event ID #{index + 1}</label>
+                                                <select
+                                                    {...register(`eventDetails.${index}.eventId`)}
+                                                    className="select-field !py-2 !text-xs"
+                                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                                        const val = e.target.value;
+                                                        const ev = eventOptions.find((opt: EventMaster) => opt.event_id === val);
+                                                        if (ev) setValue(`eventDetails.${index}.accountCode`, ev.account_code || "");
+                                                        const { onChange } = register(`eventDetails.${index}.eventId`);
+                                                        onChange(e);
+                                                    }}
+                                                >
+                                                    <option value="">Select Event...</option>
+                                                    {eventOptions.map((ev: EventMaster) => (
+                                                        <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
+                                                    ))}
+                                                </select>
+                                                {errors.eventDetails?.[index]?.eventId && <p className="text-red-400 text-[10px] mt-1">{errors.eventDetails[index]?.eventId?.message}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1 block">Account Code #{index + 1}</label>
+                                                <select 
+                                                    {...register(`eventDetails.${index}.accountCode`)} 
+                                                    className="select-field !py-2 !text-xs"
+                                                >
+                                                    <option value="">Select Account...</option>
+                                                    {accountOptions.map((acc: AccountCodeMaster) => (
+                                                        <option key={acc.id} value={acc.code}>{acc.code} - {acc.description}</option>
+                                                    ))}
+                                                </select>
+                                                {errors.eventDetails?.[index]?.accountCode && <p className="text-red-400 text-[10px] mt-1">{errors.eventDetails[index]?.accountCode?.message}</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {eventFields.length < 20 && (
+                                    <button 
+                                        type="button"
+                                        onClick={() => appendEvent({ eventId: "", accountCode: "" })}
+                                        className="w-full py-3 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl text-xs font-bold text-gray-400 hover:border-brand-500 hover:text-brand-500 hover:bg-brand-50/10 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                        Add Another Event / Account Pair ({eventFields.length}/20)
+                                    </button>
+                                )}
+                            </div>
                         </div>
+
                         <div>
                             <label className="label-text flex items-center justify-between">
                                 Select Credit Card
@@ -439,23 +486,23 @@ export function CardRequestForm() {
                                         className="input-field py-2 text-sm w-1/2" 
                                         placeholder="Name (e.g. AMEX)" 
                                         value={newCardName}
-                                        onChange={(e) => setNewCardName(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewCardName(e.target.value)}
                                     />
                                     <input 
                                         type="text" 
                                         className="input-field py-2 text-sm w-1/2" 
                                         placeholder="Card No (e.g. 1234)" 
                                         value={newCardNo}
-                                        onChange={(e) => setNewCardNo(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddCard(); } }}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewCardNo(e.target.value)}
+                                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddCard(); } }}
                                     />
                                     <button type="button" onClick={handleQuickAddCard} className="btn-primary px-3 py-2 min-w-[70px] text-xs">Save</button>
                                 </div>
                             ) : (
                                 <select {...register("creditCardNo")} className="select-field">
                                     <option value="">Select Corporate Card...</option>
-                                    {cardOptions.map((card: any) => (
-                                        <option key={card.id} value={card.card_no}>{card.card_name} ({card.card_no.slice(-4)})</option>
+                                    {cardOptions.map((c: CreditCardMaster) => (
+                                        <option key={c.id} value={c.card_no}>{c.card_no} - {c.card_name}</option>
                                     ))}
                                 </select>
                             )}

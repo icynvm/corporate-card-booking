@@ -43,7 +43,12 @@ export default function AdminRequestRow({
                 {/* Info Block */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-mono text-xs font-bold text-brand-600">{req.event_id}</span>
+                        <span className="font-mono text-xs font-bold text-brand-600">
+                            {req.event_id}
+                            {req.event_details && req.event_details.length > 1 && (
+                                <span className="ml-1 text-[10px] text-gray-400 font-normal">(+{req.event_details.length - 1})</span>
+                            )}
+                        </span>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getStatusColor(req.status)}`}>
                             {(STATUS_LABELS as Record<string, string>)[req.status] || req.status}
                         </span>

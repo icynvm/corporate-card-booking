@@ -89,6 +89,48 @@ export default function ExpandedRequestDetails({ req, reqLogs, addToast }: Expan
                     </div>
                 </div>
 
+                {/* Event & Account Details */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100">
+                        <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Events & Accounts</h4>
+                    </div>
+                    <div className="p-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {(req.event_details && (req.event_details as any).length > 0) ? (
+                                (req.event_details as any).map((ed: any, idx: number) => (
+                                    <div key={idx} className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg border border-gray-100 text-xs">
+                                        <div className="font-bold text-brand-600 mb-1.5 pb-1.5 border-b border-gray-100 flex justify-between items-center">
+                                            <span>Event #{idx + 1}</span>
+                                            <span className="font-mono">{ed.eventId}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-400 uppercase text-[10px] font-bold">Account Code</span>
+                                            <span className="font-mono font-bold text-gray-700 dark:text-gray-200">{ed.accountCode}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg border border-gray-100 text-xs">
+                                    <div className="font-bold text-brand-600 mb-1.5 pb-1.5 border-b border-gray-100 flex justify-between items-center">
+                                        <span>Event</span>
+                                        <span className="font-mono">{req.event_id || "N/A"}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-400 uppercase text-[10px] font-bold">Account Code</span>
+                                        <span className="font-mono font-bold text-gray-700 dark:text-gray-200">{req.account_code || "N/A"}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {req.credit_card_no && (
+                            <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center px-1">
+                                <span className="text-xs text-gray-400 uppercase font-bold tracking-tight">Corporate Card Number</span>
+                                <span className="text-sm font-mono font-bold text-brand-600">{req.credit_card_no}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* Row 2: Objective */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                     <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100">
