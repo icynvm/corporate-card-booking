@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -19,7 +19,7 @@ interface ProjectOption {
 }
 
 export function CardRequestForm() {
-    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
     const [submittedData, setSubmittedData] = useState<RequestFormData | null>(null);
     const [selectedChannels, setSelectedChannels] = useState<Set<string>>(new Set());
     const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
@@ -27,8 +27,8 @@ export function CardRequestForm() {
     const [eventOptions, setEventOptions] = useState<any[]>([]);
     const [accountOptions, setAccountOptions] = useState<any[]>([]);
     const [cardOptions, setCardOptions] = useState<any[]>([]);
-    const [customChannelName, setCustomChannelName] = useState("");
-    const [showCustomInput, setShowCustomInput] = useState(false);
+    const [customChannelName, setCustomChannelName] = useState<string>("");
+    const [showCustomInput, setShowCustomInput] = useState<boolean>(false);
 
     const {
         register,
@@ -64,7 +64,7 @@ export function CardRequestForm() {
 
     // Fetch Master Data
     useEffect(() => {
-        const fetchMasterData = async () => {
+        const fetchMasterData = async (): Promise<void> => {
             try {
                 // Fetch Projects
                 const resProjects = await fetch("/api/projects");
@@ -88,7 +88,7 @@ export function CardRequestForm() {
         fetchMasterData();
     }, []);
 
-    const handleChannelToggle = (channel: string) => {
+    const handleChannelToggle = (channel: string): void => {
         const newSelection = new Set(selectedChannels);
         if (newSelection.has(channel)) {
             newSelection.delete(channel);
@@ -101,7 +101,7 @@ export function CardRequestForm() {
         setSelectedChannels(newSelection);
     };
 
-    const handleAddCustomChannel = () => {
+    const handleAddCustomChannel = (): void => {
         if (!customChannelName.trim()) return;
         const channel = customChannelName.trim();
         if (!selectedChannels.has(channel)) {
@@ -111,12 +111,9 @@ export function CardRequestForm() {
         setShowCustomInput(false);
     };
 
-    // normalizeThai imported from thai-utils
-
-    const onSubmit = async (data: RequestFormData) => {
+    const onSubmit = async (data: RequestFormData): Promise<void> => {
         setSubmitError(null);
 
-        // โ… Sanitize object recursively
         const sanitize = (obj: any): any => {
             if (typeof obj === "string") return normalizeThai(obj);
             if (Array.isArray(obj)) return obj.map(sanitize);
@@ -130,7 +127,6 @@ export function CardRequestForm() {
 
         const cleanData = sanitize(data);
 
-        // Get project name from options
         const selectedProject = projectOptions.find((p: any) => p.id === cleanData.projectId);
 
         const requestBody = {
@@ -172,7 +168,7 @@ export function CardRequestForm() {
                 <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-1">
                     New Card <span className="gradient-text">Request</span>
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                     Fill in the details below to request corporate card usage.
                 </p>
             </div>
@@ -188,7 +184,6 @@ export function CardRequestForm() {
                         {submitError}
                     </div>
                 )}
-                {/* Personal Information */}
                 <GlassCard>
                     <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-5 flex items-center gap-2">
                         <span className="w-6 h-6 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center text-xs font-bold">1</span>
@@ -199,7 +194,7 @@ export function CardRequestForm() {
                             <label className="label-text">Full Name</label>
                             <input
                                 {...fullNameProps}
-                                onChange={(e) => { e.target.value = normalizeThai(e.target.value); fullNameOnChange(e); }}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { e.target.value = normalizeThai(e.target.value); fullNameOnChange(e); }}
                                 className="input-field"
                                 placeholder="Enter your full name"
                             />
@@ -209,7 +204,7 @@ export function CardRequestForm() {
                             <label className="label-text">Team</label>
                             <input
                                 {...departmentProps}
-                                onChange={(e) => { e.target.value = normalizeThai(e.target.value); departmentOnChange(e); }}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { e.target.value = normalizeThai(e.target.value); departmentOnChange(e); }}
                                 className="input-field"
                                 placeholder="e.g. Web Developer"
                             />
@@ -225,6 +220,15 @@ export function CardRequestForm() {
                             <input {...register("email")} type="email" className="input-field" placeholder="you@company.com" />
                             {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
                         </div>
+                    </div>
+                </GlassCard>
+
+                <GlassCard>
+                    <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-5 flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-pastel-blue text-brand-700 flex items-center justify-center text-xs font-bold">2</span>
+                        Project & Master Data
+                    </h2>
+                    <div className="space-y-4">
                         <div>
                             <label className="label-text">Project Name</label>
                             <select
@@ -238,51 +242,49 @@ export function CardRequestForm() {
                             </select>
                             {errors.projectId && <p className="text-red-400 text-xs mt-1">{errors.projectId.message}</p>}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-4 border-t border-gray-100 dark:border-gray-800/50 mt-4">
-                            <div>
-                                <label className="label-text">Linked Event ID</label>
-                                <select
-                                    className="select-field"
-                                    onChange={(e: any) => {
-                                        const ev = eventOptions.find(opt => opt.event_id === e.target.value);
-                                        if (ev) {
-                                            setValue("accountCode", ev.account_code || "");
-                                        }
-                                    }}
-                                >
-                                    <option value="">Select an Event ID...</option>
-                                    {eventOptions.map((ev: any) => (
-                                        <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
-                                    ))}
-                                </select>
-                                <p className="text-[10px] text-gray-400 mt-1">Populates account code automatically.</p>
-                            </div>
-                            <div>
-                                <label className="label-text">Account Code</label>
-                                <select {...register("accountCode")} className="select-field">
-                                    <option value="">Select Account Code...</option>
-                                    {accountOptions.map((acc: any) => (
-                                        <option key={acc.id} value={acc.code}>{acc.code} - {acc.description}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="label-text">Select Credit Card</label>
-                                <select {...register("creditCardNo")} className="select-field">
-                                    <option value="">Select Corporate Card...</option>
-                                    {cardOptions.map((card: any) => (
-                                        <option key={card.id} value={card.card_no}>{card.card_name} ({card.card_no.slice(-4)})</option>
-                                    ))}
-                                </select>
-                            </div>
+
+                        <div>
+                            <label className="label-text">Linked Event ID</label>
+                            <select
+                                className="select-field"
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                    const ev = eventOptions.find(opt => opt.event_id === e.target.value);
+                                    if (ev) {
+                                        setValue("accountCode", ev.account_code || "");
+                                    }
+                                }}
+                            >
+                                <option value="">Select an Event ID...</option>
+                                {eventOptions.map((ev: any) => (
+                                    <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
+                                ))}
+                            </select>
+                            <p className="text-[10px] text-gray-400 mt-1">Populates account code automatically.</p>
+                        </div>
+                        <div>
+                            <label className="label-text">Account Code</label>
+                            <select {...register("accountCode")} className="select-field">
+                                <option value="">Select Account Code...</option>
+                                {accountOptions.map((acc: any) => (
+                                    <option key={acc.id} value={acc.code}>{acc.code} - {acc.description}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="label-text">Select Credit Card</label>
+                            <select {...register("creditCardNo")} className="select-field">
+                                <option value="">Select Corporate Card...</option>
+                                {cardOptions.map((card: any) => (
+                                    <option key={card.id} value={card.card_no}>{card.card_name} ({card.card_no.slice(-4)})</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                 </GlassCard>
 
-                {/* Request Details */}
                 <GlassCard>
                     <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-5 flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-lg bg-pastel-mint text-emerald-700 flex items-center justify-center text-xs font-bold">2</span>
+                        <span className="w-6 h-6 rounded-lg bg-pastel-mint text-emerald-700 flex items-center justify-center text-xs font-bold">3</span>
                         Request Details
                     </h2>
                     <div className="space-y-5">
@@ -290,7 +292,7 @@ export function CardRequestForm() {
                             <label className="label-text">Objective</label>
                             <textarea
                                 {...objectiveProps}
-                                onChange={(e) => { e.target.value = normalizeThai(e.target.value); objectiveOnChange(e); }}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => { e.target.value = normalizeThai(e.target.value); objectiveOnChange(e); }}
                                 className="input-field min-h-[100px] resize-none"
                                 placeholder="Describe the purpose of this card request..."
                                 rows={3}
@@ -344,17 +346,15 @@ export function CardRequestForm() {
                                 {errors.billingType && <p className="text-red-400 text-xs mt-1">{errors.billingType.message}</p>}
                             </div>
                         </div>
-
                     </div>
                 </GlassCard>
 
-                {/* Promotional Channels */}
                 <GlassCard>
                     <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-5 flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-lg bg-pastel-purple text-purple-700 flex items-center justify-center text-xs font-bold">3</span>
+                        <span className="w-6 h-6 rounded-lg bg-pastel-purple text-purple-700 flex items-center justify-center text-xs font-bold">4</span>
                         Promotional Channels
                     </h2>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 mb-4">
+                    <p className="text-xs text-gray-400 mb-4">
                         Select the advertising channels for this expense. For each selected channel, specify the media account and access details.
                     </p>
 
@@ -367,9 +367,9 @@ export function CardRequestForm() {
                                     type="button"
                                     onClick={() => handleChannelToggle(channel)}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border
-                                    ${isChecked 
-                                        ? "bg-brand-50 border-brand-200 text-brand-700 shadow-sm" 
-                                        : "bg-white dark:bg-gray-800/30 border-gray-100 dark:border-gray-800/50 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:border-brand-100"}`}
+                                    ${isChecked
+                                            ? "bg-brand-50 border-brand-200 text-brand-700 shadow-sm"
+                                            : "bg-white dark:bg-gray-800/30 border-gray-100 dark:border-gray-800/50 text-gray-500 hover:border-brand-100"}`}
                                 >
                                     <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors
                                     ${isChecked ? "bg-brand-500 border-brand-500" : "border-gray-300"}`}>
@@ -384,7 +384,6 @@ export function CardRequestForm() {
                             );
                         })}
 
-                        {/* Custom Channels that were added */}
                         {Array.from(selectedChannels).filter(c => !PROMOTIONAL_CHANNELS.includes(c)).map((channel) => (
                             <button
                                 key={channel}
@@ -403,13 +402,13 @@ export function CardRequestForm() {
 
                         {showCustomInput ? (
                             <div className="flex items-center gap-2 animate-fade-in">
-                                <input 
-                                    type="text" 
-                                    className="input-field !py-1.5 !px-3 !text-sm w-32" 
+                                <input
+                                    type="text"
+                                    className="input-field !py-1.5 !px-3 !text-sm w-32"
                                     placeholder="Channel name..."
                                     value={customChannelName}
-                                    onChange={(e) => setCustomChannelName(e.target.value)}
-                                    onKeyDown={(e) => {
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomChannelName(e.target.value)}
+                                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                                         if (e.key === "Enter") {
                                             e.preventDefault();
                                             handleAddCustomChannel();
@@ -417,15 +416,15 @@ export function CardRequestForm() {
                                     }}
                                     autoFocus
                                 />
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     onClick={handleAddCustomChannel}
                                     className="p-1.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                                 </button>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     onClick={() => setShowCustomInput(false)}
                                     className="p-1.5 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors"
                                 >

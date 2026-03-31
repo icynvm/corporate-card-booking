@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, ChangeEvent } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { RequestRecord } from "@/lib/types";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -30,7 +30,9 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
     const [endDate, setEndDate] = useState("");
     const [bookingDate, setBookingDate] = useState("");
     const [effectiveDate, setEffectiveDate] = useState("");
-    const [selectedChannels, setSelectedChannels] = useState<Set<string>>(new Set());
+    const [promotionalChannels, setPromotionalChannels] = useState<any[]>([]);
+    const [customChannelName, setCustomChannelName] = useState("");
+    const [showCustomInput, setShowCustomInput] = useState(false);
     
     // Project Search States
     const [projectSearch, setProjectSearch] = useState("");
@@ -38,6 +40,10 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
     const [showProjectDropdown, setShowProjectDropdown] = useState(false);
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const projectRef = useRef<HTMLDivElement>(null);
+
+    const [eventId, setEventId] = useState("");
+    const [accountCode, setAccountCode] = useState("");
+    const [creditCardNo, setCreditCardNo] = useState("");
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
@@ -56,11 +62,13 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
             setStartDate(request.start_date ? request.start_date.substring(0, 10) : "");
             setEndDate(request.end_date ? request.end_date.substring(0, 10) : "");
             setBookingDate(request.booking_date ? request.booking_date.substring(0, 10) : "");
-            setEffectiveDate(request.effective_date ? request.effective_date.substring(0, 10) : "");
+            setEventId(request.event_id || "");
+            setAccountCode(request.account_code || "");
+            setCreditCardNo(request.credit_card_no || "");
             
             // Map promotional channels
             const channels = Array.isArray(request.promotional_channels) ? request.promotional_channels : [];
-            setSelectedChannels(new Set(channels.map((c: any) => typeof c === 'string' ? c : c?.channel).filter(Boolean)));
+            setPromotionalChannels(channels);
             setError("");
         }
     }, [request, isOpen]);
@@ -97,13 +105,33 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
     }, []);
 
     const handleChannelToggle = (channel: string) => {
-        const newSelection = new Set(selectedChannels);
-        if (newSelection.has(channel)) {
-            newSelection.delete(channel);
-        } else {
-            newSelection.add(channel);
+        setPromotionalChannels((prev: any[]) => {
+            const exists = prev.find((c: any) => c.channel === channel);
+            if (exists) {
+                return prev.filter((c: any) => c.channel !== channel);
+            }
+            return [...prev, { channel, mediaAccountEmail: "", accessList: "" }];
+        });
+    };
+
+    const updateChannelDetail = (index: number, field: string, value: string) => {
+        setPromotionalChannels((prev: any[]) => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], [field]: value };
+            return updated;
+        });
+    };
+
+    const handleAddCustomChannel = () => {
+        if (!customChannelName.trim()) return;
+        if (promotionalChannels.some(c => c.channel === customChannelName.trim())) {
+            setCustomChannelName("");
+            setShowCustomInput(false);
+            return;
         }
-        setSelectedChannels(newSelection);
+        setPromotionalChannels(prev => [...prev, { channel: customChannelName.trim(), mediaAccountEmail: "", accessList: "" }]);
+        setCustomChannelName("");
+        setShowCustomInput(false);
     };
 
     const handleSave = async () => {
@@ -128,7 +156,10 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
                     end_date: endDate,
                     bookingDate,
                     effectiveDate,
-                    promotionalChannels: Array.from(selectedChannels)
+                    promotional_channels: promotionalChannels,
+                    event_id: eventId,
+                    account_code: accountCode,
+                    credit_card_no: creditCardNo,
                 })
             });
 
@@ -148,158 +179,348 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit Request Detail">
-            <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-2">
+            <div key="modal-content" className="space-y-6 max-h-[85vh] overflow-y-auto pr-2 pb-4 scrollbar-thin scrollbar-thumb-gray-200">
                 {error && (
-                    <p className="text-xs text-red-500 bg-red-50 p-3 rounded-xl border border-red-100">{error}</p>
+                    <div className="p-4 bg-red-50/50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-2xl animate-shake">
+                        <div className="flex gap-3">
+                            <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
+                        </div>
+                    </div>
                 )}
-                
-                {/* 1. Requester Staff */}
-                <div>
-                    <h3 className="text-xs font-bold text-brand-600 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                        <span className="w-5 h-5 rounded-md bg-brand-50 flex items-center justify-center text-[10px]">1</span>
-                        Requester Staff
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="label-text-small">Full Name</label>
-                            <input value={fullName} onChange={(e) => setFullName(e.target.value)} className="input-field text-sm" />
-                        </div>
-                        <div>
-                            <label className="label-text-small">Team</label>
-                            <input value={department} onChange={(e) => setDepartment(e.target.value)} className="input-field text-sm" placeholder="e.g. Web Dev" />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 mt-3">
-                        <div>
-                            <label className="label-text-small">Contact No.</label>
-                            <input value={contactNo} onChange={(e) => setContactNo(e.target.value)} className="input-field text-sm" />
-                        </div>
-                        <div>
-                            <label className="label-text-small">E-Mail</label>
-                            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="input-field text-sm" />
-                        </div>
-                    </div>
-                </div>
 
-                {/* 2. Request Details */}
-                <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                        <span className="w-5 h-5 rounded-md bg-emerald-50 flex items-center justify-center text-[10px]">2</span>
-                        Request Details
-                    </h3>
-                    
-                    <div className="space-y-3">
-                         <div ref={projectRef} className="relative">
-                            <label className="label-text-small">Project Name</label>
+                {/* 1. Requester Information */}
+                <section>
+                    <div className="flex items-center gap-2 mb-4">
+                        <div className="w-7 h-7 rounded-lg bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 text-xs font-bold shadow-sm">1</div>
+                        <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 tracking-tight">Requester Information</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
                             <input
-                                type="text"
-                                value={projectSearch}
-                                onChange={(e) => {
-                                    setProjectSearch(e.target.value);
-                                    setShowProjectDropdown(true);
-                                    setSelectedProjectId(null);
-                                }}
-                                onFocus={() => setShowProjectDropdown(true)}
-                                className="input-field text-sm"
+                                value={fullName}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)}
+                                className="w-full bg-gray-50/50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-800/50 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
+                                placeholder="Staff Name"
                             />
-                            {showProjectDropdown && projectSearch && (
-                                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-100 rounded-xl shadow-lg max-h-36 overflow-y-auto">
-                                    {projectOptions.map((p) => (
-                                        <button
-                                            key={p.id}
-                                            type="button"
-                                            onClick={() => {
-                                                setProjectSearch(p.project_name);
-                                                setSelectedProjectId(p.id);
-                                                setShowProjectDropdown(false);
-                                            }}
-                                            className="w-full text-left px-3 py-2 text-xs hover:bg-brand-50 transition-colors"
-                                        >
-                                            {p.project_name}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Team / Department</label>
+                            <input
+                                value={department}
+                                onChange={(e) => setDepartment(e.target.value)}
+                                className="w-full bg-gray-50/50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-800/50 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
+                                placeholder="e.g. Creative Production"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Contact No.</label>
+                            <input
+                                value={contactNo}
+                                onChange={(e) => setContactNo(e.target.value)}
+                                className="w-full bg-gray-50/50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-800/50 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
+                                placeholder="0XX-XXX-XXXX"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">E-Mail Address</label>
+                            <input
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                type="email"
+                                className="w-full bg-gray-50/50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-800/50 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
+                                placeholder="email@company.com"
+                            />
+                        </div>
+                    </div>
+                </section>
+
+                <section className="space-y-4 pt-4 border-t border-gray-100/50 dark:border-gray-800/30">
+                    <div className="flex items-center gap-2 mb-1 px-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)]"></div>
+                        <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Project & Budget</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Project Autocomplete */}
+                        <div className="col-span-full md:col-span-1" ref={projectRef}>
+                            <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Project Name</label>
+                            <div className="relative">
+                                <input
+                                    value={projectSearch}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                        setProjectSearch(e.target.value);
+                                        setShowProjectDropdown(true);
+                                    }}
+                                    onFocus={() => setShowProjectDropdown(true)}
+                                    className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
+                                    placeholder="Search project..."
+                                />
+                                {showProjectDropdown && projectOptions.length > 0 && (
+                                    <div className="absolute z-50 w-full mt-2 glass-card border border-white/20 shadow-2xl rounded-2xl overflow-hidden max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
+                                        {projectOptions.map(p => (
+                                            <button
+                                                key={p.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setProjectSearch(p.project_name);
+                                                    setSelectedProjectId(p.id);
+                                                    setShowProjectDropdown(false);
+                                                }}
+                                                className="w-full text-left px-4 py-3 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors border-b border-gray-50 dark:border-gray-800/30 last:border-0"
+                                            >
+                                                {p.project_name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="label-text-small">Objective</label>
-                            <textarea value={objective} onChange={(e) => setObjective(e.target.value)} className="input-field text-sm resize-none" rows={2} />
+                        {/* Amount */}
+                        <div className="md:col-span-1">
+                            <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Plan Budget (AED)</label>
+                            <input
+                                type="number"
+                                value={amount}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
+                                className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
+                                placeholder="0.00"
+                            />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="label-text-small">Booking Date</label>
-                                <input type="date" value={bookingDate} onChange={(e) => setBookingDate(e.target.value)} className="input-field text-sm" />
-                            </div>
-                            <div>
-                                <label className="label-text-small">Effective Date</label>
-                                <input type="date" value={effectiveDate} onChange={(e) => setEffectiveDate(e.target.value)} className="input-field text-sm" />
-                            </div>
+                        {/* Event ID */}
+                        <div className="md:col-span-1">
+                            <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Event ID</label>
+                            <input
+                                value={eventId}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEventId(e.target.value)}
+                                className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
+                                placeholder="Event ID"
+                            />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="label-text-small">Start Date</label>
-                                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-field text-sm" />
-                            </div>
-                            <div>
-                                <label className="label-text-small">End Date</label>
-                                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input-field text-sm" />
-                            </div>
+                        {/* Account Code */}
+                        <div className="md:col-span-1">
+                            <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Account Code</label>
+                            <input
+                                value={accountCode}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAccountCode(e.target.value)}
+                                className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
+                                placeholder="Account Code"
+                            />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="label-text-small">Amount (THB)</label>
-                                <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="input-field text-sm" />
-                            </div>
-                            <div>
-                                <label className="label-text-small">Billing Type</label>
-                                <select value={billingType} onChange={(e) => setBillingType(e.target.value)} className="select-field text-sm">
+                        {/* Credit Card No */}
+                        <div className="md:col-span-2">
+                            <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Credit Card No</label>
+                            <input
+                                value={creditCardNo}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCreditCardNo(e.target.value)}
+                                className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
+                                placeholder="Credit Card Number"
+                            />
+                        </div>
+
+                        {/* Objective */}
+                        <div className="col-span-full">
+                            <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Objective</label>
+                            <textarea
+                                value={objective}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setObjective(e.target.value)}
+                                className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none resize-none"
+                                rows={2}
+                                placeholder="Describe the campaign or purpose..."
+                            />
+                        </div>
+
+                        {/* Periodicity & Dates */}
+                        <div className="col-span-full grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div className="col-span-1">
+                                <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Billing Periodicity</label>
+                                <select
+                                    value={billingType}
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setBillingType(e.target.value)}
+                                    className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none cursor-pointer"
+                                >
                                     <option value="ONE_TIME">One-time</option>
                                     <option value="MONTHLY">Monthly</option>
                                     <option value="YEARLY">Yearly</option>
                                     <option value="YEARLY_MONTHLY">Yearly/Monthly</option>
                                 </select>
                             </div>
+                            <div className="col-span-1">
+                                <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Booking Date</label>
+                                <input type="date" value={bookingDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBookingDate(e.target.value)} className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none" />
+                            </div>
+                            <div className="col-span-1">
+                                <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">Start Date</label>
+                                <input type="date" value={startDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartDate(e.target.value)} className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none" />
+                            </div>
+                            <div className="col-span-1">
+                                <label className="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1.5 px-1 uppercase tracking-wider">End Date</label>
+                                <input type="date" value={endDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEndDate(e.target.value)} className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-2xl px-4 py-3 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none" />
+                            </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 {/* 3. Promotional Channels */}
-                <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <span className="w-5 h-5 rounded-md bg-purple-50 flex items-center justify-center text-[10px]">3</span>
-                        Promotional Channels
-                    </h3>
-                    <div className="grid grid-cols-3 gap-2">
-                        {PROMOTIONAL_CHANNELS.map((channel) => {
-                            const isChecked = selectedChannels.has(channel);
+                <section className="pt-4 border-t border-gray-100/50 dark:border-gray-800/30">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-lg bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 text-xs font-bold shadow-sm">3</div>
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 tracking-tight">Campaign Channels</h3>
+                        </div>
+                        <span className="text-[10px] font-medium px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-lg">
+                            {promotionalChannels.length} Selected
+                        </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {PROMOTIONAL_CHANNELS.filter(c => c !== "Other").map((channel) => {
+                            const isChecked = promotionalChannels.some((c: any) => c.channel === channel);
                             return (
                                 <button
                                     key={channel}
                                     type="button"
                                     onClick={() => handleChannelToggle(channel)}
-                                    className={`px-3 py-2 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all
-                                    ${isChecked ? "bg-brand-50 border-brand-200 text-brand-700" : "bg-gray-50 dark:bg-gray-900/50/50 border-gray-100 text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:border-brand-200"}`}
+                                    className={`px-3 py-2 rounded-xl border text-[11px] font-bold flex items-center gap-2 transition-all duration-200
+                                    ${isChecked
+                                            ? "bg-brand-50/80 border-brand-200 text-brand-700 shadow-sm"
+                                            : "bg-white dark:bg-gray-900/30 border-gray-100 dark:border-gray-800/50 text-gray-500 dark:text-gray-400 hover:border-brand-100"}`}
                                 >
-                                    <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center
-                                    ${isChecked ? "bg-brand-500 border-brand-500" : "border-gray-300"}`}>
-                                        {isChecked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                    <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center transition-colors
+                                    ${isChecked ? "bg-brand-500 border-brand-500 text-white" : "border-gray-300"}`}>
+                                        {isChecked && (
+                                            <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        )}
                                     </div>
                                     {channel}
                                 </button>
                             );
                         })}
-                    </div>
-                </div>
 
-                <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 mt-2">
-                    <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:bg-gray-800/80 rounded-lg transition-colors">Cancel</button>
-                    <button onClick={handleSave} disabled={saving} className="px-4 py-2 text-sm text-white bg-brand-600 hover:bg-brand-700 rounded-lg flex items-center gap-1.5 disabled:opacity-50">
-                        {saving && <svg className="animate-spin w-4 h-4 text-white" stroke="currentColor" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" /><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
-                        {saving ? "Saving..." : "Save"}
+                        {showCustomInput ? (
+                            <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+                                <input
+                                    type="text"
+                                    className="bg-gray-50 dark:bg-gray-800 border border-brand-200 dark:border-brand-800 rounded-xl px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500/20 w-32"
+                                    placeholder="Enter channel..."
+                                    value={customChannelName}
+                                    onChange={(e) => setCustomChannelName(e.target.value)}
+                                    onKeyDown={(e) => e.key === "Enter" && handleAddCustomChannel()}
+                                    autoFocus
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleAddCustomChannel}
+                                    className="p-1.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCustomInput(false)}
+                                    className="p-1.5 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setShowCustomInput(true)}
+                                className="px-3 py-2 rounded-xl bg-gray-50/50 dark:bg-gray-900/30 border border-dashed border-gray-200 dark:border-gray-700 text-[11px] font-bold text-gray-400 hover:text-brand-500 hover:border-brand-300 transition-all flex items-center gap-1.5"
+                            >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M12 4v16m8-8H4" /></svg>
+                                Add Other
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Detailed Channel Inputs */}
+                    <div className="space-y-3 mt-4">
+                        {promotionalChannels.map((chan: any, idx: number) => (
+                            <div key={chan.channel} className="bg-gray-50/50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-800/30 rounded-2xl p-4 animate-in slide-in-from-right-4 duration-300" style={{ animationDelay: `${idx * 50}ms` }}>
+                                <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100/50 dark:border-gray-800/30">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+                                        <span className="text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-tight">{chan.channel}</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleChannelToggle(chan.channel)}
+                                        className="text-gray-300 hover:text-red-400 transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Media Account / Email</label>
+                                        <input
+                                            value={chan.mediaAccountEmail}
+                                            onChange={(e) => updateChannelDetail(idx, "mediaAccountEmail", e.target.value)}
+                                            className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
+                                            placeholder="Account ID or Email"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Access List / UID</label>
+                                        <input
+                                            value={chan.accessList}
+                                            onChange={(e) => updateChannelDetail(idx, "accessList", e.target.value)}
+                                            className="w-full bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brand-500/10 focus:border-brand-500 transition-all outline-none"
+                                            placeholder="UIDs or Staff Names"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        {promotionalChannels.length === 0 && (
+                            <div className="py-8 text-center bg-gray-50/30 dark:bg-gray-900/10 border-2 border-dashed border-gray-100 dark:border-gray-800/50 rounded-2xl">
+                                <svg className="w-10 h-10 text-gray-200 dark:text-gray-800 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                                </svg>
+                                <p className="text-xs text-gray-400 font-medium tracking-tight">No campaign channels selected yet</p>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100/50 dark:border-gray-800/30 mt-4">
+                    <button
+                        onClick={onClose}
+                        className="px-5 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
+                    >
+                        Discard Changes
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="px-6 py-2.5 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-lg shadow-brand-500/20 rounded-xl flex items-center gap-2 disabled:opacity-50 active:scale-95 transition-all"
+                    >
+                        {saving ? (
+                            <>
+                                <svg className="animate-spin w-3.5 h-3.5" stroke="currentColor" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" />
+                                    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                                Saving Changes...
+                            </>
+                        ) : (
+                            <>
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>
+                                Save Updates
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

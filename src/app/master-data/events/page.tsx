@@ -17,7 +17,6 @@ export default function EventMasterPage() {
     const [isAdding, setIsAdding] = useState(false);
     const [newEvent, setNewEvent] = useState({
         eventId: "",
-        accountCode: "",
         description: ""
     });
     const [error, setError] = useState<string | null>(null);
@@ -51,7 +50,7 @@ export default function EventMasterPage() {
             });
 
             if (res.ok) {
-                setNewEvent({ eventId: "", accountCode: "", description: "" });
+                setNewEvent({ eventId: "", description: "" });
                 setIsAdding(false);
                 fetchEvents();
             } else {
@@ -102,41 +101,30 @@ export default function EventMasterPage() {
                 <div className="mb-8 animate-slide-down">
                     <GlassCard>
                         <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">Add Event Mapping</h2>
-                        <form onSubmit={handleAddEvent} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <form onSubmit={handleAddEvent} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="label-text">Event ID</label>
+                                <label className="label-text text-[10px] uppercase font-bold text-gray-400">Event ID</label>
                                 <input
                                     type="text"
                                     required
                                     className="input-field"
                                     placeholder="e.g. EVENT-2026"
                                     value={newEvent.eventId}
-                                    onChange={(e) => setNewEvent({ ...newEvent, eventId: e.target.value })}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEvent({ ...newEvent, eventId: e.target.value })}
                                 />
                             </div>
                             <div>
-                                <label className="label-text">Default Account Code</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="input-field"
-                                    placeholder="e.g. 512000"
-                                    value={newEvent.accountCode}
-                                    onChange={(e) => setNewEvent({ ...newEvent, accountCode: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="label-text">Description</label>
+                                <label className="label-text text-[10px] uppercase font-bold text-gray-400">Description</label>
                                 <input
                                     type="text"
                                     className="input-field"
                                     placeholder="Optional"
                                     value={newEvent.description}
-                                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEvent({ ...newEvent, description: e.target.value })}
                                 />
                             </div>
-                            <div className="md:col-span-3 flex justify-end">
-                                <button type="submit" className="btn-primary">Save Mapping</button>
+                            <div className="md:col-span-2 flex justify-end">
+                                <button type="submit" className="btn-primary">Save Event ID</button>
                             </div>
                         </form>
                         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
@@ -150,7 +138,6 @@ export default function EventMasterPage() {
                         <thead>
                             <tr className="border-b border-gray-100 dark:border-gray-800/50">
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Event ID</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Account Code</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                             </tr>
@@ -169,9 +156,6 @@ export default function EventMasterPage() {
                                     <tr key={event.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors group">
                                         <td className="px-6 py-4 text-gray-900 dark:text-gray-100 font-medium">
                                             {event.event_id}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                                            {event.account_code}
                                         </td>
                                         <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">{event.description || "-"}</td>
                                         <td className="px-6 py-4 text-right">

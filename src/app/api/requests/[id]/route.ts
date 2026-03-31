@@ -114,7 +114,23 @@ export async function PUT(
             return NextResponse.json({ error: "Request ID is required" }, { status: 400 });
         }
 
-        const { objective, project_name, amount, contact_no, email, billing_type, start_date, end_date, fullName, promotionalChannels, bookingDate, effectiveDate } = await req.json();
+        const { 
+            objective, 
+            project_name, 
+            amount, 
+            contact_no, 
+            email, 
+            billing_type, 
+            start_date, 
+            end_date, 
+            fullName, 
+            promotional_channels, 
+            bookingDate, 
+            effectiveDate,
+            event_id,
+            account_code,
+            credit_card_no
+        } = await req.json();
 
         const supabase = createServerSupabase();
 
@@ -128,9 +144,12 @@ export async function PUT(
         if (billing_type !== undefined) updatePayload.billing_type = billing_type;
         if (start_date !== undefined) updatePayload.start_date = start_date;
         if (end_date !== undefined) updatePayload.end_date = end_date;
-        if (promotionalChannels !== undefined) updatePayload.promotional_channels = promotionalChannels;
+        if (promotional_channels !== undefined) updatePayload.promotional_channels = promotional_channels;
         if (bookingDate !== undefined) updatePayload.booking_date = bookingDate;
         if (effectiveDate !== undefined) updatePayload.effective_date = effectiveDate;
+        if (event_id !== undefined) updatePayload.event_id = event_id;
+        if (account_code !== undefined) updatePayload.account_code = account_code;
+        if (credit_card_no !== undefined) updatePayload.credit_card_no = credit_card_no;
 
         const { error: updateError } = await supabase
             .from("requests")
