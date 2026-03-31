@@ -37,7 +37,7 @@ const fmtDate = (d: string | null | undefined) => {
 
 export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint8Array> {
     const standardChannels = ["Facebook", "IG", "Tiktok", "Youtube", "Line", "WeChat", "Google"];
-    
+
     const selectedChannels = Array.isArray(formData.promotionalChannels)
         ? formData.promotionalChannels.map((c: any) => typeof c === "string" ? c : c?.channel).filter(Boolean)
         : [];
@@ -120,8 +120,8 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
     const getMultiLineUnderlinedField = (label: string, value: string, width1: number = 80, linesCount: number = 3) => {
         const lines: string[] = [];
         let currentLine = "";
-        const maxFirstLine = 75; 
-        const maxOtherLine = 95; 
+        const maxFirstLine = 75;
+        const maxOtherLine = 95;
 
         if (typeof Intl !== "undefined" && (Intl as any).Segmenter) {
             try {
@@ -171,11 +171,11 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 table: {
                     widths: ['*'],
                     body: [[
-                        { 
-                            text: lines[i] || '', 
-                            style: 'value', 
-                            border: [false, false, false, true], 
-                            borderColor: ['', '', '', '#6d4c41'] 
+                        {
+                            text: lines[i] || '',
+                            style: 'value',
+                            border: [false, false, false, true],
+                            borderColor: ['', '', '', '#6d4c41']
                         }
                     ]]
                 },
@@ -206,8 +206,8 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
             {
                 columns: [
                     { text: '', width: '*' },
-                    { text: 'REQ NO. ', bold: true, width: 'auto', fontSize: 10 },
-                    { text: formData.reqId || '_______________________', width: 120, fontSize: 10, decoration: formData.reqId ? 'underline' : undefined },
+                    { text: 'Card NO. ', bold: true, width: 'auto', fontSize: 10 },
+                    { text: formData.creditCardNo || '_____________________________', width: 120, fontSize: 10, decoration: formData.creditCardNo ? 'underline' : undefined },
                     { text: '', width: '*' }
                 ],
                 margin: [0, 0, 0, 15]
@@ -220,8 +220,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
             getUnderlinedField('Department / แผนก  :', normalizeThai(formData.department), 100),
             getTwoColumnUnderlinedField('Contact No. / เบอร์ติดต่อ  :', formData.contactNo, 100, 'E-Mail  :', formData.email, 40),
 
-            { text: '', margin: [0, 5] },
-            { 
+            {
                 table: {
                     widths: ['*', '*'],
                     body: [
@@ -229,7 +228,7 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                             { text: 'Event ID / รหัสอีเว้นท์', style: 'sectionHeader', border: [false, false, false, true] },
                             { text: 'Account Code / รหัสบัญชี', style: 'sectionHeader', border: [false, false, false, true] }
                         ],
-                        ...(formData.eventDetails && formData.eventDetails.length > 0 
+                        ...(formData.eventDetails && formData.eventDetails.length > 0
                             ? formData.eventDetails.map(ed => [
                                 { text: ed.eventId || (ed as any).reqId || 'N/A', style: 'value', margin: [0, 2] },
                                 { text: ed.accountCode || 'N/A', style: 'value', margin: [0, 2] }
@@ -241,14 +240,11 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                 layout: 'lightHorizontalLines',
                 margin: [0, 5, 0, 10]
             },
-
-            { text: '', margin: [0, 5] },
-
             { text: 'REQUEST DETAILS / รายละเอียดการขอใช้', style: 'sectionHeader' },
             { canvas: [{ type: 'line', x1: 0, y1: -2, x2: 515, y2: -2, lineWidth: 1, lineColor: '#8E5A34' }] },
 
             ...getMultiLineUnderlinedField('Objective / วัตถุประสงค์  :', normalizeThai(formData.objective), 120, 3),
-            
+
             { text: '', margin: [0, 5] },
             { text: 'Promotional Channels / ช่องทางในการโฆษณา', style: 'labelSub', bold: true },
             { text: '*Choose your type of Promotional Channels', fontSize: 6.5, color: '#666666', margin: [0, 1, 0, 4] },
@@ -305,8 +301,6 @@ export async function generateRequestPdf(formData: RequestPdfData): Promise<Uint
                     body: [[
                         { text: 'Amount / จำนวนเงิน  :', style: 'label', border: [false, false, false, false] },
                         { text: formData.amount ? `${parseFloat(String(formData.amount)).toLocaleString()} THB` : "0", style: 'value', bold: true, border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] },
-                        { text: 'Credit Card No  :', style: 'label', border: [false, false, false, false], margin: [15, 0, 0, 0] },
-                        { text: formData.creditCardNo || 'N/A', style: 'value', border: [false, false, false, true], borderColor: ['', '', '', '#6d4c41'] }
                     ]]
                 },
                 margin: [0, 5, 0, 5]
