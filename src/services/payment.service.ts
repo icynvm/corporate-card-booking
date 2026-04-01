@@ -28,12 +28,37 @@ export class PaymentService {
 
     if (appErr) throw appErr;
 
-    // 3. Generate virtual events for ONE_TIME, MONTHLY, YEARLY, YEARLY_MONTHLY types
-    // Pass explicitPayments for deduplication
-    const virtualEvents = this.generateVirtualEvents(approvedRequests as RequestRecord[], year, month, explicitPayments);
+    // 3. Fetch all receipts for this month to check status
+    const { data: receipts, error: recErr } = await supabase
+      .from("receipts")
+      .select("request_id, month_year, receipt_file_url")
+      .eq("month_year", monthStr);
+    
+    if (recErr) throw recErr;
 
-    // 4. Merge and return
-    return this.mergeAndSortPayments(explicitPayments as (RequestPayment & { requests: RequestRecord })[], virtualEvents);
+    // 4. Generate virtual events
+    const virtualEvents = this.generateVirtualEvents(
+      approvedRequests as RequestRecord[], 
+      year, 
+      month, 
+      explicitPayments || [], 
+      receipts || []
+    );
+
+    // 5. Merge and return
+    const merged = this.mergeAndSortPayments(
+      explicitPayments as (RequestPayment & { requests: RequestRecord })[], 
+      virtualEvents
+    );
+
+    // Final Status override: If an explicit payment doesn't have PAID status yet but has a receipt, mark as PAID
+    return merged.map(p => {
+      const hasReceipt = receipts?.some(r => r.request_id === p.request_id);
+      if (hasReceipt && p.status !== "PAID") {
+        return { ...p, status: "PAID" };
+      }
+      return p;
+    });
   }
 
   /**
@@ -76,7 +101,13 @@ export class PaymentService {
   /**
    * Calculates virtual payment dates for requests that aren't in request_payments table.
    */
-  private static generateVirtualEvents(requests: RequestRecord[], year: number, month: number, explicitPayments: any[]) {
+  private static generateVirtualEvents(
+    requests: RequestRecord[], 
+    year: number, 
+    month: number, 
+    explicitPayments: any[],
+    receipts: any[]
+  ) {
     const events: any[] = [];
     const monthStr = `${year}-${String(month).padStart(2, "0")}`;
 
@@ -113,15 +144,20 @@ export class PaymentService {
       }
 
       if (isDueThisMonth) {
+        // Check if a receipt already exists for this virtual installment
+        const hasReceipt = receipts.some(r => r.request_id === req.id);
+        const receiptUrl = receipts.find(r => r.request_id === req.id)?.receipt_file_url || null;
+
         events.push({
           id: `virtual:${req.id}:${year}:${month}`,
           request_id: req.id,
           amount_due: req.amount,
-          month_year: `${year}-${String(month).padStart(2, "0")}`,
-          status: "PENDING", // Virtual events always start as PENDING on calendar
+          month_year: monthStr,
+          status: hasReceipt ? "PAID" : "PENDING",
           due_date: currentMonthDueDate.toISOString(),
           requests: req,
-          is_virtual: true
+          is_virtual: true,
+          receipt_file_url: receiptUrl
         });
       }
     }

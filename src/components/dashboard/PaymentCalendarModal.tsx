@@ -13,6 +13,13 @@ export const PaymentCalendarModal: React.FC<PaymentCalendarModalProps> = ({ isOp
   const [loading, setLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState<Date | null>(new Date());
   const [notifying, setNotifying] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  // Clear stale state when day changes or modal opens
+  useEffect(() => {
+    setUploading(null);
+    setNotifying(null);
+  }, [selectedDay, isOpen]);
 
   useEffect(() => {
     if (isOpen) fetchPayments();
@@ -46,6 +53,34 @@ export const PaymentCalendarModal: React.FC<PaymentCalendarModalProps> = ({ isOp
       alert("แจ้งเตือนล้มเหลว");
     } finally {
       setNotifying(null);
+    }
+  };
+
+  const handleUploadReceipt = async (requestId: string, monthYear: string, file: File) => {
+    if (!file) return;
+    setUploading(`${requestId}-${monthYear}`);
+    try {
+      const formData = new FormData();
+      formData.append("requestId", requestId);
+      formData.append("monthYear", monthYear);
+      formData.append("file", file);
+
+      const res = await fetch("/api/payments/receipt", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        await fetchPayments(); // Refresh calendar dots and status
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.error}`);
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Upload failed");
+    } finally {
+      setUploading(null);
     }
   };
 
@@ -171,20 +206,52 @@ export const PaymentCalendarModal: React.FC<PaymentCalendarModalProps> = ({ isOp
                       {p.status}
                     </span>
                   </div>
-                  
-                  {p.status !== "PAID" && (
-                    <button 
-                      onClick={() => handleNotify(p.id)}
-                      disabled={notifying === p.id}
-                      className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-tighter transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                   {p.status === "PAID" ? (
+                    <a 
+                      href={p.receipt_file_url || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-tighter transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
-                      {notifying === p.id ? (
-                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2" /></svg>
-                      )}
-                      {notifying === p.id ? "Sending..." : "Notify via LINE"}
-                    </button>
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                      View Receipt
+                    </a>
+                  ) : (
+                    <div className="space-y-2">
+                      <button 
+                        onClick={() => handleNotify(p.id)}
+                        disabled={notifying === p.id}
+                        className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-tighter transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {notifying === p.id ? (
+                          <div className="w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2" /></svg>
+                        )}
+                        {notifying === p.id ? "Sending..." : "Notify via LINE"}
+                      </button>
+
+                      <label className="block">
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*,application/pdf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadReceipt(p.request_id, p.month_year, file);
+                          }}
+                          disabled={uploading === `${p.request_id}-${p.month_year}`}
+                        />
+                        <div className={`w-full py-2.5 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-brand-500 text-gray-500 hover:text-brand-500 rounded-xl text-[10px] font-black uppercase text-center cursor-pointer transition-all flex items-center justify-center gap-2 ${uploading === `${p.request_id}-${p.month_year}` ? "opacity-50" : ""}`}>
+                          {uploading === `${p.request_id}-${p.month_year}` ? (
+                            <div className="w-3 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+                          ) : (
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
+                          )}
+                          {uploading === `${p.request_id}-${p.month_year}` ? "Uploading..." : "Upload Receipt"}
+                        </div>
+                      </label>
+                    </div>
                   )}
                 </div>
               ))
