@@ -190,7 +190,123 @@ export class RequestService {
   }
 
   private static async notifyLine(body: any) {
-    const lineMessage = `📣 มีคำขอการใช้บัตรเครดิตเข้ามาใหม่!\n\n👤 ผู้ขอ: ${body.fullName}\n🏢 ทีม: ${body.department}\n📂 โปรเจกต์: ${body.projectName}\n💰 วงเงิน: ${parseFloat(body.amount).toLocaleString()} บาท\n📝 เหตุผล: ${body.objective}\n\nฝากพิจารณาให้หน่อยนะ 🙏`;
-    await sendLineNotification(lineMessage);
+    const flexMessage = this.createRequestFlexMessage(body);
+    await sendLineNotification(flexMessage);
+  }
+
+  private static createRequestFlexMessage(body: any) {
+    const headerColor = "#10B981"; // Emerald Green for New Request
+    
+    return {
+      type: "flex",
+      altText: `คําขอใหม่: ${body.projectName}`,
+      contents: {
+        type: "bubble",
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "📣 ใหม่! คําขอการใช้บัตรเครดิต",
+              weight: "bold",
+              color: "#ffffff",
+              size: "sm"
+            }
+          ],
+          backgroundColor: headerColor
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: body.projectName || "N/A",
+              weight: "bold",
+              size: "md",
+              wrap: true
+            },
+            {
+              type: "separator",
+              margin: "md"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              margin: "md",
+              spacing: "sm",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "ผู้ขอ", size: "xs", color: "#aaaaaa", flex: 0 },
+                    { type: "text", text: body.fullName, size: "xs", color: "#666666", align: "end" }
+                  ]
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "ทีม/แผนก", size: "xs", color: "#aaaaaa", flex: 0 },
+                    { type: "text", text: body.department || "N/A", size: "xs", color: "#666666", align: "end" }
+                  ]
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "วงเงิน", size: "xs", color: "#aaaaaa", flex: 0 },
+                    { type: "text", text: `${parseFloat(body.amount).toLocaleString()} บาท`, size: "xs", color: "#666666", align: "end", weight: "bold" }
+                  ]
+                }
+              ]
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              margin: "md",
+              paddingAll: "sm",
+              backgroundColor: "#F3F4F6",
+              cornerRadius: "sm",
+              contents: [
+                {
+                  type: "text",
+                  text: "เหตุผล/วัตถุประสงค์:",
+                  size: "xxs",
+                  color: "#9ca3af",
+                  margin: "none"
+                },
+                {
+                  type: "text",
+                  text: body.objective || "N/A",
+                  size: "xs",
+                  color: "#4b5563",
+                  wrap: true
+                }
+              ]
+            }
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "button",
+              action: {
+                type: "uri",
+                label: "ตรวจสอบคําขอ",
+                uri: "https://line.me" // Placeholder
+              },
+              style: "primary",
+              color: headerColor,
+              height: "sm"
+            }
+          ]
+        }
+      }
+    };
   }
 }

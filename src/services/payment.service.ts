@@ -2,6 +2,7 @@ import { createServerSupabase } from "@/lib/supabase";
 import { RequestPayment, RequestRecord } from "@/lib/types";
 import { sendLineNotification } from "@/lib/line";
 import { BillingType, RequestStatus } from "@/types/enums";
+import { addDays, isSameDay, format as formatDate } from "date-fns";
 
 export class PaymentService {
   /**
@@ -23,7 +24,7 @@ export class PaymentService {
     const { data: approvedRequests, error: appErr } = await supabase
       .from("requests")
       .select("*, profiles(*)")
-      .in("status", ["APPROVED", "ACTIVE"]);
+      .in("status", [RequestStatus.APPROVED, RequestStatus.ACTIVE]);
 
     if (appErr) throw appErr;
 
@@ -33,6 +34,43 @@ export class PaymentService {
 
     // 4. Merge and return
     return this.mergeAndSortPayments(explicitPayments as (RequestPayment & { requests: RequestRecord })[], virtualEvents);
+  }
+
+  /**
+   * Automatically scans for payments due exactly X days from now and notifies users. (Cron Job Entry Point)
+   */
+  static async runDailyAutoReminders(daysAhead: number = 14) {
+    const targetDate = addDays(new Date(), daysAhead);
+    const targetYear = targetDate.getFullYear();
+    const targetMonth = targetDate.getMonth() + 1;
+    
+    const allPaymentsInTargetMonth = await this.getPaymentsByMonth(targetYear, targetMonth);
+    
+    const matchingPayments = allPaymentsInTargetMonth.filter(p => {
+      if (!p.due_date) return false;
+      const dueDate = new Date(p.due_date);
+      return isSameDay(dueDate, targetDate);
+    });
+
+    if (matchingPayments.length === 0) return { success: true, count: 0 };
+
+    const results = [];
+    for (const payment of matchingPayments) {
+      try {
+        const id = payment.id;
+        const res = await this.notifyPayment(id);
+        results.push({ id, status: "sent", sentTo: res.sentTo });
+      } catch (err: any) {
+        results.push({ id: payment.id, status: "error", error: err.message });
+      }
+    }
+
+    return { 
+      success: true, 
+      count: matchingPayments.length, 
+      targetDate: formatDate(targetDate, "yyyy-MM-dd"),
+      results 
+    };
   }
 
   /**
