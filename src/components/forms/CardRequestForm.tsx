@@ -38,7 +38,8 @@ import {
     ArrowRight,
     Loader2,
     Info,
-    AlertCircle
+    AlertCircle,
+    Clock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
