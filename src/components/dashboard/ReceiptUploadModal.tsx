@@ -3,6 +3,20 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { RequestRecord } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+    CheckCircle2, 
+    Upload, 
+    FileText, 
+    X, 
+    Eye, 
+    Loader2, 
+    Calendar,
+    DollarSign,
+    Hash
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ReceiptUploadModalProps {
     isOpen: boolean;
@@ -24,7 +38,6 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
     const currentYear = new Date().getFullYear();
     const isYearlyMonthly = request?.billing_type === "YEARLY_MONTHLY";
 
-    // Initialize selectedMonth to "SINGLE" if not yearly-monthly so the upload area shows automatically
     if (request && !isYearlyMonthly && selectedMonth === "") {
         setSelectedMonth(`SINGLE-${request.id}`);
     }
@@ -62,42 +75,48 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={isYearlyMonthly ? "Upload Monthly Receipt" : "Upload Receipt"}>
+        <Modal 
+            isOpen={isOpen} 
+            onClose={onClose} 
+            title={isYearlyMonthly ? "Monthly Expenditure Sync" : "Verify Expenditure"}
+            maxWidth="max-w-xl"
+        >
             {uploaded ? (
-                <div className="text-center py-8 animate-slide-up">
-                    <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                        </svg>
+                <div className="text-center py-12 animate-in zoom-in-95 duration-500">
+                    <div className="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-6 shadow-sm">
+                        <CheckCircle2 className="w-10 h-10 text-emerald-600" />
                     </div>
-                    <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-1">Receipt Uploaded!</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">The receipt has been submitted for verification.</p>
+                    <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Receipt Synchronized</h3>
+                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest opacity-60">The financial record has been updated.</p>
                 </div>
             ) : (
-                <div className="space-y-5">
-                    {/* Request Info */}
+                <div className="space-y-8">
+                    {/* Request Context Card */}
                     {request && (
-                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">Request</span>
-                                <span className="font-mono font-semibold text-brand-600">
-                                    {request.event_id}
-                                </span>
+                        <div className="grid grid-cols-2 gap-4 p-5 rounded-2xl bg-gray-50/50 border border-gray-100">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 opacity-50">
+                                    <Hash className="w-3 h-3" /> Reference
+                                </p>
+                                <p className="text-sm font-black text-brand-700 font-mono">{request.req_id || request.event_id}</p>
                             </div>
-                            <div className="flex justify-between items-center text-sm mt-1">
-                                <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">Amount</span>
-                                <span className="text-gray-900 dark:text-gray-50 font-medium">
-                                    THB {request.amount?.toLocaleString()}
-                                </span>
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 opacity-50">
+                                    <DollarSign className="w-3 h-3" /> Amount
+                                </p>
+                                <p className="text-sm font-black text-gray-900">฿{request.amount?.toLocaleString()}</p>
                             </div>
                         </div>
                     )}
 
-                    {/* Monthly Tracking Grid ONLY for YEARLY_MONTHLY */}
+                    {/* Monthly Selector Grid */}
                     {isYearlyMonthly && (
-                        <div>
-                            <label className="label-text mb-3 block">Monthly Tracking ({currentYear})</label>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Calendar className="w-4 h-4 text-brand-600" />
+                                <span className="text-[11px] font-black uppercase tracking-widest text-gray-900">Billing Cycle: {currentYear}</span>
+                            </div>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
                                 {MONTHS.map((month, idx) => {
                                     const mKey = `${currentYear}-${String(idx + 1).padStart(2, "0")}`;
                                     const existing = request?.receipts?.find(r => r.month_year === mKey);
@@ -107,25 +126,29 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                         <button
                                             key={month}
                                             onClick={() => setSelectedMonth(mKey)}
-                                            className={`flex flex-col items-center p-2 rounded-xl border transition-all ${isSelected
-                                                ? "border-brand-500 bg-brand-50 shadow-sm"
-                                                : existing
-                                                    ? "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50"
-                                                    : "border-gray-100 hover:border-gray-200 hover:bg-gray-50 dark:bg-gray-900/50"
-                                                }`}
+                                            className={cn(
+                                                "flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all group",
+                                                isSelected
+                                                    ? "border-brand-500 bg-brand-50/50 shadow-md transform scale-105 z-10"
+                                                    : existing
+                                                        ? "border-emerald-100 bg-emerald-50/30 hover:border-emerald-200"
+                                                        : "border-gray-50 bg-white hover:border-gray-200 hover:bg-gray-50"
+                                            )}
                                         >
-                                            <span className={`text-[10px] uppercase font-bold tracking-wider ${isSelected ? "text-brand-600" : "text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500"}`}>
+                                            <span className={cn(
+                                                "text-[10px] font-black uppercase tracking-tighter transition-colors",
+                                                isSelected ? "text-brand-700" : existing ? "text-emerald-700" : "text-gray-400 group-hover:text-gray-600"
+                                            )}>
                                                 {month.slice(0, 3)}
                                             </span>
-                                            <div className="mt-1">
+                                            <div className="mt-2 text-center flex items-center justify-center h-4 w-4">
                                                 {existing ? (
-                                                    <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                            <polyline points="20 6 9 17 4 12" />
-                                                        </svg>
-                                                    </div>
+                                                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                                                 ) : (
-                                                    <div className={`w-5 h-5 rounded-full border-2 border-dashed ${isSelected ? "border-brand-300" : "border-gray-200"}`} />
+                                                    <div className={cn(
+                                                        "w-1.5 h-1.5 rounded-full",
+                                                        isSelected ? "bg-brand-400 animate-pulse" : "bg-gray-100"
+                                                    )} />
                                                 )}
                                             </div>
                                         </button>
@@ -135,54 +158,69 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                         </div>
                     )}
 
-                    {/* Selection Detail & Upload */}
+                    {/* Upload Management Section */}
                     {selectedMonth && (
-                        <div className="bg-brand-50/30 rounded-2xl p-5 border border-brand-100 animate-slide-up">
-                            <div className="flex justify-between items-center mb-4">
-                                <h4 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
+                        <div className="space-y-5 animate-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-brand-500 rounded-full" />
                                     {isYearlyMonthly
-                                        ? `${MONTHS[parseInt(selectedMonth.split("-")[1]) - 1]} ${currentYear}`
-                                        : "Attached File"}
+                                        ? `Period: ${MONTHS[parseInt(selectedMonth.split("-")[1]) - 1]} ${currentYear}`
+                                        : "Evidence Attachment"}
                                 </h4>
                                 {request?.receipts?.find(r => r.month_year === selectedMonth) && (
-                                    <a
-                                        href={request.receipts.find(r => r.month_year === selectedMonth)?.receipt_file_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-xs font-bold text-brand-600 hover:underline flex items-center gap-1"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                                        View Current
-                                    </a>
+                                    <Button asChild variant="ghost" size="sm" className="h-7 text-[10px] font-black uppercase tracking-tight text-brand-600">
+                                        <a href={request.receipts.find(r => r.month_year === selectedMonth)?.receipt_file_url} target="_blank" rel="noopener noreferrer">
+                                            <Eye className="w-3 h-3 mr-1.5" /> View Current
+                                        </a>
+                                    </Button>
                                 )}
                             </div>
 
-                            {/* File Upload Dropzone */}
+                            {/* Enhanced Dropzone */}
                             <div
-                                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer bg-white dark:bg-gray-800 ${file
-                                    ? "border-brand-300"
-                                    : "border-gray-200 hover:border-brand-200"
-                                    }`}
+                                className={cn(
+                                    "relative border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer group",
+                                    file ? "border-brand-400 bg-brand-50/20" : "border-gray-200 bg-gray-50/30 hover:border-brand-300 hover:bg-brand-50/10"
+                                )}
                                 onClick={() => document.getElementById("receipt-file")?.click()}
                             >
                                 {file ? (
-                                    <div className="flex items-center gap-3 text-left">
-                                        <div className="w-10 h-10 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14,2 14,8 20,8" /></svg>
+                                    <div className="flex items-center gap-5 text-left">
+                                        <div className="w-14 h-14 rounded-2xl bg-brand-100 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                                            <FileText className="w-7 h-7 text-brand-600" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{file.name}</p>
-                                            <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                            <p className="text-sm font-black text-gray-900 truncate">{file.name}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Badge variant="outline" className="text-[9px] font-bold h-4">
+                                                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                                                </Badge>
+                                                <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-40">Ready to sync</span>
+                                            </div>
                                         </div>
-                                        <button onClick={(e) => { e.stopPropagation(); setFile(null); }} className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-red-500">.</button>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="rounded-full h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                            onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </Button>
                                     </div>
                                 ) : (
-                                    <div>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">Click to upload receipt</p>
-                                        <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">PDF, JPEG or PNG (max 2MB)</p>
+                                    <div className="space-y-4">
+                                        <div className="w-16 h-16 rounded-3xl bg-white shadow-sm flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-500">
+                                            <Upload className="w-8 h-8 text-brand-500" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-black text-gray-900">Selection required</p>
+                                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-50">PDF, JPEG or PNG (Max 2MB)</p>
+                                        </div>
                                     </div>
                                 )}
                             </div>
+                            
                             <input
                                 type="file"
                                 id="receipt-file"
@@ -205,29 +243,25 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                 }}
                             />
 
-                            <button
+                            <Button
                                 onClick={handleUpload}
                                 disabled={!file || uploading}
-                                className="btn-primary w-full mt-4 disabled:opacity-50 flex items-center justify-center gap-2"
+                                variant="brand"
+                                className="w-full h-12 rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-brand/20"
                             >
                                 {uploading ? (
                                     <>
-                                        <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                        </svg>
-                                        Uploading...
+                                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                        Synchronizing...
                                     </>
                                 ) : (
-                                    "Save Receipt"
+                                    "Confirm & Upload Record"
                                 )}
-                            </button>
+                            </Button>
                         </div>
                     )}
-
                 </div>
             )}
         </Modal>
     );
 }
-

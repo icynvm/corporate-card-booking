@@ -1,28 +1,42 @@
-# Next.js Reverse Proxy Setup
+# Corporate Card Booking: Reverse Proxy Orchestration
 
-This project demonstrates a production-ready reverse proxy configuration using Nginx and Docker Compose for your Corporate Card Booking System.
+This directory contains the production-grade **Nginx Reverse Proxy** configuration for the Corporate Card Booking System. It is designed to sit in front of the Next.js application, providing essential security, performance, and character encoding stability.
 
-## Architecture
+## Core Features
 
--   **Nginx Container**: Acts as the entry point (Port 80), handles SSL (TLS) termination, static file caching, and request forwarding.
--   **Next.js Application**: Running in a separate container (Port 3000) on an internal Docker network.
+- **Character Encoding Stability**: Specifically configured with `charset utf-8` to prevent "mojibake" (corrupted Thai characters) during high-load proxying.
+- **Security Hardening**: Implements `HSTS`, `X-Frame-Options`, and `X-Content-Type-Options` to protect against common web vulnerabilities.
+- **Zero-Downtime Resilience**: Configured with automated health checks and restart policies via Docker Compose.
+- **Asset Optimization**: Aggressive caching headers for Next.js static assets (`/_next/static`) to reduce server load and improve LCP (Largest Contentful Paint).
 
-## Files
+## Deployment Instructions
 
--   `nginx.conf`: Custom Nginx configuration with optimized headers and proxy set-ups.
--   `docker-compose.yml`: Orchestrates the application and proxy containers.
+### 1. Prerequisite Checklist
+- [ ] Docker and Docker Compose installed on the target environment.
+- [ ] Port `80` (and `443` if SSL is added) open in the firewall.
+- [ ] Environment variables configured in a `.env` file (see `.env.example` in root).
 
-## How to Run
+### 2. Launching the Stack
+From this directory, run:
+```bash
+docker-compose up -d --build
+```
 
-1.  **Prepare .env**: Ensure you have a `.env` file in the root directory (parent of this folder) containing your Supabase and Prisma environment variables.
-2.  **Dockerfile**: Ensure you have a standard Next.js Dockerfile in the root directory. If you don't have one, I can create it for you.
-3.  **Run with Docker Compose**:
-    ```bash
-    docker-compose up -d --build
-    ```
-4.  **Access**: Open `http://localhost` in your browser.
+### 3. Verification
+Verify that the proxy is successfully routing traffic:
+```bash
+docker-compose ps
+docker-compose logs -f proxy
+```
 
-## Customization
+## Security & Maintenance
 
--   **SSL**: To add HTTPS, you can use a sidecar container like `nginx-proxy-manager` or `certbot` to manage Let's Encrypt certificates.
--   **Domain**: Update the `server_name` in `nginx.conf` to your actual domain.
+### SSL/TLS Consideration
+Current configuration handles **Port 80 (HTTP)**. In a production environment, it is highly recommended to:
+1.  **Cloud Load Balancer**: Use an AWS ALB or Cloudfront to terminate SSL and forward traffic to Port 80.
+2.  **Certbot/LetsEncrypt**: If deploying on a standalone VPS, modify the `nginx.conf` and `docker-compose.yml` to include volumes for certificates and listen on Port 443.
+
+### Troubleshooting Mojibake
+If you experience character encoding issues:
+1.  Ensure the Next.js app itself returns `Content-Type: text/html; charset=utf-8`.
+2.  Verify the `nginx.conf` includes the `charset utf-8;` directive (already included in this refactored version).

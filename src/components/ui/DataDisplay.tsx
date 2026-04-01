@@ -1,4 +1,6 @@
 import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface InfoCardProps {
   title: string;
@@ -9,7 +11,7 @@ interface InfoCardProps {
 }
 
 /**
- * Standardized Information Card for data sections.
+ * Modernized Information Card for data sections using shadcn/ui.
  */
 export const InfoCard: React.FC<InfoCardProps> = ({ 
   title, 
@@ -18,17 +20,17 @@ export const InfoCard: React.FC<InfoCardProps> = ({
   className = "", 
   headerClassName = "" 
 }) => (
-  <div className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden ${className}`}>
-    <div className={`px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 ${headerClassName}`}>
-      {icon && <span className="flex-shrink-0">{icon}</span>}
-      <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+  <Card glass className={cn("overflow-hidden border-none shadow-md", className)}>
+    <CardHeader className={cn("bg-gray-50/50 py-3 px-6 border-b border-gray-100 flex-row items-center gap-3 space-y-0", headerClassName)}>
+      {icon && <span className="text-brand-600 shrink-0">{icon}</span>}
+      <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-70">
         {title}
-      </h4>
-    </div>
-    <div className="p-4">
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="p-6">
       {children}
-    </div>
-  </div>
+    </CardContent>
+  </Card>
 );
 
 interface DetailItemProps {
@@ -49,9 +51,9 @@ export const DetailItem: React.FC<DetailItemProps> = ({
 }) => {
   if (horizontal) {
     return (
-      <div className={`flex flex-wrap justify-between items-baseline gap-2 py-1 ${className}`}>
-        <span className="text-gray-400 dark:text-gray-500 text-xs font-medium">{label}</span>
-        <span className="text-gray-700 dark:text-gray-200 text-sm font-semibold break-all text-right">
+      <div className={cn("flex flex-wrap justify-between items-baseline gap-2 py-2 border-b border-gray-50 last:border-0", className)}>
+        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">{label}</span>
+        <span className="text-xs font-bold text-gray-900 break-all text-right">
           {value || "N/A"}
         </span>
       </div>
@@ -59,11 +61,11 @@ export const DetailItem: React.FC<DetailItemProps> = ({
   }
 
   return (
-    <div className={`space-y-1 ${className}`}>
-      <span className="text-gray-400 dark:text-gray-500 text-xs font-medium block uppercase tracking-tight">
+    <div className={cn("space-y-1.5", className)}>
+      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50 block">
         {label}
       </span>
-      <div className="text-gray-700 dark:text-gray-200 text-sm font-semibold">
+      <div className="text-sm font-bold text-gray-900 leading-snug">
         {value || "N/A"}
       </div>
     </div>
@@ -73,15 +75,16 @@ export const DetailItem: React.FC<DetailItemProps> = ({
 /**
  * A grid wrapper for detail items to ensure consistent spacing.
  */
-export const DetailGrid: React.FC<{ children: React.ReactNode; cols?: number }> = ({ 
+export const DetailGrid: React.FC<{ children: React.ReactNode; cols?: number, className?: string }> = ({ 
   children, 
-  cols = 2 
+  cols = 2,
+  className = ""
 }) => {
-  const gridCols = {
+  const gridCols: Record<number, string> = {
     1: "grid-cols-1",
     2: "grid-cols-1 md:grid-cols-2",
     3: "grid-cols-1 md:grid-cols-3",
-  }[cols] || "grid-cols-1 md:grid-cols-2";
+  };
 
-  return <div className={`grid ${gridCols} gap-4`}>{children}</div>;
+  return <div className={cn("grid gap-8", gridCols[cols] || gridCols[2], className)}>{children}</div>;
 };

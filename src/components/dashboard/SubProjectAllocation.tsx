@@ -1,6 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { 
+    Table, 
+    TableBody, 
+    TableCell, 
+    TableHead, 
+    TableHeader, 
+    TableRow 
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { 
+    Plus, 
+    Trash2, 
+    LayoutGrid, 
+    Info, 
+    ChevronRight,
+    Loader2,
+    DollarSign
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SubProject {
     id: string;
@@ -32,9 +54,10 @@ export default function SubProjectAllocation({ requestId, totalAmount, isApprove
             if (res.ok) {
                 const data = await res.json();
                 setSubProjects(data.subProjects || []);
-                // If there are existing sub-projects, populate the input
                 if (data.subProjects && data.subProjects.length > 0) {
                     setNamesInput(data.subProjects.map((sp: SubProject) => sp.name).join(", "));
+                } else {
+                    setNamesInput("");
                 }
             } else {
                 setError("Failed to fetch sub-projects");
@@ -69,7 +92,6 @@ export default function SubProjectAllocation({ requestId, totalAmount, isApprove
 
     const handleSave = async () => {
         if (!namesInput.trim()) {
-            // If empty, delete all
             handleDeleteAll();
             return;
         }
@@ -88,11 +110,7 @@ export default function SubProjectAllocation({ requestId, totalAmount, isApprove
 
             if (res.ok) {
                 await fetchSubProjects();
-                if (addToast) {
-                    addToast("Sub-projects allocated successfully!", "success");
-                } else {
-                    alert("Sub-projects allocated successfully!");
-                }
+                addToast?.("Sub-projects allocated successfully!", "success");
             } else {
                 const data = await res.json();
                 setError(data.error || "Failed to save sub-projects");
@@ -117,9 +135,7 @@ export default function SubProjectAllocation({ requestId, totalAmount, isApprove
             if (res.ok) {
                 setSubProjects([]);
                 setNamesInput("");
-                if (addToast) {
-                    addToast("Allocations cleared successfully!", "success");
-                }
+                addToast?.("Allocations cleared successfully!", "success");
             } else {
                 const data = await res.json();
                 setError(data.error || "Failed to delete sub-projects");
@@ -134,30 +150,69 @@ export default function SubProjectAllocation({ requestId, totalAmount, isApprove
     if (!isApproved) return null;
 
     if (loading) {
-        return <div className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-2">Loading allocations...</div>;
+        return (
+            <div className="flex items-center gap-2 py-6 animate-pulse">
+                <Loader2 className="w-3.5 h-3.5 text-brand-500 animate-spin" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-30">Synching Ledger...</span>
+            </div>
+        );
     }
 
     return (
-        <div className="mt-4 border-t border-gray-100 pt-4">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Sub-Project Allocations</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 mb-3">
-                Divide the total requested amount (THB {totalAmount.toLocaleString()}) logically into multiple sub-projects.
-            </p>
+        <Card glass className="mt-8 border-none shadow-xl bg-gray-50/30 overflow-hidden">
+            <CardContent className="p-8 space-y-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-brand-500 text-white flex items-center justify-center font-black shadow-lg text-[10px]">DIV</div>
+                        <div className="space-y-0.5">
+                            <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Quantum Allocation</h4>
+                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight opacity-50">Logical division of primary directive expenditure</p>
+                        </div>
+                    </div>
+                </div>
 
-            <div className="flex gap-2 items-start mb-4">
-                <div className="flex-1">
-                    <input
-                        type="text"
-                        placeholder="e.g. Project 1, Project 2, Project 3"
-                        value={namesInput}
-                        onChange={(e) => setNamesInput(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-                    />
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">Separate names with commas. Amount will be divided equally.</p>
-                    
+                <div className="bg-brand-50/50 p-4 rounded-2xl flex items-start gap-4 border border-brand-100/50">
+                    <Info className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
+                    <p className="text-[10px] font-bold text-brand-800/80 leading-relaxed uppercase tracking-tighter">
+                        Divide the total requested quantum of <span className="font-black">฿{totalAmount.toLocaleString()}</span> into discrete logical sub-projects. The system will auto-allocate equal parity across all specified nodes.
+                    </p>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="flex gap-3">
+                        <div className="flex-1 relative">
+                            <Input
+                                placeholder="Alpha-Node, Beta-Element, Gamma-Sector..."
+                                value={namesInput}
+                                onChange={(e) => setNamesInput(e.target.value)}
+                                className="h-12 rounded-2xl bg-white border-white focus:border-brand-200 transition-all font-bold text-xs pl-12"
+                            />
+                            <LayoutGrid className="absolute left-4 top-3.5 w-4 h-4 text-brand-500 opacity-40" />
+                        </div>
+                        <Button 
+                            onClick={handleSave} 
+                            disabled={saving} 
+                            variant="brand" 
+                            className="h-12 px-8 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-brand/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Initiate"}
+                        </Button>
+                        {subProjects.length > 0 && (
+                            <Button 
+                                onClick={handleDeleteAll} 
+                                disabled={saving} 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-12 w-12 rounded-2xl text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                            </Button>
+                        )}
+                    </div>
+
                     {suggestedNames.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                            <span className="text-[10px] text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 self-center mr-1">Quick Select:</span>
+                        <div className="flex flex-wrap gap-2 px-1">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-30 self-center">Template Nodes:</span>
                             {suggestedNames.map(name => (
                                 <button
                                     key={name}
@@ -168,7 +223,7 @@ export default function SubProjectAllocation({ requestId, totalAmount, isApprove
                                             setNamesInput([...current, name].join(", "));
                                         }
                                     }}
-                                    className="px-2 py-0.5 bg-gray-50 dark:bg-gray-900/50 hover:bg-brand-50 hover:text-brand-600 text-gray-600 dark:text-gray-300 rounded-full text-[11px] font-medium transition-colors border border-gray-200"
+                                    className="px-3 py-1 bg-white border border-gray-100 hover:border-brand-500 hover:bg-brand-50 text-gray-500 hover:text-brand-700 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-300"
                                 >
                                     + {name}
                                 </button>
@@ -176,56 +231,59 @@ export default function SubProjectAllocation({ requestId, totalAmount, isApprove
                         </div>
                     )}
                 </div>
-                <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-                >
-                    {saving ? "Saving..." : "Allocate"}
-                </button>
-                {subProjects.length > 0 && (
-                    <button
-                        onClick={handleDeleteAll}
-                        disabled={saving}
-                        className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 border border-red-200"
-                        title="Clear Allocations"
-                    >
-                        Clear
-                    </button>
+
+                {error && (
+                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2">
+                        <AlertCircle className="w-4 h-4 text-red-600" />
+                        <p className="text-[10px] font-black text-red-700 uppercase tracking-tighter">{error}</p>
+                    </div>
                 )}
-            </div>
 
-            {error && (
-                <p className="text-xs text-red-500 mb-3">{error}</p>
-            )}
-
-            {subProjects.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-xl overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead className="bg-gray-50 dark:bg-gray-900/50">
-                            <tr>
-                                <th scope="col" className="px-4 py-2 text-left font-medium text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">Sub-Project Name</th>
-                                <th scope="col" className="px-4 py-2 text-right font-medium text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">Allocated Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {subProjects.map((sp) => (
-                                <tr key={sp.id} className="hover:bg-gray-50 dark:bg-gray-900/50">
-                                    <td className="px-4 py-2 text-gray-700 dark:text-gray-200 font-medium">{sp.name}</td>
-                                    <td className="px-4 py-2 text-right text-gray-600 dark:text-gray-300">THB {Number(sp.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                </tr>
-                            ))}
-                            <tr className="bg-gray-50 dark:bg-gray-900/50 font-semibold border-t-2 border-gray-200">
-                                <td className="px-4 py-2 text-gray-700 dark:text-gray-200">Total</td>
-                                <td className="px-4 py-2 text-right text-brand-600">
-                                    THB {subProjects.reduce((sum, sp) => sum + Number(sp.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
+                {subProjects.length > 0 && (
+                    <div className="rounded-2xl border border-gray-100 overflow-hidden bg-white shadow-sm animate-in zoom-in-95 duration-500">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
+                                    <TableHead className="h-10 text-[10px] font-black uppercase tracking-widest px-6">Allocation Node</TableHead>
+                                    <TableHead className="h-10 text-[10px] font-black uppercase tracking-widest px-6 text-right">Computed Quantum</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {subProjects.map((sp) => (
+                                    <TableRow key={sp.id} className="group hover:bg-brand-50/20 transition-colors">
+                                        <TableCell className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <ChevronRight className="w-3 h-3 text-brand-400 opacity-0 group-hover:opacity-100 transition-all -ml-6 group-hover:ml-0" />
+                                                <span className="text-xs font-bold text-gray-900 uppercase tracking-tight">{sp.name}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="px-6 py-4 text-right">
+                                            <span className="text-xs font-mono font-bold text-gray-600 bg-gray-50 px-2 py-1 rounded-lg">
+                                                ฿{Number(sp.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                <TableRow className="bg-brand-50/30 hover:bg-brand-50/30 border-t-2 border-brand-100">
+                                    <TableCell className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-brand-700">Consolidated Allocation</TableCell>
+                                    <TableCell className="px-6 py-4 text-right">
+                                        <Badge variant="brand" className="px-4 py-1.5 h-auto text-sm font-black rounded-xl shadow-lg shadow-brand/10">
+                                            ฿{subProjects.reduce((sum, sp) => sum + Number(sp.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </Badge>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     );
 }
 
+// Internal AlertCircle for error state
+function AlertCircle({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    );
+}

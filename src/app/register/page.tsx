@@ -2,6 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { 
+    Card, 
+    CardHeader, 
+    CardTitle, 
+    CardDescription, 
+    CardContent, 
+    CardFooter 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -65,7 +77,7 @@ export default function RegisterPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4">
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md animate-fade-in">
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-600 mb-4 shadow-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -75,108 +87,102 @@ export default function RegisterPage() {
                             <line x1="23" y1="11" x2="17" y2="11" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">
                         Create <span className="gradient-text">Account</span>
                     </h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">
-                        {step === "form" ? "Register to start using the system" : "Enter the verification code sent to your email"}
+                    <p className="text-sm text-muted-foreground mt-2">
+                        {step === "form" ? "Register to start using the system" : "Verify your identity to proceed"}
                     </p>
                 </div>
 
-                <div className="glass-card !p-8">
+                <Card glass className="border-none">
                     {step === "form" ? (
-                        <form onSubmit={handleRegister} className="space-y-4">
-                            {error && (
-                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">{error}</div>
-                            )}
+                        <form onSubmit={handleRegister}>
+                            <CardContent className="pt-6 space-y-4">
+                                {error && (
+                                    <div className="bg-red-50/50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-xs animate-slide-in">
+                                        {error}
+                                    </div>
+                                )}
 
-                            <div>
-                                <label className="label-text">Full Name</label>
-                                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-field" placeholder="Enter your full name" required />
-                            </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="name">Full Name</Label>
+                                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="John Doe" required />
+                                </div>
 
-                            <div>
-                                <label className="label-text">Email</label>
-                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" placeholder="you@company.com" required />
-                            </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Work Email</Label>
+                                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required />
+                                </div>
 
-                            <div>
-                                <label className="label-text">Password</label>
-                                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field" placeholder="Min. 6 characters" required minLength={6} />
-                            </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Security Password</Label>
+                                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 6 characters" required minLength={6} />
+                                </div>
 
-                            <div>
-                                <label className="label-text">Team</label>
-                                <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} className="input-field" placeholder="e.g. Digital Marketing" required />
-                            </div>
-
-                            <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
-                                {loading ? (
-                                    <>
-                                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                        </svg>
-                                        Creating account...
-                                    </>
-                                ) : "Create Account & Verify Email"}
-                            </button>
+                                <div className="space-y-2">
+                                    <Label htmlFor="team">Department / Team</Label>
+                                    <Input id="team" value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="e.g. Technology" required />
+                                </div>
+                            </CardContent>
+                            <CardFooter className="flex flex-col gap-6">
+                                <Button type="submit" variant="brand" className="w-full h-12" disabled={loading}>
+                                    {loading ? "Initializing..." : "Create Account & Verify"}
+                                </Button>
+                            </CardFooter>
                         </form>
                     ) : (
-                        <form onSubmit={handleVerifyOTP} className="space-y-5">
-                            {error && (
-                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">{error}</div>
-                            )}
+                        <form onSubmit={handleVerifyOTP}>
+                            <CardContent className="pt-6 space-y-5">
+                                {error && (
+                                    <div className="bg-red-50/50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-xs animate-slide-in">
+                                        {error}
+                                    </div>
+                                )}
 
-                            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm">
-                                A 6-digit code was sent to <strong>{email}</strong>
-                            </div>
-
-                            {devCode && (
-                                <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl text-sm">
-                                    <strong>Dev Mode:</strong> Your code is <span className="font-mono font-bold text-lg">{devCode}</span>
+                                <div className="bg-indigo-50/50 border border-indigo-100 text-indigo-700 px-4 py-3 rounded-xl text-xs text-center">
+                                    A 6-digit code was sent to <span className="font-bold">{email}</span>
                                 </div>
-                            )}
 
-                            <div>
-                                <label className="label-text">Verification Code</label>
-                                <input
-                                    type="text"
-                                    value={otpCode}
-                                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                                    className="input-field text-center text-2xl tracking-[0.5em] font-mono"
-                                    placeholder="000000"
-                                    maxLength={6}
-                                    required
-                                    autoFocus
-                                />
-                            </div>
+                                {devCode && (
+                                    <div className="bg-amber-50/50 border border-amber-100 text-amber-700 px-4 py-3 rounded-xl text-center">
+                                        <p className="text-[10px] uppercase tracking-wider font-bold opacity-70 mb-1">Developer Mode</p>
+                                        <span className="font-mono font-bold text-xl tracking-widest">{devCode}</span>
+                                    </div>
+                                )}
 
-                            <button type="submit" disabled={loading || otpCode.length !== 6} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
-                                {loading ? (
-                                    <>
-                                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                        </svg>
-                                        Verifying...
-                                    </>
-                                ) : "Verify & Continue"}
-                            </button>
-
-                            <button type="button" onClick={() => { setStep("form"); setError(""); setDevCode(""); }} className="w-full text-sm text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-300 transition-colors">
-                                Back to form
-                            </button>
+                                <div className="space-y-3">
+                                    <Label className="text-center block">Verification Code</Label>
+                                    <Input
+                                        type="text"
+                                        value={otpCode}
+                                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                        className="text-center text-2xl tracking-[0.5em] font-mono h-14"
+                                        placeholder="000000"
+                                        maxLength={6}
+                                        required
+                                        autoFocus
+                                    />
+                                </div>
+                            </CardContent>
+                            <CardFooter className="flex flex-col gap-4">
+                                <Button type="submit" variant="brand" className="w-full h-12" disabled={loading || otpCode.length !== 6}>
+                                    {loading ? "Verifying..." : "Confirm & Continue"}
+                                </Button>
+                                <Button variant="ghost" type="button" onClick={() => { setStep("form"); setError(""); setDevCode(""); }} className="w-full text-xs text-muted-foreground hover:text-gray-900">
+                                    Back to registration
+                                </Button>
+                            </CardFooter>
                         </form>
                     )}
 
-                    <div className="mt-6 text-center">
-                        <p className="text-sm text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">
+                    <div className="pb-8 px-8 text-center border-t border-gray-50/50 pt-6">
+                        <p className="text-xs text-muted-foreground">
                             Already have an account?{" "}
-                            <a href="/login" className="text-brand-500 hover:text-brand-700 font-medium transition-colors">Sign In</a>
+                            <Link href="/login" className="text-brand-600 font-semibold hover:underline">Sign In</Link>
                         </p>
                     </div>
-                </div>
+                </Card>
             </div>
         </div>
     );
