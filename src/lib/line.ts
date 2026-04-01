@@ -1,6 +1,6 @@
 import { createServerSupabase } from "./supabase";
 
-export async function sendLineNotification(message: string) {
+export async function sendLineNotification(message: string | any) {
     try {
         const supabase = createServerSupabase();
         
@@ -23,6 +23,11 @@ export async function sendLineNotification(message: string) {
             return { success: false, error: "Missing configuration" };
         }
 
+        // Determine if message is plain text or an object (Flex Message)
+        const lineMessage = typeof message === "string" 
+            ? { type: "text", text: message } 
+            : message;
+
         const response = await fetch("https://api.line.me/v2/bot/message/push", {
             method: "POST",
             headers: {
@@ -31,12 +36,7 @@ export async function sendLineNotification(message: string) {
             },
             body: JSON.stringify({
                 to: destinationId,
-                messages: [
-                    {
-                        type: "text",
-                        text: message,
-                    },
-                ],
+                messages: [lineMessage],
             }),
         });
 

@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/supabase";
 import { RequestPayment, RequestRecord } from "@/lib/types";
 import { sendLineNotification } from "@/lib/line";
+import { BillingType, RequestStatus } from "@/types/enums";
 
 export class PaymentService {
   /**
@@ -26,8 +27,9 @@ export class PaymentService {
 
     if (appErr) throw appErr;
 
-    // 3. Generate virtual events for ONE_TIME, MONTHLY, YEARLY types
-    const virtualEvents = this.generateVirtualEvents(approvedRequests as RequestRecord[], year, month);
+    // 3. Generate virtual events for ONE_TIME, MONTHLY, YEARLY, YEARLY_MONTHLY types
+    // Pass explicitPayments for deduplication
+    const virtualEvents = this.generateVirtualEvents(approvedRequests as RequestRecord[], year, month, explicitPayments);
 
     // 4. Merge and return
     return this.mergeAndSortPayments(explicitPayments as (RequestPayment & { requests: RequestRecord })[], virtualEvents);
@@ -36,20 +38,20 @@ export class PaymentService {
   /**
    * Calculates virtual payment dates for requests that aren't in request_payments table.
    */
-  private static generateVirtualEvents(requests: RequestRecord[], year: number, month: number) {
+  private static generateVirtualEvents(requests: RequestRecord[], year: number, month: number, explicitPayments: any[]) {
     const events: any[] = [];
-    const targetMonthStart = new Date(year, month - 1, 1);
-    const targetMonthEnd = new Date(year, month, 0);
+    const monthStr = `${year}-${String(month).padStart(2, "0")}`;
 
     for (const req of requests) {
       if (!req.start_date) continue;
 
+      // Deduplication: If a record already exists in the database for this request/month, skip virtual generation
+      const exists = explicitPayments.find(p => p.request_id === req.id && p.month_year === monthStr);
+      if (exists) continue;
+
       const startDate = new Date(req.start_date);
       const endDate = req.end_date ? new Date(req.end_date) : null;
-      const billingType = req.billing_type;
-
-      // Skip if billing type is YEARLY_MONTHLY (they are in the explicit table)
-      if (billingType === "YEARLY_MONTHLY") continue;
+      const billingType = req.billing_type as BillingType;
 
       // Calculate due day (day part of start_date)
       const dueDay = startDate.getDate();
@@ -61,13 +63,13 @@ export class PaymentService {
 
       let isDueThisMonth = false;
 
-      if (billingType === "ONE_TIME") {
+      if (billingType === BillingType.ONE_TIME) {
         // Only if start_date is in this month
         isDueThisMonth = startDate.getMonth() === (month - 1) && startDate.getFullYear() === year;
-      } else if (billingType === "MONTHLY") {
+      } else if (billingType === BillingType.MONTHLY || billingType === BillingType.YEARLY_MONTHLY) {
         // Every month within period
         isDueThisMonth = true;
-      } else if (billingType === "YEARLY") {
+      } else if (billingType === BillingType.YEARLY) {
         // Only if startMonth matches
         isDueThisMonth = startDate.getMonth() === (month - 1);
       }
@@ -140,22 +142,122 @@ export class PaymentService {
       paymentData = p;
     }
 
-    const { requests: request, amount_due, month_year } = paymentData;
+    const { requests: request, amount_due, month_year, status } = paymentData;
     const profile = request.profiles;
     const monthLabel = this.formatMonthYear(month_year);
 
-    // 2. Compose notification message
-    const message = `🔔 *แจ้งเตือนการชำระรอบบิล*\n\n` +
-      `📌 โปรเจกต์: ${request.project_name}\n` +
-      `📅 รอบเดือน: ${monthLabel}\n` +
-      `💰 ยอดที่ต้องชำระ: ${amount_due.toLocaleString()} บาท\n` +
-      `👤 ผู้รับผิดชอบ: ${profile?.name || "N/A"}\n\n` +
-      `กรุณาตรวจสอบและดำเนินการอัปโหลดหลักฐานการชำระเงินในระบบด้วยครับ 🙏`;
+    // 2. Compose Rich Flex Message
+    const flexMessage = this.createPaymentFlexMessage({
+      projectName: request.project_name,
+      monthLabel,
+      amount: amount_due,
+      userName: profile?.name || "N/A",
+      status: status || "PENDING"
+    });
 
     // 3. Send notification
-    await sendLineNotification(message);
+    await sendLineNotification(flexMessage);
 
     return { success: true, sentTo: profile?.name };
+  }
+
+  private static createPaymentFlexMessage(data: { 
+    projectName: string; 
+    monthLabel: string; 
+    amount: number; 
+    userName: string; 
+    status: string; 
+  }) {
+    const isOverdue = data.status === "OVERDUE";
+    const headerColor = isOverdue ? "#EF4444" : "#2563EB"; // Red for overdue, Blue for pending
+    
+    return {
+      type: "flex",
+      altText: `แจ้งเตือนการชำระเงิน: ${data.projectName}`,
+      contents: {
+        type: "bubble",
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "แจ้งเตือนการชำระรอบบิล",
+              weight: "bold",
+              color: "#ffffff",
+              size: "sm"
+            }
+          ],
+          backgroundColor: headerColor
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: data.projectName,
+              weight: "bold",
+              size: "md",
+              wrap: true
+            },
+            {
+              type: "separator",
+              margin: "md"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              margin: "md",
+              spacing: "sm",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "เดือน", size: "xs", color: "#aaaaaa", flex: 0 },
+                    { type: "text", text: data.monthLabel, size: "xs", color: "#666666", align: "end" }
+                  ]
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "ยอดชำระ", size: "xs", color: "#aaaaaa", flex: 0 },
+                    { type: "text", text: `${data.amount.toLocaleString()} บาท`, size: "xs", color: "#666666", align: "end", weight: "bold" }
+                  ]
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "ผู้รับผิดชอบ", size: "xs", color: "#aaaaaa", flex: 0 },
+                    { type: "text", text: data.userName, size: "xs", color: "#666666", align: "end" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "button",
+              action: {
+                type: "uri",
+                label: "ตรวจสอบในระบบ",
+                uri: "https://line.me" // Placeholder: should be APP_URL
+              },
+              style: "primary",
+              color: headerColor,
+              height: "sm"
+            }
+          ]
+        }
+      }
+    };
   }
 
   private static formatMonthYear(my: string) {
