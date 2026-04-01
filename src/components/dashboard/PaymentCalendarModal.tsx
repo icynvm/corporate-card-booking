@@ -9,9 +9,9 @@ interface PaymentCalendarModalProps {
 
 export const PaymentCalendarModal: React.FC<PaymentCalendarModalProps> = ({ isOpen, onClose }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [payments, setPayments] = useState<(RequestPayment & { requests: RequestRecord })[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(new Date());
   const [notifying, setNotifying] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,10 +58,13 @@ export const PaymentCalendarModal: React.FC<PaymentCalendarModalProps> = ({ isOp
 
   // Helper: Get payments for a specific day in this month (arbitrary logic for demo)
   // Real world: installments are monthly, we can show them on the 1st or 15th
+  // Helper: Get payments for a specific day in this month
   const getPaymentsForDay = (day: Date) => {
-    // For this app, installments are 'month_year', so we show them on the 1st
-    if (format(day, "d") !== "1") return [];
-    return payments;
+    return payments.filter(p => {
+      if (!p.due_date) return false;
+      const dueDate = new Date(p.due_date);
+      return isSameDay(day, dueDate);
+    });
   };
 
   return (
