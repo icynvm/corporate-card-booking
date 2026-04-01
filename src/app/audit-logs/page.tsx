@@ -43,7 +43,7 @@ const describeAuditChange = (action: string, changes: Record<string, unknown> | 
             const from = STATUS_LABEL_MAP[changes.old_status as string] || "";
             let msg = "Approved this request";
             if (from) msg += ` (was ${from})`;
-            if (changes.notes) msg += ` ✅ "${changes.notes}"`;
+            if (changes.notes) msg += ` — "${changes.notes}"`;
             return msg;
         }
         case "REJECT": {

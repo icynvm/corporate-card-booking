@@ -1,4 +1,6 @@
-// Type definitions for the application
+import { RequestStatus, BillingType, AuditAction, EntityType } from "@/types/enums";
+
+export type { RequestStatus, BillingType, AuditAction, EntityType };
 
 export interface Profile {
     id: string;
@@ -19,8 +21,6 @@ export interface Project {
     created_at: string;
 }
 
-export type RequestStatus = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
-
 export interface RequestRecord {
     id: string;
     req_id: string; // The REQ-XXXX-XXXX identifier
@@ -32,7 +32,7 @@ export interface RequestRecord {
     objective: string;
     contact_no: string;
     email: string;
-    billing_type: "ONE_TIME" | "MONTHLY" | "YEARLY" | "YEARLY_MONTHLY";
+    billing_type: BillingType;
     start_date: string;
     end_date: string;
     booking_date: string | null;
@@ -100,9 +100,9 @@ export interface SubProject {
 
 export interface AuditLog {
     id: string;
-    entity_type: string;
+    entity_type: EntityType;
     entity_id: string;
-    action: string;
+    action: AuditAction | string;
     user_id: string | null;
     user_name: string;
     changes: Record<string, unknown>;
@@ -170,6 +170,6 @@ export const STATUS_COLORS: Record<RequestStatus, string> = {
     REJECTED: "bg-red-100 text-red-700",
     ACTIVE: "bg-blue-100 text-blue-700",
     COMPLETED: "bg-emerald-100 text-emerald-800",
-    CANCELLED: "bg-gray-200 text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500",
+    CANCELLED: "bg-gray-200 text-gray-500 dark:text-gray-400",
 };
 

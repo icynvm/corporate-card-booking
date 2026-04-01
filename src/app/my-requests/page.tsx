@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 import SubProjectAllocation from "@/components/dashboard/SubProjectAllocation";
+import { InfoCard, DetailItem, DetailGrid } from "@/components/ui/DataDisplay";
 import { RequestRecord, STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
+import { RequestStatus, BillingType } from "@/types/enums";
 import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
 import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
 import { RequestEditModal } from "@/components/dashboard/RequestEditModal";
@@ -160,12 +162,13 @@ export default function MyRequestsPage() {
         }
     };
 
-    const canCancel = (status: string) => status === "DRAFT" || status === "PENDING_APPROVAL";
-    const canDownloadPDF = (status: string) => status !== "CANCELLED";
-    const canUploadSigned = (status: string) => status === "PENDING_APPROVAL";
-    const canSendEmail = (status: string) => status === "PENDING_APPROVAL";
-    const canUploadReceipt = (status: string) => ["APPROVED", "ACTIVE", "COMPLETED"].includes(status);
-    const canEdit = (status: string) => status === "PENDING_APPROVAL";
+    const canCancel = (status: RequestStatus) => status === RequestStatus.DRAFT || status === RequestStatus.PENDING_APPROVAL;
+    const canDownloadPDF = (status: RequestStatus) => status !== RequestStatus.CANCELLED;
+    const canUploadSigned = (status: RequestStatus) => status === RequestStatus.PENDING_APPROVAL;
+    const canSendEmail = (status: RequestStatus) => status === RequestStatus.PENDING_APPROVAL;
+    const canUploadReceipt = (status: RequestStatus) => 
+        [RequestStatus.APPROVED, RequestStatus.ACTIVE, RequestStatus.COMPLETED].includes(status);
+    const canEdit = (status: RequestStatus) => status === RequestStatus.PENDING_APPROVAL;
 
     const handleUploadReceipt = (request: RequestRecord) => {
         setSelectedRequest(request);
@@ -403,74 +406,29 @@ export default function MyRequestsPage() {
                                             {/* Row 1: My Info + Project */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 {/* My Info */}
-                                                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                                                    <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100">
-                                                        <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider">My Contact Info</h4>
+                                                <InfoCard title="My Contact Info">
+                                                    <div className="space-y-1">
+                                                        <DetailItem label="Name" value={request.full_name || request.profiles?.name} />
+                                                        <DetailItem label="Department" value={request.department || request.profiles?.department} />
+                                                        <DetailItem label="Email" value={request.email} />
+                                                        <DetailItem label="Contact" value={request.contact_no} />
                                                     </div>
-                                                    <div className="p-4 space-y-2.5 text-sm">
-                                                        <div className="flex flex-wrap justify-between gap-1">
-                                                            <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-xs">Name</span>
-                                                            <span className="font-medium text-gray-700 dark:text-gray-200 text-xs break-all text-right">{request.full_name || request.profiles?.name || "N/A"}</span>
-                                                        </div>
-                                                        <div className="flex flex-wrap justify-between gap-1">
-                                                            <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-xs">Department</span>
-                                                            <span className="font-medium text-gray-700 dark:text-gray-200 text-xs break-all text-right">{request.department || request.profiles?.department || "N/A"}</span>
-                                                        </div>
-                                                        <div className="flex flex-wrap justify-between gap-1">
-                                                            <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-xs">Email</span>
-                                                            <span className="font-medium text-gray-700 dark:text-gray-200 text-xs break-all text-right">{request.email || "N/A"}</span>
-                                                        </div>
-                                                        <div className="flex flex-wrap justify-between gap-1">
-                                                            <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-xs">Contact</span>
-                                                            <span className="font-medium text-gray-700 dark:text-gray-200 text-xs break-all text-right">{request.contact_no || "N/A"}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
+                                                </InfoCard>
+                                                
                                                 {/* Project Details */}
-                                                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                                                    <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100">
-                                                        <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider">Project Details</h4>
+                                                <InfoCard title="Project Details">
+                                                    <div className="space-y-1">
+                                                        <DetailItem label="Project Name" value={request.project_name} />
+                                                        <div className="grid grid-cols-2 gap-4 mt-2">
+                                                            <DetailItem label="Amount" value={`THB ${request.amount?.toLocaleString()}`} horizontal={false} />
+                                                            <DetailItem label="Billing" value={getBillingLabel(request.billing_type)} horizontal={false} />
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-4 mt-2">
+                                                            <DetailItem label="Start Date" value={fmtDate(request.start_date)} horizontal={false} />
+                                                            <DetailItem label="End Date" value={fmtDate(request.end_date)} horizontal={false} />
+                                                        </div>
                                                     </div>
-                                                    <div className="p-4 space-y-2.5 text-sm">
-                                                        <div>
-                                                            <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-xs block">Project Name</span>
-                                                            <p className="font-medium text-gray-700 dark:text-gray-200 text-xs break-words mt-0.5">{request.project_name || "N/A"}</p>
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-3">
-                                                            <div>
-                                                                <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-xs block">Amount</span>
-                                                                <p className="font-semibold text-brand-600 text-sm mt-0.5">THB {request.amount?.toLocaleString()}</p>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-xs block">Billing</span>
-                                                                <p className="font-medium text-gray-700 dark:text-gray-200 text-xs mt-0.5">{request.billing_type?.replace("_", " ") || "N/A"}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-3">
-                                                            <div>
-                                                                <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-xs block">Start Date</span>
-                                                                <p className="font-medium text-gray-700 dark:text-gray-200 text-xs mt-0.5">{fmtDate(request.start_date)}</p>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-xs block">End Date</span>
-                                                                <p className="font-medium text-gray-700 dark:text-gray-200 text-xs mt-0.5">{fmtDate(request.end_date)}</p>
-                                                            </div>
-                                                        </div>
-                                                        {(request.booking_date || request.effective_date) && (
-                                                            <div className="grid grid-cols-2 gap-3">
-                                                                <div>
-                                                                    <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-xs block">Booking Date</span>
-                                                                    <p className="font-medium text-gray-700 dark:text-gray-200 text-xs mt-0.5">{fmtDate(request.booking_date)}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-xs block">Effective Date</span>
-                                                                    <p className="font-medium text-gray-700 dark:text-gray-200 text-xs mt-0.5">{fmtDate(request.effective_date)}</p>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                                </InfoCard>
                                             </div>
 
                                             {/* Row 2: Objective */}
