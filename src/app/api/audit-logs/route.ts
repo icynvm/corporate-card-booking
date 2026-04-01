@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 // GET: Fetch audit logs
 export async function GET(req: NextRequest) {
     try {

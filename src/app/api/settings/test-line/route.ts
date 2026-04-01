@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendLineNotification } from "@/lib/line";
 import { parseSessionToken, getSessionCookieName } from "@/lib/session";
 
+export const dynamic = "force-dynamic";
+
 function getSession(req: NextRequest) {
     const token = req.cookies.get(getSessionCookieName())?.value;
     if (!token) return null;

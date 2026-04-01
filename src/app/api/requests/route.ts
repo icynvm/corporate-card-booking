@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+
+export const dynamic = "force-dynamic";
 import { RequestService } from "@/services/request.service";
 import { CreateRequestSchema, RequestQuerySchema } from "@/lib/validations/schemas";
 import { RequestStatus } from "@/types/enums";

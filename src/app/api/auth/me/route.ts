@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseSessionToken, getSessionCookieName } from "@/lib/session";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
     const token = req.cookies.get(getSessionCookieName())?.value;
     if (!token) {
