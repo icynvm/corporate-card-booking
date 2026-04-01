@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { ApprovalUploadModal } from "@/components/dashboard/ApprovalUploadModal";
 import { ReceiptUploadModal } from "@/components/dashboard/ReceiptUploadModal";
+import { PaymentCalendarModal } from "@/components/dashboard/PaymentCalendarModal";
 import { RequestRecord, AuditLog, STATUS_LABELS } from "@/lib/types";
 import { ToastContainer, AlertSeverity } from "@/components/ui/MuiAlert";
 import { AnalyticsTab } from "@/components/admin/AnalyticsTab";
@@ -39,6 +40,7 @@ export default function AdminPage() {
     const [showEmailSettings, setShowEmailSettings] = useState(false);
     const [managerEmail, setManagerEmail] = useState("");
     const [savingSettings, setSavingSettings] = useState(false);
+    const [calendarModalOpen, setCalendarModalOpen] = useState(false);
 
     // Toast (Notification) State
     const [toasts, setToasts] = useState<{ id: string; message: string; severity: AlertSeverity }[]>([]);
@@ -46,12 +48,12 @@ export default function AdminPage() {
     /** Adds a disappearing popup notification */
     const addToast = (message: string, severity: AlertSeverity = "info") => {
         const id = Math.random().toString(36).substring(2, 9);
-        setToasts((prev) => [...prev, { id, message, severity }]);
+        setToasts((prev: any[]) => [...prev, { id, message, severity }]);
         setTimeout(() => removeToast(id), 5000); // 5 seconds later
     };
 
     const removeToast = (id: string) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
+        setToasts((prev: any[]) => prev.filter((t: any) => t.id !== id));
     };
 
     // ---- Data Fetching ----
@@ -195,13 +197,22 @@ export default function AdminPage() {
                         Manage all requests and review submissions
                     </p>
                 </div>
-                <button
-                    onClick={() => setShowEmailSettings(!showEmailSettings)}
-                    className="btn-secondary text-xs sm:text-sm px-3 sm:px-4 py-2 flex items-center gap-2 self-start"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                    <span>Email Settings</span>
-                </button>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <button
+                        onClick={() => setCalendarModalOpen(true)}
+                        className="btn-primary text-xs sm:text-sm px-3 sm:px-4 py-2 flex items-center gap-2 whitespace-nowrap"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span>Payment Schedule</span>
+                    </button>
+                    <button
+                        onClick={() => setShowEmailSettings(!showEmailSettings)}
+                        className="btn-secondary text-xs sm:text-sm px-3 sm:px-4 py-2 flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <span>Email Settings</span>
+                    </button>
+                </div>
             </div>
 
             {/* Hidden Panel: Email Settings */}
@@ -318,6 +329,10 @@ export default function AdminPage() {
                 isOpen={receiptModalOpen}
                 onClose={() => { setReceiptModalOpen(false); setSelectedRequest(null); fetchData(); }}
                 request={selectedRequest}
+            />
+            <PaymentCalendarModal
+                isOpen={calendarModalOpen}
+                onClose={() => setCalendarModalOpen(false)}
             />
         </div>
     );
