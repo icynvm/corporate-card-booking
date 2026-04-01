@@ -190,16 +190,28 @@ export class RequestService {
   }
 
   private static async notifyLine(body: any) {
-    const flexMessage = this.createRequestFlexMessage(body);
-    await sendLineNotification(flexMessage);
+    try {
+      console.log("[RequestService] Creating notification for:", body.projectName);
+      const flexMessage = this.createRequestFlexMessage(body);
+      
+      const result = await sendLineNotification(flexMessage);
+      if (!result.success) {
+        console.error("[RequestService] LINE Notification failed:", result.error);
+      } else {
+        console.log("[RequestService] LINE Notification sent successfully");
+      }
+    } catch (err) {
+      console.error("[RequestService] Failed to generate/send notification:", err);
+    }
   }
 
   private static createRequestFlexMessage(body: any) {
     const headerColor = "#10B981"; // Emerald Green for New Request
+    const amount = typeof body.amount === "number" ? body.amount : parseFloat(body.amount || "0");
     
     return {
       type: "flex",
-      altText: `คําขอใหม่: ${body.projectName}`,
+      altText: `คําขอใหม่: ${body.projectName || "N/A"}`,
       contents: {
         type: "bubble",
         header: {
@@ -241,24 +253,24 @@ export class RequestService {
                   type: "box",
                   layout: "horizontal",
                   contents: [
-                    { type: "text", text: "ผู้ขอ", size: "xs", color: "#aaaaaa", flex: 0 },
-                    { type: "text", text: body.fullName, size: "xs", color: "#666666", align: "end" }
+                    { type: "text", text: "ผู้ขอ", size: "xs", color: "#aaaaaa", flex: 1 },
+                    { type: "text", text: body.fullName || "N/A", size: "xs", color: "#666666", align: "end", flex: 4 }
                   ]
                 },
                 {
                   type: "box",
                   layout: "horizontal",
                   contents: [
-                    { type: "text", text: "ทีม/แผนก", size: "xs", color: "#aaaaaa", flex: 0 },
-                    { type: "text", text: body.department || "N/A", size: "xs", color: "#666666", align: "end" }
+                    { type: "text", text: "ทีม/แผนก", size: "xs", color: "#aaaaaa", flex: 1 },
+                    { type: "text", text: body.department || "N/A", size: "xs", color: "#666666", align: "end", flex: 4 }
                   ]
                 },
                 {
                   type: "box",
                   layout: "horizontal",
                   contents: [
-                    { type: "text", text: "วงเงิน", size: "xs", color: "#aaaaaa", flex: 0 },
-                    { type: "text", text: `${parseFloat(body.amount).toLocaleString()} บาท`, size: "xs", color: "#666666", align: "end", weight: "bold" }
+                    { type: "text", text: "วงเงิน", size: "xs", color: "#aaaaaa", flex: 1 },
+                    { type: "text", text: `${amount.toLocaleString()} บาท`, size: "xs", color: "#666666", align: "end", weight: "bold", flex: 4 }
                   ]
                 }
               ]
