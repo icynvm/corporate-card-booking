@@ -76,7 +76,7 @@ export class PaymentService {
 
       if (isDueThisMonth) {
         events.push({
-          id: `virtual-${req.id}-${year}-${month}`,
+          id: `virtual:${req.id}:${year}:${month}`,
           request_id: req.id,
           amount_due: req.amount,
           month_year: `${year}-${String(month).padStart(2, "0")}`,
@@ -109,10 +109,10 @@ export class PaymentService {
     const supabase = createServerSupabase();
     let paymentData: any = null;
 
-    if (paymentId.startsWith("virtual-")) {
+    if (paymentId.startsWith("virtual:")) {
       // Handle virtual notification (no record in DB)
-      // Extract request ID from "virtual-{reqId}-{year}-{month}"
-      const parts = paymentId.split("-");
+      // Extract request ID from "virtual:{reqId}:{year}:{month}"
+      const parts = paymentId.split(":");
       const reqId = parts[1];
       const year = parts[2];
       const month = parts[3];
@@ -123,12 +123,13 @@ export class PaymentService {
         .eq("id", reqId)
         .single();
 
-      if (error || !request) throw new Error("Request not found");
+      if (error || !request) throw new Error("Request not found: " + reqId);
 
       paymentData = {
         requests: request,
         amount_due: (request as any).amount,
         month_year: `${year}-${month}`,
+        status: "PENDING",
         is_virtual: true
       };
     } else {
