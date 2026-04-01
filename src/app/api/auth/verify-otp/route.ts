@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
 import { createSessionToken, getSessionCookieName } from "@/lib/session";
 
-export const dynamic = "force-dynamic";
-
 export async function POST(req: NextRequest) {
     try {
         const supabase = createServerSupabase();

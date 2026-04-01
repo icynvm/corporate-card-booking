@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
 import { parseSessionToken, getSessionCookieName } from "@/lib/session";
 
-export const dynamic = "force-dynamic";
-
 // Helper to get session from cookie
 function getSession(req: NextRequest) {
     const token = req.cookies.get(getSessionCookieName())?.value;

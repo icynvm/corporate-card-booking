@@ -14,32 +14,27 @@ import {
     ColumnFiltersState,
 } from "@tanstack/react-table";
 import { RequestRecord } from "@/lib/types";
-import { 
-    Table, 
-    TableBody, 
-    TableCell, 
-    TableHead, 
-    TableHeader, 
-    TableRow 
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { 
-    ExternalLink, 
-    Upload, 
-    MailCheck, 
-    FileCheck, 
-    Receipt, 
-    ChevronLeft, 
-    ChevronRight,
-    ArrowUpDown,
-    MoreHorizontal,
-    FileQuestion
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import SubProjectAllocation from "./SubProjectAllocation";
 
 const columnHelper = createColumnHelper<RequestRecord>();
+
+const downloadFile = async (url: string) => {
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const urlBlob = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = urlBlob;
+        const filename = url.split("/").pop()?.split("?")[0] || "document.pdf";
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(urlBlob);
+    } catch (error) {
+        console.error("Download failed:", error);
+    }
+};
 
 interface RequestsTableProps {
     data: RequestRecord[];
@@ -51,41 +46,44 @@ const RowActions = ({ row, onUploadReceipt, onUploadSigned }: { row: RequestReco
     const canUploadReceipt = ["APPROVED", "ACTIVE", "COMPLETED"].includes(row.status);
     const canUploadSigned = row.status === "PENDING_APPROVAL";
     const hasReceipt = row.receipts && row.receipts.length > 0;
+    const latestReceipt = hasReceipt ? row.receipts![row.receipts!.length - 1] : null;
 
     return (
-        <div className="flex gap-2 flex-wrap justify-end">
+        <div className="flex gap-2 flex-wrap">
             {canUploadSigned && (
-                <Button
-                    size="sm"
-                    variant="outline"
+                <button
                     onClick={() => onUploadSigned(row)}
-                    className="h-8 px-3 text-[10px] font-black uppercase tracking-widest bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-100 hover:text-purple-800 transition-all gap-1.5"
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-50 text-purple-600 border border-purple-200 hover:bg-purple-100 transition-all flex items-center gap-1.5"
                 >
-                    <Upload className="w-3 h-3" />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
                     Upload Signed
-                </Button>
+                </button>
             )}
 
             {row.status === "APPROVED" && !row.approval_file_url && (
-                <Badge variant="success" className="h-8 px-3 text-[10px] font-black uppercase tracking-widest gap-1.5 italic">
-                    <MailCheck className="w-3 h-3" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                    </svg>
                     Email Approved
-                </Badge>
+                </span>
             )}
 
             {canUploadReceipt && (
-                <Button
-                    size="sm"
-                    variant={hasReceipt ? "brand" : "outline"}
+                <button
                     onClick={() => onUploadReceipt(row)}
-                    className={cn(
-                        "h-8 px-3 text-[10px] font-black uppercase tracking-widest gap-1.5 transition-all",
-                        !hasReceipt && "bg-white border-gray-100 text-gray-500 hover:border-brand-200 hover:text-brand-700"
-                    )}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${latestReceipt
+                        ? "bg-brand-50 text-brand-600 border-brand-200"
+                        : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 hover:border-brand-200 hover:text-brand-600"
+                        }`}
                 >
-                    <Receipt className="w-3 h-3" />
-                    {hasReceipt ? "Manage Receipts" : "Upload Receipt"}
-                </Button>
+                    {latestReceipt ? " Manage Receipts" : " Upload Receipt"}
+                </button>
             )}
         </div>
     );
@@ -98,56 +96,54 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
     const columns = useMemo(
         () => [
             columnHelper.accessor("req_id", {
-                header: ({ column }) => (
-                    <Button
-                        variant="ghost"
-                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                        className="p-0 hover:bg-transparent text-[10px] font-black uppercase tracking-widest"
-                    >
-                        ID <ArrowUpDown className="ml-1 w-2.5 h-2.5" />
-                    </Button>
-                ),
-                cell: (info) => {
+                header: "Request ID",
+                cell: (info: any) => {
                     const row = info.row.original;
                     return (
-                        <Link
-                            href={`/request/${row.id}`}
-                            className="font-mono text-xs font-black text-brand-600 hover:text-brand-700 hover:underline flex items-center gap-1.5 group"
-                        >
-                            <ExternalLink className="w-3 h-3 opacity-30 group-hover:opacity-100 transition-opacity" />
-                            {info.getValue()}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                            <Link
+                                href={`/request/${row.id}`}
+                                className="font-mono text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1"
+                                title="View Request Details"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                                {info.getValue()}
+                            </Link>
+                        </div>
+                    );
+                },
+            }),
+            columnHelper.accessor("event_id", {
+                header: "Event ID",
+                cell: (info: any) => {
+                    const row = info.row.original;
+                    const hasMultiple = row.event_details && row.event_details.length > 1;
+                    return (
+                        <div className="text-xs text-gray-600 dark:text-gray-300">
+                            {info.getValue() || "N/A"}
+                            {hasMultiple && <span className="ml-1 text-[10px] text-gray-400 font-normal">(+{row.event_details.length - 1})</span>}
+                        </div>
                     );
                 },
             }),
             columnHelper.accessor("project_name", {
-                header: "Project Distribution",
+                header: "Project",
                 cell: (info) => (
-                    <div className="max-w-[180px]">
-                        <p className="text-sm font-bold text-gray-900 truncate">{info.getValue() || "N/A"}</p>
-                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">Cost Center Primary</p>
-                    </div>
+                    <span className="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[150px] block">
+                        {info.getValue() || "N/A"}
+                    </span>
                 ),
             }),
             columnHelper.accessor("amount", {
-                header: ({ column }) => (
-                    <Button
-                        variant="ghost"
-                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                        className="p-0 hover:bg-transparent text-[10px] font-black uppercase tracking-widest"
-                    >
-                        Amount <ArrowUpDown className="ml-1 w-2.5 h-2.5" />
-                    </Button>
-                ),
+                header: "Amount",
                 cell: (info) => (
-                    <div className="font-black text-sm text-gray-900">
-                        <span className="text-[10px] font-bold text-gray-400 mr-1">THB</span>
-                        {info.getValue()?.toLocaleString()}
-                    </div>
+                    <span className="font-semibold text-sm text-gray-700 dark:text-gray-200">
+                        THB {info.getValue()?.toLocaleString()}
+                    </span>
                 ),
             }),
             columnHelper.accessor("billing_type", {
-                header: "Expenditure Type",
+                header: "Billing",
                 cell: (info) => {
                     const type = info.getValue();
                     const label = type
@@ -155,49 +151,51 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                         .replace("YEARLY_MONTHLY", "Yearly (Monthly)")
                         .replace("MONTHLY", "Monthly")
                         .replace("YEARLY", "Yearly");
-                    
-                    let variant: "secondary" | "outline" | "info" = "outline";
-                    if (type === "MONTHLY") variant = "secondary";
-                    
+                    const color =
+                        type === "MONTHLY"
+                            ? "bg-purple-100 text-purple-700"
+                            : type === "YEARLY"
+                                ? "bg-blue-100 text-blue-700"
+                                : type === "YEARLY_MONTHLY"
+                                    ? "bg-indigo-100 text-indigo-700"
+                                    : "bg-gray-100 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300";
                     return (
-                        <Badge variant={variant} className="text-[9px] font-black uppercase tracking-tight px-2 py-0.5 border-gray-100 bg-gray-50/50">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${color}`}>
                             {label}
-                        </Badge>
+                        </span>
                     );
                 },
             }),
             columnHelper.accessor("status", {
-                header: "Current State",
+                header: "Status",
                 cell: (info) => {
-                    const status = info.getValue() as string;
-                    let variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info" = "outline";
-                    
-                    if (status === "APPROVED" || status === "COMPLETED" || status === "ACTIVE") variant = "success";
-                    else if (status === "PENDING" || status === "PENDING_APPROVAL") variant = "warning";
-                    else if (status === "REJECTED" || status === "CANCELLED") variant = "destructive";
-
-                    return (
-                        <Badge variant={variant} className="h-5 text-[9px] font-black uppercase tracking-widest">
-                            {status}
-                        </Badge>
-                    );
+                    const status = info.getValue();
+                    const className =
+                        status === "PENDING"
+                            ? "status-pending"
+                            : status === "APPROVED"
+                                ? "status-approved"
+                                : status === "REJECTED"
+                                    ? "status-rejected"
+                                    : "status-completed";
+                    return <span className={className}>{status}</span>;
                 },
             }),
             columnHelper.accessor("created_at", {
-                header: "Initiated",
+                header: "Date",
                 cell: (info) => (
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">
                         {new Date(info.getValue()).toLocaleDateString("en-GB", {
                             day: "2-digit",
                             month: "short",
                             year: "numeric",
                         })}
-                    </div>
+                    </span>
                 ),
             }),
             columnHelper.display({
                 id: "actions",
-                header: () => <div className="text-right pr-4">Operations</div>,
+                header: "Actions",
                 cell: (info) => <RowActions row={info.row.original} onUploadReceipt={onUploadReceipt} onUploadSigned={onUploadSigned} />,
             }),
         ],
@@ -220,82 +218,96 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
     });
 
     return (
-        <Card glass className="border-none shadow-xl bg-white/50 backdrop-blur-md overflow-hidden">
+        <div className="glass-card overflow-hidden">
             {/* Desktop View */}
-            <div className="hidden md:block overflow-x-auto">
-                <Table>
-                    <TableHeader className="bg-gray-50/50">
+            <div className="hidden md:block overflow-x-auto scrollbar-thin">
+                <table className="w-full">
+                    <thead>
                         {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id} className="hover:bg-transparent border-gray-100">
+                            <tr key={headerGroup.id} className="border-b border-gray-100/50">
                                 {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id} className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
+                                    <th
+                                        key={header.id}
+                                        className="px-5 py-4 text-left text-xs font-semibold text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-600 dark:text-gray-300 transition-colors"
+                                        onClick={header.column.getToggleSortingHandler()}
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            {flexRender(header.column.columnDef.header, header.getContext())}
+                                            {header.column.getIsSorted() === "asc" && (
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15" /></svg>
+                                            )}
+                                            {header.column.getIsSorted() === "desc" && (
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                                            )}
+                                        </div>
+                                    </th>
                                 ))}
-                            </TableRow>
+                            </tr>
                         ))}
-                    </TableHeader>
-                    <TableBody>
+                    </thead>
+                    <tbody>
                         {table.getRowModel().rows.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-48 text-center">
-                                    <div className="flex flex-col items-center justify-center space-y-3">
-                                        <FileQuestion className="w-10 h-10 text-gray-200" />
-                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No matching records found</p>
+                            <tr>
+                                <td colSpan={columns.length} className="px-5 py-16 text-center">
+                                    <div className="text-gray-300 mb-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <polyline points="14,2 14,8 20,8" />
+                                        </svg>
                                     </div>
-                                </TableCell>
-                            </TableRow>
+                                    <p className="text-sm text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">No requests found</p>
+                                </td>
+                            </tr>
                         ) : (
                             table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id} className="border-gray-50 hover:bg-white/80 transition-colors group">
+                                <tr key={row.id} className="border-b border-gray-50 hover:bg-brand-50/30 transition-colors">
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id} className="py-4 px-6">
+                                        <td key={cell.id} className="px-5 py-4">
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
+                                        </td>
                                     ))}
-                                </TableRow>
+                                </tr>
                             ))
                         )}
-                    </TableBody>
-                </Table>
+                    </tbody>
+                </table>
             </div>
 
             {/* Mobile View */}
-            <div className="md:hidden divide-y divide-gray-100/50">
+            <div className="md:hidden space-y-4 px-4 pt-4 pb-2">
                 {table.getRowModel().rows.length === 0 ? (
-                    <div className="py-20 text-center text-gray-400 text-xs font-black uppercase tracking-widest">No records found</div>
+                    <p className="text-center text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 py-8 text-sm">No requests found</p>
                 ) : (
                     table.getRowModel().rows.map((row) => (
-                        <div key={row.original.id} className="p-6 space-y-4 hover:bg-white/80 transition-colors">
+                        <div key={row.original.id} className="glass-card-hover p-4 space-y-3 relative border border-gray-100/50 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
                             <div className="flex justify-between items-center">
                                 <Link
                                     href={`/request/${row.original.id}`}
-                                    className="font-mono text-xs font-black text-brand-600 flex items-center gap-1.5"
+                                    className="font-mono text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1"
                                 >
-                                    <ExternalLink className="w-3 h-3" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
                                     {row.original.req_id}
                                 </Link>
-                                <span className="text-[10px] font-bold text-gray-400 uppercase">
+                                <span className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">
                                     {new Date(row.original.created_at).toLocaleDateString("en-GB", { day: '2-digit', month: 'short' })}
                                 </span>
                             </div>
-                            <div className="space-y-1">
-                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-50">Project Detail</p>
-                                <p className="text-sm font-bold text-gray-900 truncate">{row.original.project_name || "N/A"}</p>
+                            <div>
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-0.5">Project</span>
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{row.original.project_name || "N/A"}</p>
                             </div>
-                            <div className="flex justify-between items-center gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-50">Expenditure</p>
-                                    <p className="text-sm font-black text-gray-900">THB {row.original.amount?.toLocaleString()}</p>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-0.5">Amount</span>
+                                    <p className="text-sm font-bold text-gray-800 dark:text-gray-100">THB {row.original.amount?.toLocaleString()}</p>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-50 mb-1">State</p>
-                                    <Badge variant={row.original.status === "APPROVED" ? "success" : "warning"} className="h-5 text-[9px] font-black uppercase">
-                                        {row.original.status}
-                                    </Badge>
-                                </div>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${row.original.status === "APPROVED" ? "bg-green-100 text-green-700" :
+                                        row.original.status === "PENDING" ? "bg-amber-100 text-amber-700" : "bg-gray-100 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300"
+                                    }`}>
+                                    {row.original.status}
+                                </span>
                             </div>
-                            <div className="pt-4 mt-2">
+                            <div className="pt-2 border-t border-gray-100/50">
                                 <RowActions row={row.original} onUploadReceipt={onUploadReceipt} onUploadSigned={onUploadSigned} />
                             </div>
                         </div>
@@ -303,34 +315,21 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                 )}
             </div>
 
-            {/* Pagination */}
-            <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/30 gap-4">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                    Showing <span className="text-gray-900">{table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}</span> to{" "}
-                    <span className="text-gray-900">{Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, data.length)}</span>{" "}
-                    of <span className="text-gray-900">{data.length}</span> entries
+            <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100/50">
+                <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">
+                    Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
+                    {Math.min(
+                        (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                        data.length
+                    )}{" "}
+                    of {data.length} results
                 </p>
-                <div className="flex items-center gap-2">
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => table.previousPage()} 
-                        disabled={!table.getCanPreviousPage()}
-                        className="h-8 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white border-gray-200"
-                    >
-                        <ChevronLeft className="w-3 h-3 mr-1" /> Prev
-                    </Button>
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => table.nextPage()} 
-                        disabled={!table.getCanNextPage()}
-                        className="h-8 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white border-gray-200"
-                    >
-                        Next <ChevronRight className="w-3 h-3 ml-1" />
-                    </Button>
+                <div className="flex gap-2">
+                    <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-gray-800/80 border border-gray-200 text-gray-600 dark:text-gray-300 hover:bg-white dark:bg-gray-800 disabled:opacity-40 transition-all">Previous</button>
+                    <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-gray-800/80 border border-gray-200 text-gray-600 dark:text-gray-300 hover:bg-white dark:bg-gray-800 disabled:opacity-40 transition-all">Next</button>
                 </div>
             </div>
-        </Card>
+        </div>
     );
 }
+

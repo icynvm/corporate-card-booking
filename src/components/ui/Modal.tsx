@@ -1,7 +1,4 @@
 import * as React from "react";
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 interface ModalProps {
     isOpen: boolean;
@@ -9,48 +6,35 @@ interface ModalProps {
     title: string;
     children: React.ReactNode;
     maxWidth?: string;
-    className?: string;
 }
 
-export function Modal({ 
-    isOpen, 
-    onClose, 
-    title, 
-    children, 
-    maxWidth = "max-w-lg",
-    className
-}: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-lg" }: ModalProps) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-md animate-in fade-in duration-500"
+                className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fade-in"
                 onClick={onClose}
             />
-            {/* Content Container */}
-            <div 
-                className={cn(
-                    "relative w-full shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-500 overflow-hidden rounded-2xl flex flex-col bg-white/70 backdrop-blur-xl border border-white/40",
-                    maxWidth,
-                    className
-                )}
-            >
+            {/* Content */}
+            <div className={`relative glass-card p-0 w-full ${maxWidth} mx-4 animate-slide-up shadow-2xl overflow-hidden max-h-[90vh] flex flex-col`}>
                 {/* Header */}
-                <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100/50 bg-white/30">
-                    <h3 className="text-xl font-black text-gray-900 tracking-tight">{title}</h3>
-                    <Button
-                        variant="ghost"
-                        size="icon"
+                <div className="flex items-center justify-between p-6 border-b border-gray-100/50">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{title}</h3>
+                    <button
                         onClick={onClose}
-                        className="h-9 w-9 rounded-xl hover:bg-white/50 hover:text-red-500 transition-all duration-300"
+                        className="w-8 h-8 rounded-lg hover:bg-gray-100 dark:bg-gray-800/80 flex items-center justify-center transition-colors"
                     >
-                        <X className="w-5 h-5" />
-                    </Button>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
                 </div>
                 {/* Body */}
-                <div className="px-8 py-8 overflow-y-auto min-h-0 relative z-10 max-h-[75vh] scrollbar-thin">
+                <div className="p-6 overflow-y-auto min-h-0 relative z-10">
                     {children}
                 </div>
             </div>

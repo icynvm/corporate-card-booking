@@ -1,6 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase";
 import { RequestStatus, BillingType, AuditAction, EntityType } from "@/types/enums";
-import { normalizeThai } from "@/lib/utils/thai";
+import { normalizeThaiText } from "@/lib/utils/string";
 import { sendLineNotification } from "@/lib/line";
 import { RequestRecord, AuditLog } from "@/lib/types";
 
@@ -35,10 +35,10 @@ export class RequestService {
     // 1. Data Sanitization
     const sanitizedBody = {
       ...body,
-      projectName: normalizeThai(body.projectName),
-      objective: normalizeThai(body.objective),
-      contactNo: normalizeThai(body.contactNo),
-      fullName: normalizeThai(body.fullName),
+      projectName: normalizeThaiText(body.projectName),
+      objective: normalizeThaiText(body.objective),
+      contactNo: normalizeThaiText(body.contactNo),
+      fullName: normalizeThaiText(body.fullName),
     };
 
     // 2. Generate Request ID if not provided

@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
 import { hashPassword, generateOTP, sendOTPEmail } from "@/lib/session";
 
-export const dynamic = "force-dynamic";
-
 export async function POST(req: NextRequest) {
     try {
         const supabase = createServerSupabase();

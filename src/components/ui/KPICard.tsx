@@ -1,7 +1,4 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface KPICardProps {
     title: string;
@@ -14,52 +11,31 @@ interface KPICardProps {
 
 export function KPICard({ title, value, subtitle, icon, gradient, trend }: KPICardProps) {
     return (
-        <Card glass className="overflow-hidden border-none shadow-md group hover:shadow-xl transition-all duration-500">
-            <CardContent className="p-6 relative">
-                {/* Background decorative element */}
-                <div className={cn(
-                    "absolute -top-6 -right-6 w-24 h-24 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-700",
-                    gradient
-                )} />
+        <div className="glass-card-hover p-6 relative overflow-hidden group">
+            {/* Background gradient accent */}
+            <div className={`absolute top-0 right-0 w-24 h-24 rounded-full ${gradient} opacity-20 blur-2xl -mr-8 -mt-8 group-hover:opacity-30 transition-opacity`} />
 
-                <div className="flex items-start justify-between relative z-10">
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-70">
-                            {title}
-                        </p>
-                        <div className="flex items-baseline gap-1.5">
-                            <h3 className="text-2xl font-black text-gray-900 tracking-tight">
-                                {typeof value === 'number' ? value.toLocaleString() : value}
-                            </h3>
+            <div className="relative flex items-start justify-between">
+                <div className="flex-1">
+                    <p className="text-xs font-medium text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">{title}</p>
+                    <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-1">{typeof value === 'number' ? value.toLocaleString() : value}</p>
+                    {subtitle && (
+                        <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">{subtitle}</p>
+                    )}
+                    {trend && (
+                        <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${trend.positive ? 'text-emerald-600' : 'text-red-500'}`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className={`w-3 h-3 ${!trend.positive && 'rotate-180'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="18 15 12 9 6 15" />
+                            </svg>
+                            {trend.value}
                         </div>
-                        
-                        {subtitle && (
-                            <p className="text-[11px] font-bold text-muted-foreground/60 leading-tight">
-                                {subtitle}
-                            </p>
-                        )}
-
-                        {trend && (
-                            <div className={cn(
-                                "flex items-center gap-1 mt-3 px-2 py-0.5 rounded-full w-fit text-[10px] font-black border uppercase tracking-tighter",
-                                trend.positive 
-                                    ? 'text-emerald-700 bg-emerald-50 border-emerald-100' 
-                                    : 'text-red-700 bg-red-50 border-red-100'
-                            )}>
-                                {trend.positive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                                {trend.value}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className={cn(
-                        "w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-500 shrink-0",
-                        gradient
-                    )}>
-                        {icon}
-                    </div>
+                    )}
                 </div>
-            </CardContent>
-        </Card>
+                <div className={`w-12 h-12 rounded-2xl ${gradient} flex items-center justify-center text-white shadow-lg`}>
+                    {icon}
+                </div>
+            </div>
+        </div>
     );
 }
+

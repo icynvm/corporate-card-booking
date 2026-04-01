@@ -1,6 +1,6 @@
 import pdfMake from "./pdfmake-fonts";
 import { IMPACT_LOGO_BASE64 } from "./logo-base64";
-import { normalizeThai, insertZeroWidthSpaces } from "@/lib/utils/thai";
+import { normalizeThai, insertZeroWidthSpaces } from "./thai-utils";
 
 export interface RequestPdfData {
     reqId: string;

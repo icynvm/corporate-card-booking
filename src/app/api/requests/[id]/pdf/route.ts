@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
 import { parseSessionToken, getSessionCookieName } from "@/lib/session";
-
-export const dynamic = "force-dynamic";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { IMPACT_LOGO_BASE64 } from "@/lib/logo-base64";
 
