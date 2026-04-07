@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
+import { IdleTimer } from "@/components/auth/IdleTimer";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -19,6 +20,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex min-h-screen w-full">
+            <IdleTimer />
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             <main className="flex-1 lg:ml-64 flex flex-col min-h-screen w-full overflow-hidden">

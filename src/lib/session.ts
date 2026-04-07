@@ -14,7 +14,7 @@ export function createSessionToken(profile: {
         role: profile.role,
         name: profile.name,
         department: profile.department,
-        exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
+        exp: Date.now() + 3 * 24 * 60 * 60 * 1000,
         sig: SESSION_SECRET.slice(0, 8),
     };
     return Buffer.from(JSON.stringify(payload)).toString("base64url");
