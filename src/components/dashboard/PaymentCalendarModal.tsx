@@ -207,15 +207,20 @@ export const PaymentCalendarModal: React.FC<PaymentCalendarModalProps> = ({ isOp
                     </span>
                   </div>
                                    {p.status === "PAID" ? (
-                    <a 
-                      href={p.receipt_file_url || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-tighter transition-all active:scale-95 flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                      View Receipt
-                    </a>
+                    <div className="space-y-1.5">
+                      {(p.receipt_file_urls && p.receipt_file_urls.length > 0 ? p.receipt_file_urls : [p.receipt_file_url].filter(Boolean)).map((url: string, fileIdx: number) => (
+                        <a 
+                          key={fileIdx}
+                          href={url || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-tighter transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                          {(p.receipt_file_urls?.length || 0) > 1 ? `View Receipt #${fileIdx + 1}` : "View Receipt"}
+                        </a>
+                      ))}
+                    </div>
                   ) : (
                     <div className="space-y-2">
                       <button 

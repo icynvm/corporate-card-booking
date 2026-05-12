@@ -137,7 +137,8 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                 {MONTHS.map((month, idx) => {
                                     const mKey = `${currentYear}-${String(idx + 1).padStart(2, "0")}`;
-                                    const existing = request?.receipts?.find(r => r.month_year === mKey);
+                                    const existingFiles = request?.receipts?.filter(r => r.month_year === mKey) || [];
+                                    const hasFiles = existingFiles.length > 0;
                                     const isSelected = selectedMonth === mKey;
 
                                     return (
@@ -146,7 +147,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                             onClick={() => setSelectedMonth(mKey)}
                                             className={`flex flex-col items-center p-2 rounded-xl border transition-all ${isSelected
                                                 ? "border-brand-500 bg-brand-50 shadow-sm"
-                                                : existing
+                                                : hasFiles
                                                     ? "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50"
                                                     : "border-gray-100 hover:border-gray-200 hover:bg-gray-50 dark:bg-gray-900/50"
                                                 }`}
@@ -154,13 +155,20 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                             <span className={`text-[10px] uppercase font-bold tracking-wider ${isSelected ? "text-brand-600" : "text-gray-400 dark:text-gray-500"}`}>
                                                 {month.slice(0, 3)}
                                             </span>
-                                            <div className="mt-1">
-                                                {existing ? (
-                                                    <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                            <polyline points="20 6 9 17 4 12" />
-                                                        </svg>
-                                                    </div>
+                                            <div className="mt-1 relative">
+                                                {hasFiles ? (
+                                                    <>
+                                                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                                                <polyline points="20 6 9 17 4 12" />
+                                                            </svg>
+                                                        </div>
+                                                        {existingFiles.length > 1 && (
+                                                            <span className="absolute -top-1.5 -right-2 text-[8px] font-black text-emerald-700 bg-emerald-100 rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none">
+                                                                {existingFiles.length}
+                                                            </span>
+                                                        )}
+                                                    </>
                                                 ) : (
                                                     <div className={`w-5 h-5 rounded-full border-2 border-dashed ${isSelected ? "border-brand-300" : "border-gray-200"}`} />
                                                 )}
@@ -175,24 +183,62 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                     {/* Selection Detail & Upload */}
                     {selectedMonth && (
                         <div className="bg-brand-50/30 rounded-2xl p-5 border border-brand-100 animate-slide-up">
-                            <div className="flex justify-between items-center mb-4">
+                            <div className="mb-4">
                                 <h4 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
                                     {isYearlyMonthly
                                         ? `${MONTHS[parseInt(selectedMonth.split("-")[1]) - 1]} ${currentYear}`
                                         : "Attached Files"}
                                 </h4>
-                                {request?.receipts?.find(r => r.month_year === selectedMonth) && (
-                                    <a
-                                        href={request.receipts.find(r => r.month_year === selectedMonth)?.receipt_file_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-xs font-bold text-brand-600 hover:underline flex items-center gap-1"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                                        View Current
-                                    </a>
-                                )}
                             </div>
+
+                            {/* Existing uploaded files list */}
+                            {(() => {
+                                const existingFiles = request?.receipts?.filter(r => r.month_year === selectedMonth) || [];
+                                if (existingFiles.length === 0) return null;
+                                return (
+                                    <div className="mb-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1.5">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                                                {existingFiles.length} file{existingFiles.length > 1 ? "s" : ""} uploaded
+                                            </span>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {existingFiles.map((receipt, idx) => {
+                                                // Extract display name from URL
+                                                const urlParts = receipt.receipt_file_url.split("/");
+                                                const rawName = decodeURIComponent(urlParts[urlParts.length - 2] || urlParts[urlParts.length - 1] || "File");
+                                                // Remove monthYear prefix and index for cleaner display
+                                                const displayName = rawName.replace(/^[\d-]+-\d+-/, "").replace(/^[\d-]+-/, "").replace(/_/g, " ");
+
+                                                return (
+                                                    <div key={receipt.id} className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-xl p-3 border border-emerald-100 shadow-sm">
+                                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14,2 14,8 20,8" /></svg>
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">{displayName}</p>
+                                                            <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                                                                {receipt.status === "VERIFIED" ? "✓ Verified" : "Pending verification"}
+                                                            </p>
+                                                        </div>
+                                                        <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-gray-900/50 px-1.5 py-0.5 rounded-md">#{idx + 1}</span>
+                                                        <a
+                                                            href={receipt.receipt_file_url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline flex items-center gap-1 flex-shrink-0 px-2 py-1 rounded-lg hover:bg-brand-50 transition-colors"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                                                            View
+                                                        </a>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
                             {/* File counter badge */}
                             <div className="flex items-center justify-between mb-3">

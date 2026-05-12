@@ -52,12 +52,16 @@ export class PaymentService {
     );
 
     // Final Status override: If an explicit payment doesn't have PAID status yet but has a receipt, mark as PAID
+    // Also attach all receipt URLs for multi-file display
     return merged.map(p => {
-      const hasReceipt = receipts?.some(r => r.request_id === p.request_id);
-      if (hasReceipt && p.status !== "PAID") {
-        return { ...p, status: "PAID" };
-      }
-      return p;
+      const matchingReceipts = receipts?.filter(r => r.request_id === p.request_id) || [];
+      const hasReceipt = matchingReceipts.length > 0;
+      return {
+        ...p,
+        status: hasReceipt && p.status !== "PAID" ? "PAID" : p.status,
+        receipt_file_url: matchingReceipts[0]?.receipt_file_url || p.receipt_file_url || null,
+        receipt_file_urls: matchingReceipts.map(r => r.receipt_file_url),
+      };
     });
   }
 
@@ -145,8 +149,8 @@ export class PaymentService {
 
       if (isDueThisMonth) {
         // Check if a receipt already exists for this virtual installment
-        const hasReceipt = receipts.some(r => r.request_id === req.id);
-        const receiptUrl = receipts.find(r => r.request_id === req.id)?.receipt_file_url || null;
+        const matchingReceipts = receipts.filter(r => r.request_id === req.id);
+        const hasReceipt = matchingReceipts.length > 0;
 
         events.push({
           id: `virtual:${req.id}:${year}:${month}`,
@@ -157,7 +161,8 @@ export class PaymentService {
           due_date: currentMonthDueDate.toISOString(),
           requests: req,
           is_virtual: true,
-          receipt_file_url: receiptUrl
+          receipt_file_url: matchingReceipts[0]?.receipt_file_url || null,
+          receipt_file_urls: matchingReceipts.map(r => r.receipt_file_url),
         });
       }
     }
