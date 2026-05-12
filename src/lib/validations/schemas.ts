@@ -20,12 +20,12 @@ export const EventDetailSchema = z.object({
  * API Request Body Schemas
  */
 export const CreateRequestSchema = z.object({
-  fullName: z.string().min(2, "Full name is required").optional(),
-  projectName: z.string().min(2, "Project name is required"),
-  objective: z.string().min(5, "Objective is required"),
-  contactNo: z.string().min(9, "Contact number is required"),
-  email: z.string().email("Invalid email").optional(),
-  department: z.string().min(2, "Department is required").optional(),
+  fullName: z.string().optional(),
+  projectName: z.string().min(1, "Project name is required"),
+  objective: z.string().min(1, "Objective is required"),
+  contactNo: z.string().min(1, "Contact number is required"),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  department: z.string().optional(),
   amount: z.union([z.number(), z.string().transform((v: string) => parseFloat(v))]),
   billingType: z.nativeEnum(BillingType),
   startDate: z.string(),
@@ -34,7 +34,7 @@ export const CreateRequestSchema = z.object({
   effectiveDate: z.string().nullable().optional(),
   promotionalChannels: z.array(ChannelDetailSchema).optional(),
   eventDetails: z.array(EventDetailSchema).optional(),
-  projectId: z.string().uuid().optional(),
+  projectId: z.string().uuid().optional().nullable().or(z.literal("").transform(() => null)),
   reqId: z.string().optional(),
   creditCardNo: z.string().optional(),
 });
