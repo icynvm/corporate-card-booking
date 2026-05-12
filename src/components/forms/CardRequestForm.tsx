@@ -252,7 +252,10 @@ export function CardRequestForm() {
                 setIsSubmitted(true);
             } else {
                 const errorData = await res.json();
-                setSubmitError(errorData.error || "Failed to submit request (Server Error)");
+                const details = errorData.details 
+                    ? errorData.details.map((d: any) => `${d.path.join('.')}: ${d.message}`).join(", ")
+                    : "";
+                setSubmitError(`${errorData.error || "Failed to submit request"} ${details ? `(${details})` : ""}`);
             }
         } catch (err) {
             setSubmitError("Failed to connect to the server. Please check your connection.");

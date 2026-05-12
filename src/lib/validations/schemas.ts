@@ -6,8 +6,8 @@ import { RequestStatus, BillingType } from "@/types/enums";
  */
 export const ChannelDetailSchema = z.object({
   channel: z.string().min(1, "Channel name is required"),
-  mediaAccountEmail: z.string().email("Invalid email address"),
-  accessList: z.string().min(1, "Access list is required"),
+  mediaAccountEmail: z.string().optional().or(z.literal("")),
+  accessList: z.string().optional().or(z.literal("")),
 });
 
 export const EventDetailSchema = z.object({

@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
         console.error("[POST /api/requests] Failed:", error);
         
         if (error.name === "ZodError") {
+            console.error("[POST /api/requests] Validation details:", JSON.stringify(error.errors, null, 2));
             return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
         }
 
