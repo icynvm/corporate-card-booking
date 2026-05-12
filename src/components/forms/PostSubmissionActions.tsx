@@ -21,7 +21,7 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
             const { generateRequestPdf } = await import("@/lib/pdf-generator");
             
             const mappedData = {
-                eventId: `REQ-${Date.now()}`,
+                reqId: `REQ-NEW-${Date.now().toString().slice(-4)}`, // Temporary ID since we don't have the server-generated one yet
                 fullName: formData.fullName,
                 department: formData.department,
                 contactNo: formData.contactNo,
@@ -34,6 +34,8 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
                 startDate: formData.startDate,
                 endDate: formData.endDate,
                 amount: formData.amount,
+                eventDetails: formData.eventDetails || [],
+                creditCardNo: formData.creditCardNo,
             };
 
             const pdfBytes = await generateRequestPdf(mappedData);
