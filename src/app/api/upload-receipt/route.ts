@@ -8,6 +8,8 @@ function getSession(req: NextRequest) {
     return parseSessionToken(token);
 }
 
+const MAX_FILES = 3;
+
 export async function POST(req: NextRequest) {
     try {
         const session = getSession(req);
@@ -15,96 +17,145 @@ export async function POST(req: NextRequest) {
         const formData = await req.formData();
         const id = (formData.get("id") || formData.get("requestId")) as string;
         const monthYear = formData.get("monthYear") as string;
-        const file = formData.get("file") as File;
 
-        if (!id || !monthYear || !file) {
+        // Support both single "file" field (legacy) and multiple "files" field
+        const files: File[] = [];
+        const multipleFiles = formData.getAll("files");
+        if (multipleFiles.length > 0) {
+            for (const f of multipleFiles) {
+                if (f instanceof File) files.push(f);
+            }
+        } else {
+            const singleFile = formData.get("file") as File | null;
+            if (singleFile) files.push(singleFile);
+        }
+
+        if (!id || !monthYear || files.length === 0) {
             return NextResponse.json(
                 { error: "Missing required fields" },
                 { status: 400 }
             );
         }
 
-        const buffer = Buffer.from(await file.arrayBuffer());
-        // Sanitize filename: remove spaces and special characters
-        const safeName = file.name.replace(/[^a-z0-9._-]/gi, "_");
-        const storagePath = `${id}/${monthYear}-${safeName}`;
-        const filePath = storagePath;
-
-        // Validation: 2MB limit
-        if (file.size > 2 * 1024 * 1024) {
-            return NextResponse.json({ error: "File size exceeds 2MB limit" }, { status: 400 });
+        if (files.length > MAX_FILES) {
+            return NextResponse.json(
+                { error: `Maximum ${MAX_FILES} files allowed per upload` },
+                { status: 400 }
+            );
         }
 
-        // Validation: MIME types
         const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-        if (!allowedTypes.includes(file.type)) {
-            return NextResponse.json({ error: "Only JPEG, PNG and PDF files are allowed" }, { status: 400 });
-        }
+        const receipts = [];
 
-        // Upload to Supabase Storage (bucket: receipt)
-        const { error: uploadError } = await supabase.storage
-            .from("receipt")
-            .upload(filePath, buffer, {
-                contentType: file.type,
-                upsert: true,
-            });
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
 
-        if (uploadError) {
-            console.error("Storage upload error:", uploadError);
-            return NextResponse.json({ error: "Failed to upload to storage" }, { status: 500 });
-        }
+            // Validation: 2MB limit per file
+            if (file.size > 2 * 1024 * 1024) {
+                return NextResponse.json({ error: `File "${file.name}" exceeds 2MB limit` }, { status: 400 });
+            }
 
-        // We use a proxy route to handle the viewing
-        // This allows us to handle permissions or bucket name changes later
-        const receiptFileUrl = `/api/receipts/${id}/${encodeURIComponent(`${monthYear}-${safeName}`)}/view`;
+            // Validation: MIME types
+            if (!allowedTypes.includes(file.type)) {
+                return NextResponse.json({ error: `File "${file.name}": Only JPEG, PNG and PDF files are allowed` }, { status: 400 });
+            }
 
-        // Check if receipt already exists for this month
-        const { data: existing } = await supabase
-            .from("receipts")
-            .select("id")
-            .eq("request_id", id)
-            .eq("month_year", monthYear)
-            .single();
+            const buffer = Buffer.from(await file.arrayBuffer());
+            // Sanitize filename: remove spaces and special characters
+            const safeName = file.name.replace(/[^a-z0-9._-]/gi, "_");
+            // For multiple files, append index suffix to storage path to avoid overwriting
+            const fileKey = files.length > 1 ? `${monthYear}-${i + 1}-${safeName}` : `${monthYear}-${safeName}`;
+            const storagePath = `${id}/${fileKey}`;
 
-        let receipt;
+            // Upload to Supabase Storage (bucket: receipt)
+            const { error: uploadError } = await supabase.storage
+                .from("receipt")
+                .upload(storagePath, buffer, {
+                    contentType: file.type,
+                    upsert: true,
+                });
 
-        if (existing) {
-            const { data } = await supabase
-                .from("receipts")
-                .update({
-                    receipt_file_url: receiptFileUrl,
-                    storage_path: storagePath,
-                    status: "UPLOADED"
-                })
-                .eq("id", existing.id)
-                .select()
-                .single();
-            receipt = data;
-        } else {
-            const { data } = await supabase
-                .from("receipts")
-                .insert({
-                    request_id: id,
-                    month_year: monthYear,
-                    receipt_file_url: receiptFileUrl,
-                    storage_path: storagePath,
-                    status: "UPLOADED",
-                })
-                .select()
-                .single();
-            receipt = data;
+            if (uploadError) {
+                console.error("Storage upload error:", uploadError);
+                return NextResponse.json({ error: `Failed to upload "${file.name}" to storage` }, { status: 500 });
+            }
+
+            // We use a proxy route to handle the viewing
+            const receiptFileUrl = `/api/receipts/${id}/${encodeURIComponent(fileKey)}/view`;
+
+            // For the first file, check if receipt already exists for this month and update it
+            // For subsequent files, always insert new records
+            if (i === 0) {
+                const { data: existing } = await supabase
+                    .from("receipts")
+                    .select("id")
+                    .eq("request_id", id)
+                    .eq("month_year", monthYear)
+                    .single();
+
+                let receipt;
+                if (existing) {
+                    const { data } = await supabase
+                        .from("receipts")
+                        .update({
+                            receipt_file_url: receiptFileUrl,
+                            storage_path: storagePath,
+                            status: "UPLOADED"
+                        })
+                        .eq("id", existing.id)
+                        .select()
+                        .single();
+                    receipt = data;
+                } else {
+                    const { data } = await supabase
+                        .from("receipts")
+                        .insert({
+                            request_id: id,
+                            month_year: monthYear,
+                            receipt_file_url: receiptFileUrl,
+                            storage_path: storagePath,
+                            status: "UPLOADED",
+                        })
+                        .select()
+                        .single();
+                    receipt = data;
+                }
+                receipts.push(receipt);
+            } else {
+                // Additional files: insert new receipt records
+                const { data } = await supabase
+                    .from("receipts")
+                    .insert({
+                        request_id: id,
+                        month_year: monthYear,
+                        receipt_file_url: receiptFileUrl,
+                        storage_path: storagePath,
+                        status: "UPLOADED",
+                    })
+                    .select()
+                    .single();
+                receipts.push(data);
+            }
         }
 
         // Audit log
         await supabase.from("audit_logs").insert({
             entity_type: "RECEIPT",
-            entity_id: receipt?.id || id,
+            entity_id: receipts[0]?.id || id,
             action: "UPLOAD",
             user_name: session?.name || session?.email || "User",
-            changes: { month_year: monthYear, file_name: file.name },
+            changes: {
+                month_year: monthYear,
+                file_count: files.length,
+                file_names: files.map(f => f.name),
+            },
         });
 
-        return NextResponse.json(receipt, { status: 201 });
+        // Return array if multiple, single object if one (backward-compatible)
+        return NextResponse.json(
+            files.length === 1 ? receipts[0] : receipts,
+            { status: 201 }
+        );
     } catch (error) {
         console.error("Upload receipt error:", error);
         return NextResponse.json(

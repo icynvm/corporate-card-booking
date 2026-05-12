@@ -15,9 +15,11 @@ const MONTHS = [
     "July", "August", "September", "October", "November", "December",
 ];
 
+const MAX_FILES = 3;
+
 export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadModalProps) {
     const [selectedMonth, setSelectedMonth] = useState("");
-    const [file, setFile] = useState<File | null>(null);
+    const [files, setFiles] = useState<File[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploaded, setUploaded] = useState(false);
 
@@ -30,14 +32,16 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
     }
 
     const handleUpload = async () => {
-        if (!selectedMonth || !file || !request) return;
+        if (!selectedMonth || files.length === 0 || !request) return;
 
         setUploading(true);
         try {
             const formData = new FormData();
             formData.append("requestId", request.id);
             formData.append("monthYear", selectedMonth);
-            formData.append("file", file);
+            files.forEach((f) => {
+                formData.append("files", f);
+            });
 
             const res = await fetch("/api/upload-receipt", {
                 method: "POST",
@@ -49,7 +53,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
             setUploaded(true);
             setTimeout(() => {
                 onClose();
-                setFile(null);
+                setFiles([]);
                 setSelectedMonth("");
                 setUploaded(false);
             }, 1500);
@@ -59,6 +63,39 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
         } finally {
             setUploading(false);
         }
+    };
+
+    const handleFilesSelected = (selectedFiles: FileList | null) => {
+        if (!selectedFiles) return;
+
+        const newFiles: File[] = [];
+        const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const f = selectedFiles[i];
+            if (f.size > 2 * 1024 * 1024) {
+                alert(`"${f.name}" exceeds the 2MB size limit and was not added.`);
+                continue;
+            }
+            if (!allowedTypes.includes(f.type)) {
+                alert(`"${f.name}" is not a supported file type. Only PDF, JPEG and PNG are allowed.`);
+                continue;
+            }
+            newFiles.push(f);
+        }
+
+        setFiles((prev) => {
+            const combined = [...prev, ...newFiles];
+            if (combined.length > MAX_FILES) {
+                alert(`You can upload up to ${MAX_FILES} files only. Only the first ${MAX_FILES} files will be kept.`);
+                return combined.slice(0, MAX_FILES);
+            }
+            return combined;
+        });
+    };
+
+    const removeFile = (index: number) => {
+        setFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
     return (
@@ -71,7 +108,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                         </svg>
                     </div>
                     <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-1">Receipt Uploaded!</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">The receipt has been submitted for verification.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">The receipt has been submitted for verification.</p>
                 </div>
             ) : (
                 <div className="space-y-5">
@@ -79,13 +116,13 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                     {request && (
                         <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">Request</span>
+                                <span className="text-gray-400 dark:text-gray-500">Request</span>
                                 <span className="font-mono font-semibold text-brand-600">
                                     {request.event_id}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center text-sm mt-1">
-                                <span className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">Amount</span>
+                                <span className="text-gray-400 dark:text-gray-500">Amount</span>
                                 <span className="text-gray-900 dark:text-gray-50 font-medium">
                                     THB {request.amount?.toLocaleString()}
                                 </span>
@@ -114,7 +151,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                                     : "border-gray-100 hover:border-gray-200 hover:bg-gray-50 dark:bg-gray-900/50"
                                                 }`}
                                         >
-                                            <span className={`text-[10px] uppercase font-bold tracking-wider ${isSelected ? "text-brand-600" : "text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500"}`}>
+                                            <span className={`text-[10px] uppercase font-bold tracking-wider ${isSelected ? "text-brand-600" : "text-gray-400 dark:text-gray-500"}`}>
                                                 {month.slice(0, 3)}
                                             </span>
                                             <div className="mt-1">
@@ -142,7 +179,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                 <h4 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
                                     {isYearlyMonthly
                                         ? `${MONTHS[parseInt(selectedMonth.split("-")[1]) - 1]} ${currentYear}`
-                                        : "Attached File"}
+                                        : "Attached Files"}
                                 </h4>
                                 {request?.receipts?.find(r => r.month_year === selectedMonth) && (
                                     <a
@@ -157,57 +194,84 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                 )}
                             </div>
 
-                            {/* File Upload Dropzone */}
-                            <div
-                                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer bg-white dark:bg-gray-800 ${file
-                                    ? "border-brand-300"
-                                    : "border-gray-200 hover:border-brand-200"
-                                    }`}
-                                onClick={() => document.getElementById("receipt-file")?.click()}
-                            >
-                                {file ? (
-                                    <div className="flex items-center gap-3 text-left">
-                                        <div className="w-10 h-10 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14,2 14,8 20,8" /></svg>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{file.name}</p>
-                                            <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                                        </div>
-                                        <button onClick={(e) => { e.stopPropagation(); setFile(null); }} className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-red-500">.</button>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">Click to upload receipt</p>
-                                        <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">PDF, JPEG or PNG (max 2MB)</p>
-                                    </div>
+                            {/* File counter badge */}
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {files.length} / {MAX_FILES} files selected
+                                </span>
+                                {files.length > 0 && (
+                                    <button
+                                        onClick={() => setFiles([])}
+                                        className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
+                                    >
+                                        Clear all
+                                    </button>
                                 )}
                             </div>
+
+                            {/* Selected Files List */}
+                            {files.length > 0 && (
+                                <div className="space-y-2 mb-3">
+                                    {files.map((f, idx) => (
+                                        <div key={idx} className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-xl p-3 border border-gray-100 shadow-sm">
+                                            <div className="w-9 h-9 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0">
+                                                {f.type === "application/pdf" ? (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14,2 14,8 20,8" /></svg>
+                                                ) : (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{f.name}</p>
+                                                <p className="text-xs text-gray-400 dark:text-gray-500">{(f.size / 1024 / 1024).toFixed(2)} MB</p>
+                                            </div>
+                                            <button
+                                                onClick={() => removeFile(idx)}
+                                                className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                                                title="Remove file"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* File Upload Dropzone */}
+                            {files.length < MAX_FILES && (
+                                <div
+                                    className="border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer bg-white dark:bg-gray-800 border-gray-200 hover:border-brand-200"
+                                    onClick={() => document.getElementById("receipt-file")?.click()}
+                                >
+                                    <div>
+                                        <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center mx-auto mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                        </div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                                            {files.length === 0 ? "Click to upload receipt" : "Click to add more files"}
+                                        </p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                            PDF, JPEG or PNG (max 2MB each · up to {MAX_FILES} files)
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                             <input
                                 type="file"
                                 id="receipt-file"
                                 className="hidden"
                                 accept=".pdf,.jpg,.jpeg,.png"
+                                multiple
                                 onChange={(e) => {
-                                    const selectedFile = e.target.files?.[0];
-                                    if (selectedFile) {
-                                        if (selectedFile.size > 2 * 1024 * 1024) {
-                                            alert("File size exceeds 2MB limit");
-                                            return;
-                                        }
-                                        const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
-                                        if (!allowedTypes.includes(selectedFile.type)) {
-                                            alert("Only PDF, JPEG and PNG files are allowed");
-                                            return;
-                                        }
-                                        setFile(selectedFile);
-                                    }
+                                    handleFilesSelected(e.target.files);
+                                    // Reset the input so the same file(s) can be selected again if needed
+                                    e.target.value = "";
                                 }}
                             />
 
                             <button
                                 onClick={handleUpload}
-                                disabled={!file || uploading}
+                                disabled={files.length === 0 || uploading}
                                 className="btn-primary w-full mt-4 disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {uploading ? (
@@ -219,7 +283,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                         Uploading...
                                     </>
                                 ) : (
-                                    "Save Receipt"
+                                    `Save Receipt${files.length > 1 ? `s (${files.length})` : ""}`
                                 )}
                             </button>
                         </div>
@@ -230,4 +294,3 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
         </Modal>
     );
 }
-
