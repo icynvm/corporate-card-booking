@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const supabase = createServerSupabase();
 
-        let userId = body.userId;
+        let userId = body.userId || session?.pid;
         if (!userId) {
             // Find or create the dev profile
             const { data: profile } = await supabase
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
                         name: "Developer Admin",
                         email: "dev@company.com",
                         department: "Development",
-                        role: "FA"
+                        role: "admin"
                     })
                     .select("id")
                     .single();

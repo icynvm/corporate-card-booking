@@ -4,11 +4,15 @@ import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Profile } from "@/lib/types";
 import { AlertSeverity } from "@/components/ui/MuiAlert";
+import { Modal } from "@/components/ui/Modal";
 
 export function UserRolesTab({ addToast }: { addToast: (msg: string, sev: AlertSeverity) => void }) {
     const [users, setUsers] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+    const [newPassword, setNewPassword] = useState("");
+    const [resettingPassword, setResettingPassword] = useState(false);
 
     const fetchUsers = async () => {
         try {
@@ -52,6 +56,37 @@ export function UserRolesTab({ addToast }: { addToast: (msg: string, sev: AlertS
         }
     };
 
+    const handlePasswordReset = async () => {
+        if (!selectedUser || !newPassword) return;
+        
+        if (newPassword.length < 6) {
+            addToast("Password must be at least 6 characters", "error");
+            return;
+        }
+
+        setResettingPassword(true);
+        try {
+            const res = await fetch(`/api/users/${selectedUser.id}/password`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password: newPassword }),
+            });
+            
+            if (res.ok) {
+                addToast(`Password reset for ${selectedUser.name || selectedUser.email}`, "success");
+                setSelectedUser(null);
+                setNewPassword("");
+            } else {
+                const data = await res.json();
+                addToast(data.error || "Failed to reset password", "error");
+            }
+        } catch (err) {
+            addToast("Network error resetting password", "error");
+        } finally {
+            setResettingPassword(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center p-12">
@@ -74,6 +109,7 @@ export function UserRolesTab({ addToast }: { addToast: (msg: string, sev: AlertS
                                 <th className="px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase">Email</th>
                                 <th className="px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase">Department</th>
                                 <th className="px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase">Role</th>
+                                <th className="px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -100,6 +136,14 @@ export function UserRolesTab({ addToast }: { addToast: (msg: string, sev: AlertS
                                             <option value="admin">Admin</option>
                                         </select>
                                     </td>
+                                    <td className="px-5 py-4">
+                                        <button
+                                            onClick={() => setSelectedUser(user)}
+                                            className="text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
+                                        >
+                                            Reset Password
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                             {users.length === 0 && (
@@ -113,6 +157,57 @@ export function UserRolesTab({ addToast }: { addToast: (msg: string, sev: AlertS
                     </table>
                 </div>
             </GlassCard>
+
+            <Modal
+                isOpen={!!selectedUser}
+                onClose={() => {
+                    setSelectedUser(null);
+                    setNewPassword("");
+                }}
+                title={`Reset Password for ${selectedUser?.name || "User"}`}
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Enter a new password for <strong>{selectedUser?.email}</strong>.
+                    </p>
+                    <div className="space-y-2">
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">New Password</label>
+                        <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="input-field"
+                            placeholder="At least 6 characters"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="flex justify-end space-x-3 pt-4">
+                        <button
+                            onClick={() => {
+                                setSelectedUser(null);
+                                setNewPassword("");
+                            }}
+                            className="btn-secondary"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handlePasswordReset}
+                            disabled={resettingPassword || !newPassword || newPassword.length < 6}
+                            className="btn-primary min-w-[120px]"
+                        >
+                            {resettingPassword ? (
+                                <svg className="animate-spin h-4 w-4 text-white mx-auto" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                            ) : (
+                                "Update Password"
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
