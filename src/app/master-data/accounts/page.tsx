@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 
-interface AccountCode {
 interface AccountMaster {
     id: string;
     code: string;
