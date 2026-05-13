@@ -13,6 +13,8 @@ export default function DashboardPage() {
     const [filterStatus, setFilterStatus] = useState("");
     const [filterBilling, setFilterBilling] = useState("");
     const [filterProject, setFilterProject] = useState("");
+    const [filterStartDate, setFilterStartDate] = useState("");
+    const [filterEndDate, setFilterEndDate] = useState("");
     const [receiptModalOpen, setReceiptModalOpen] = useState(false);
     const [signedModalOpen, setSignedModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<RequestRecord | null>(null);
@@ -53,9 +55,23 @@ export default function DashboardPage() {
             if (filterStatus && r.status !== filterStatus) return false;
             if (filterBilling && r.billing_type !== filterBilling) return false;
             if (filterProject && r.project_name !== filterProject) return false;
+            
+            if (filterStartDate) {
+                const start = new Date(filterStartDate);
+                start.setHours(0, 0, 0, 0);
+                const reqDate = new Date(r.created_at);
+                if (reqDate < start) return false;
+            }
+            if (filterEndDate) {
+                const end = new Date(filterEndDate);
+                end.setHours(23, 59, 59, 999);
+                const reqDate = new Date(r.created_at);
+                if (reqDate > end) return false;
+            }
+
             return true;
         });
-    }, [requests, filterStatus, filterBilling, filterProject]);
+    }, [requests, filterStatus, filterBilling, filterProject, filterStartDate, filterEndDate]);
 
     // KPI calculations
     const kpis = useMemo(() => {
@@ -198,12 +214,30 @@ export default function DashboardPage() {
                         <option value="YEARLY_MONTHLY">Yearly (Monthly)</option>
                     </select>
 
-                    {(filterStatus || filterBilling || filterProject) && (
+                    <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 p-1 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <input
+                            type="date"
+                            value={filterStartDate}
+                            onChange={(e) => setFilterStartDate(e.target.value)}
+                            className="bg-transparent text-xs font-medium text-gray-600 dark:text-gray-300 border-none focus:ring-0 px-2 py-1"
+                        />
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">to</span>
+                        <input
+                            type="date"
+                            value={filterEndDate}
+                            onChange={(e) => setFilterEndDate(e.target.value)}
+                            className="bg-transparent text-xs font-medium text-gray-600 dark:text-gray-300 border-none focus:ring-0 px-2 py-1"
+                        />
+                    </div>
+
+                    {(filterStatus || filterBilling || filterProject || filterStartDate || filterEndDate) && (
                         <button
                             onClick={() => {
                                 setFilterStatus("");
                                 setFilterBilling("");
                                 setFilterProject("");
+                                setFilterStartDate("");
+                                setFilterEndDate("");
                             }}
                             className="text-xs text-brand-500 hover:text-brand-700 font-medium transition-colors"
                         >

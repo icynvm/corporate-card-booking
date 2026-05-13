@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { parseISO, eachMonthOfInterval, format } from "date-fns";
 import { Modal } from "@/components/ui/Modal";
 import { RequestRecord } from "@/lib/types";
 
@@ -26,10 +27,30 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
     const currentYear = new Date().getFullYear();
     const isYearlyMonthly = request?.billing_type === "YEARLY_MONTHLY";
 
-    // Initialize selectedMonth to "SINGLE" if not yearly-monthly so the upload area shows automatically
-    if (request && !isYearlyMonthly && selectedMonth === "") {
-        setSelectedMonth(`SINGLE-${request.id}`);
-    }
+    // New logic: Monthly but spans > 2 months
+    const startDate = request?.start_date ? parseISO(request.start_date) : null;
+    const endDate = request?.end_date ? parseISO(request.end_date) : null;
+    const monthsInRange = (startDate && endDate)
+        ? eachMonthOfInterval({ start: startDate, end: endDate })
+        : [];
+
+    const isMonthlyLongTerm = request?.billing_type === "MONTHLY" && monthsInRange.length > 2;
+    const showMonthlyGrid = isYearlyMonthly || isMonthlyLongTerm;
+
+    // Reset state when modal opens or request changes
+    useEffect(() => {
+        if (isOpen) {
+            setFiles([]);
+            setUploaded(false);
+            if (request) {
+                if (showMonthlyGrid) {
+                    setSelectedMonth("");
+                } else {
+                    setSelectedMonth(`SINGLE-${request.id}`);
+                }
+            }
+        }
+    }, [isOpen, request?.id, showMonthlyGrid]);
 
     const handleUpload = async () => {
         if (!selectedMonth || files.length === 0 || !request) return;
@@ -99,7 +120,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={isYearlyMonthly ? "Upload Monthly Receipt" : "Upload Receipt"}>
+        <Modal isOpen={isOpen} onClose={onClose} title={showMonthlyGrid ? "Upload Monthly Receipt" : "Upload Receipt"}>
             {uploaded ? (
                 <div className="text-center py-8 animate-slide-up">
                     <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
@@ -130,20 +151,23 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                         </div>
                     )}
 
-                    {/* Monthly Tracking Grid ONLY for YEARLY_MONTHLY */}
-                    {isYearlyMonthly && (
+                    {/* Monthly Tracking Grid for YEARLY_MONTHLY or Long-term MONTHLY */}
+                    {showMonthlyGrid && (
                         <div>
-                            <label className="label-text mb-3 block">Monthly Tracking ({currentYear})</label>
+                            <label className="label-text mb-3 block">
+                                {isYearlyMonthly ? `Monthly Tracking (${currentYear})` : `Monthly Tracking (${format(startDate!, "MMM yyyy")} - ${format(endDate!, "MMM yyyy")})`}
+                            </label>
                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                                {MONTHS.map((month, idx) => {
-                                    const mKey = `${currentYear}-${String(idx + 1).padStart(2, "0")}`;
+                                {(isYearlyMonthly ? MONTHS.map((_, i) => new Date(currentYear, i, 1)) : monthsInRange).map((mDate) => {
+                                    const mKey = format(mDate, "yyyy-MM");
+                                    const monthLabel = format(mDate, "MMMM");
                                     const existingFiles = request?.receipts?.filter(r => r.month_year === mKey) || [];
                                     const hasFiles = existingFiles.length > 0;
                                     const isSelected = selectedMonth === mKey;
 
                                     return (
                                         <button
-                                            key={month}
+                                            key={mKey}
                                             onClick={() => setSelectedMonth(mKey)}
                                             className={`flex flex-col items-center p-2 rounded-xl border transition-all ${isSelected
                                                 ? "border-brand-500 bg-brand-50 shadow-sm"
@@ -153,7 +177,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                                 }`}
                                         >
                                             <span className={`text-[10px] uppercase font-bold tracking-wider ${isSelected ? "text-brand-600" : "text-gray-400 dark:text-gray-500"}`}>
-                                                {month.slice(0, 3)}
+                                                {monthLabel.slice(0, 3)}
                                             </span>
                                             <div className="mt-1 relative">
                                                 {hasFiles ? (
@@ -185,8 +209,8 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                         <div className="bg-brand-50/30 rounded-2xl p-5 border border-brand-100 animate-slide-up">
                             <div className="mb-4">
                                 <h4 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
-                                    {isYearlyMonthly
-                                        ? `${MONTHS[parseInt(selectedMonth.split("-")[1]) - 1]} ${currentYear}`
+                                    {showMonthlyGrid
+                                        ? `${format(parseISO(`${selectedMonth}-01`), "MMMM yyyy")}`
                                         : "Attached Files"}
                                 </h4>
                             </div>

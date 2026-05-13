@@ -20,23 +20,23 @@ export const EventDetailSchema = z.object({
  * API Request Body Schemas
  */
 export const CreateRequestSchema = z.object({
-  fullName: z.string().optional(),
+  fullName: z.string().min(1, "Full name is required"),
   projectName: z.string().min(1, "Project name is required"),
   objective: z.string().min(1, "Objective is required"),
   contactNo: z.string().min(1, "Contact number is required"),
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
-  department: z.string().optional(),
+  email: z.string().email("Invalid email"),
+  department: z.string().min(1, "Department is required"),
   amount: z.union([z.number(), z.string().transform((v: string) => parseFloat(v))]),
   billingType: z.nativeEnum(BillingType),
-  startDate: z.string(),
-  endDate: z.string(),
-  bookingDate: z.string().nullable().optional(),
-  effectiveDate: z.string().nullable().optional(),
-  promotionalChannels: z.array(ChannelDetailSchema).optional(),
-  eventDetails: z.array(EventDetailSchema).optional(),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().min(1, "End date is required"),
+  bookingDate: z.string().min(1, "Booking date is required"),
+  effectiveDate: z.string().min(1, "Effective date is required"),
+  promotionalChannels: z.array(ChannelDetailSchema).min(1, "At least one channel is required"),
+  eventDetails: z.array(EventDetailSchema).min(1, "At least one event detail is required"),
   projectId: z.string().uuid().optional().nullable().or(z.literal("").transform(() => null)),
   reqId: z.string().optional(),
-  creditCardNo: z.string().optional(),
+  creditCardNo: z.string().min(1, "Credit card number is required"),
 });
 
 export const UpdateStatusSchema = z.object({

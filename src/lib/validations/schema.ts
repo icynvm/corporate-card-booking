@@ -20,7 +20,7 @@ export const requestFormSchema = z.object({
     projectName: z.string().optional(),
     objective: z.string().min(1, "Objective is required"),
     bookingDate: z.string().min(1, "Booking date is required"),
-    effectiveDate: z.string().optional(),
+    effectiveDate: z.string().min(1, "Effective date is required"),
     startDate: z.string().min(1, "Start date is required"),
     endDate: z.string().min(1, "End date is required"),
     amount: z.coerce.number().positive("Amount must be greater than 0"),
@@ -31,14 +31,14 @@ export const requestFormSchema = z.object({
             accountCode: z.string().min(1, "Account Code is required"),
         })
     ).min(1, "At least one Event ID / Account Code pair is required"),
-    creditCardNo: z.string().optional(),
+    creditCardNo: z.string().min(1, "Please select a credit card"),
     promotionalChannels: z.array(
         z.object({
-            channel: z.string(),
-            mediaAccountEmail: z.string(),
-            accessList: z.string(),
+            channel: z.string().min(1, "Channel name is required"),
+            mediaAccountEmail: z.string().min(1, "Media account email is required"),
+            accessList: z.string().min(1, "Access list is required"),
         })
-    ).optional(),
+    ).min(1, "At least one promotional channel must be selected and filled"),
 });
 
 export type RequestFormData = z.infer<typeof requestFormSchema>;

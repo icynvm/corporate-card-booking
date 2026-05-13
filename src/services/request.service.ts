@@ -128,19 +128,25 @@ export class RequestService {
   }
 
   private static async createPayments(requestId: string, body: any) {
-    if (body.billingType !== BillingType.YEARLY_MONTHLY) return;
-    
-    const supabase = createServerSupabase();
     const startDate = new Date(body.startDate);
     const endDate = new Date(body.endDate);
-    const totalAmount = parseFloat(body.amount);
+    
+    // Calculate months in range
     const months: string[] = [];
     const current = new Date(startDate);
-    
     while (current <= endDate) {
       months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`);
       current.setMonth(current.getMonth() + 1);
     }
+
+    const isMonthlyLongTerm = body.billingType === BillingType.MONTHLY && months.length > 2;
+    const isYearlyMonthly = body.billingType === BillingType.YEARLY_MONTHLY;
+
+    // Only create installment payments for YEARLY_MONTHLY or long-term MONTHLY
+    if (!isYearlyMonthly && !isMonthlyLongTerm) return;
+    
+    const supabase = createServerSupabase();
+    const totalAmount = parseFloat(body.amount);
     
     const monthlyAmount = totalAmount / (months.length || 1);
     const payments = months.map((my) => ({
