@@ -19,6 +19,7 @@ export default function DashboardPage() {
     const [signedModalOpen, setSignedModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<RequestRecord | null>(null);
     const [loading, setLoading] = useState(true);
+    const [userRole, setUserRole] = useState<string>("");
 
     const [toasts, setToasts] = useState<{ id: string; message: string; severity: AlertSeverity }[]>([]);
     const addToast = (message: string, severity: AlertSeverity = "info") => {
@@ -29,6 +30,16 @@ export default function DashboardPage() {
 
     const removeToast = (id: string) => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
+    };
+
+    const fetchUser = async () => {
+        try {
+            const res = await fetch("/api/auth/me");
+            if (res.ok) {
+                const data = await res.json();
+                setUserRole(data.user?.role || "");
+            }
+        } catch {}
     };
 
     const fetchRequests = async () => {
@@ -47,6 +58,7 @@ export default function DashboardPage() {
 
     useEffect(() => {
         fetchRequests();
+        fetchUser();
     }, []);
 
     // Filtered data
@@ -257,7 +269,7 @@ export default function DashboardPage() {
                     <p className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 text-sm">Loading requests...</p>
                 </div>
             ) : (
-                <RequestsTable data={filteredData} onUploadReceipt={handleUploadReceipt} onUploadSigned={handleUploadSigned} />
+                <RequestsTable data={filteredData} onUploadReceipt={handleUploadReceipt} onUploadSigned={handleUploadSigned} userRole={userRole} />
             )}
 
             {/* Receipt Upload Modal */}

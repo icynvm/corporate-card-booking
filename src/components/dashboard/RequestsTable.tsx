@@ -16,6 +16,7 @@ import {
 import { RequestRecord } from "@/lib/types";
 import { getOverdueMonths } from "@/lib/utils/receipt-utils";
 import SubProjectAllocation from "./SubProjectAllocation";
+import { isAfter, endOfDay, parseISO } from "date-fns";
 
 const columnHelper = createColumnHelper<RequestRecord>();
 
@@ -41,6 +42,7 @@ interface RequestsTableProps {
     data: RequestRecord[];
     onUploadReceipt: (request: RequestRecord) => void;
     onUploadSigned: (request: RequestRecord) => void;
+    userRole?: string;
 }
 
 const RowActions = ({ row, onUploadReceipt, onUploadSigned }: { row: RequestRecord; onUploadReceipt: any; onUploadSigned: any }) => {
@@ -90,7 +92,7 @@ const RowActions = ({ row, onUploadReceipt, onUploadSigned }: { row: RequestReco
     );
 };
 
-export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: RequestsTableProps) {
+export function RequestsTable({ data, onUploadReceipt, onUploadSigned, userRole }: RequestsTableProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
@@ -137,11 +139,32 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
             }),
             columnHelper.accessor("amount", {
                 header: "Amount",
-                cell: (info) => (
-                    <span className="font-semibold text-sm text-gray-700 dark:text-gray-200">
-                        THB {info.getValue()?.toLocaleString()}
-                    </span>
-                ),
+                cell: (info) => {
+                    const row = info.row.original;
+                    const requested = info.getValue();
+                    const actual = row.receipts?.reduce((sum, r) => sum + (Number(r.amount) || 0), 0) || 0;
+                    const isOverBudget = actual > requested;
+
+                    return (
+                        <div className="flex flex-col">
+                            <span className="font-semibold text-sm text-gray-700 dark:text-gray-200">
+                                THB {requested?.toLocaleString()}
+                            </span>
+                            {actual > 0 && (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className={`text-[10px] font-bold ${isOverBudget ? "text-red-500" : "text-emerald-500"}`}>
+                                        Actual: {actual.toLocaleString()}
+                                    </span>
+                                    {isOverBudget && (
+                                        <span className="px-1 py-0.5 rounded bg-red-100 text-red-700 text-[8px] font-black uppercase">
+                                            Over Budget
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                },
             }),
             columnHelper.accessor("billing_type", {
                 header: "Billing",
@@ -175,6 +198,11 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                     const overdueMonths = getOverdueMonths(row);
                     const isWarning = overdueMonths.length > 0;
 
+                    // Period ended check
+                    const today = new Date();
+                    const endDate = row.end_date ? parseISO(row.end_date) : null;
+                    const isPeriodEnded = endDate && isAfter(today, endOfDay(endDate));
+
                     const className =
                         status === "PENDING"
                             ? "status-pending"
@@ -186,7 +214,14 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                                     
                     return (
                         <div className="flex items-center gap-2">
-                            <span className={className}>{status}</span>
+                            <div className="flex flex-col gap-1">
+                                <span className={className}>{status}</span>
+                                {isPeriodEnded && (
+                                    <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[9px] font-bold uppercase tracking-tight w-fit">
+                                        Period Ended
+                                    </span>
+                                )}
+                            </div>
                             {isWarning && (
                                 <div 
                                     className="flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-600 animate-pulse cursor-help"
@@ -239,8 +274,53 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
         },
     });
 
+    const handleExportCSV = () => {
+        // Use the table's current filtered rows
+        const rows = table.getFilteredRowModel().rows.map(r => r.original);
+        if (rows.length === 0) return;
+
+        const headers = ["Request ID", "Event ID", "Project", "Amount", "Billing Type", "Status", "Date", "Period End"];
+        const csvContent = [
+            headers.join(","),
+            ...rows.map(r => [
+                r.req_id,
+                r.event_id,
+                `"${r.project_name || "N/A"}"`,
+                r.amount,
+                r.billing_type,
+                r.status,
+                new Date(r.created_at).toLocaleDateString("en-GB"),
+                r.end_date || "N/A"
+            ].join(","))
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `requests_export_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="glass-card overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100/50 bg-gray-50/50 dark:bg-gray-800/20">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Requests List</h3>
+                <button
+                    onClick={handleExportCSV}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-all"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Export CSV
+                </button>
+            </div>
             {/* Desktop View */}
             <div className="hidden md:block overflow-x-auto scrollbar-thin">
                 <table className="w-full">

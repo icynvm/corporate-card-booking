@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
         const formData = await req.formData();
         const id = (formData.get("id") || formData.get("requestId")) as string;
         const monthYear = formData.get("monthYear") as string;
+        const amount = formData.get("amount") ? Number(formData.get("amount")) : 0;
 
         // Support both single "file" field (legacy) and multiple "files" field
         const files: File[] = [];
@@ -100,7 +101,8 @@ export async function POST(req: NextRequest) {
                         .update({
                             receipt_file_url: receiptFileUrl,
                             storage_path: storagePath,
-                            status: "UPLOADED"
+                            status: "UPLOADED",
+                            amount: amount // Save actual charge amount
                         })
                         .eq("id", existing.id)
                         .select()
@@ -115,6 +117,7 @@ export async function POST(req: NextRequest) {
                             receipt_file_url: receiptFileUrl,
                             storage_path: storagePath,
                             status: "UPLOADED",
+                            amount: amount // Save actual charge amount
                         })
                         .select()
                         .single();
@@ -123,6 +126,8 @@ export async function POST(req: NextRequest) {
                 receipts.push(receipt);
             } else {
                 // Additional files: insert new receipt records
+                // For additional files in the same batch, we don't necessarily want to duplicate the amount
+                // unless it's a split receipt. But for simplicity, we'll assign the amount to the first record.
                 const { data } = await supabase
                     .from("receipts")
                     .insert({
@@ -146,6 +151,7 @@ export async function POST(req: NextRequest) {
             user_name: session?.name || session?.email || "User",
             changes: {
                 month_year: monthYear,
+                amount: amount,
                 file_count: files.length,
                 file_names: files.map(f => f.name),
             },

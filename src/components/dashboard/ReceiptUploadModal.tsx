@@ -23,6 +23,7 @@ const isValidDate = (d: any) => d instanceof Date && !isNaN(d.getTime());
 
 export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadModalProps) {
     const [selectedMonth, setSelectedMonth] = useState("");
+    const [amount, setAmount] = useState("");
     const [files, setFiles] = useState<File[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploaded, setUploaded] = useState(false);
@@ -42,6 +43,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
     useEffect(() => {
         if (isOpen) {
             setFiles([]);
+            setAmount("");
             setUploaded(false);
             if (request) {
                 if (showMonthlyGrid) {
@@ -61,6 +63,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
             const formData = new FormData();
             formData.append("requestId", request.id);
             formData.append("monthYear", selectedMonth);
+            formData.append("amount", amount || "0");
             files.forEach((f) => {
                 formData.append("files", f);
             });
@@ -76,6 +79,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
             setTimeout(() => {
                 onClose();
                 setFiles([]);
+                setAmount("");
                 setSelectedMonth("");
                 setUploaded(false);
             }, 1500);
@@ -239,6 +243,21 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                 </h4>
                             </div>
 
+                            <div className="mb-4">
+                                <label className="label-text block mb-1.5">Actual Amount Paid (THB)</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">THB</span>
+                                    <input
+                                        type="number"
+                                        placeholder="0.00"
+                                        className="input-field !pl-11"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                    />
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-1">Enter the exact amount charged on the credit card for this receipt.</p>
+                            </div>
+
                             {/* Existing uploaded files list */}
                             {(() => {
                                 const existingFiles = request?.receipts?.filter(r => r.month_year === selectedMonth) || [];
@@ -266,9 +285,16 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <p className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">{displayName}</p>
-                                                            <p className="text-[10px] text-gray-400 dark:text-gray-500">
-                                                                {receipt.status === "VERIFIED" ? "✓ Verified" : "Pending verification"}
-                                                            </p>
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                                                                    {receipt.status === "VERIFIED" ? "✓ Verified" : "Pending verification"}
+                                                                </p>
+                                                                {receipt.amount > 0 && (
+                                                                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                                                                        THB {receipt.amount.toLocaleString()}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                         <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-gray-900/50 px-1.5 py-0.5 rounded-md">#{idx + 1}</span>
                                                         <a

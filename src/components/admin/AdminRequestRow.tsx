@@ -2,6 +2,7 @@ import { RequestRecord, AuditLog, STATUS_LABELS } from "@/lib/types";
 import { getStatusColor, fmtDate } from "@/lib/admin-utils";
 import { GlassCard } from "@/components/ui/GlassCard";
 import ExpandedRequestDetails from "./ExpandedRequestDetails";
+import { isAfter, endOfDay, parseISO } from "date-fns";
 
 interface AdminRequestRowProps {
     role?: string;
@@ -36,6 +37,11 @@ export default function AdminRequestRow({
     setExpandedRequest,
     addToast
 }: AdminRequestRowProps) {
+    // Period ended check
+    const today = new Date();
+    const endDate = req.end_date ? parseISO(req.end_date) : null;
+    const isPeriodEnded = endDate && isAfter(today, endOfDay(endDate));
+
     return (
         <GlassCard className="!p-0 overflow-hidden">
             {/* ─── Main Row ─── */}
@@ -57,6 +63,11 @@ export default function AdminRequestRow({
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getStatusColor(req.status)}`}>
                             {(STATUS_LABELS as Record<string, string>)[req.status] || req.status}
                         </span>
+                        {isPeriodEnded && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 uppercase tracking-tight">
+                                Period Ended
+                            </span>
+                        )}
                         {req.approval_file_url && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700 border border-purple-200">
                                 Signed
@@ -64,9 +75,28 @@ export default function AdminRequestRow({
                         )}
                     </div>
                     <p className="text-sm text-gray-600 whitespace-normal break-words">{req.project_name || "No project"}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 break-words">
-                        THB {req.amount?.toLocaleString()} · {req.billing_type?.replace("_", " ")} · {fmtDate(req.created_at)}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+                        <p className="text-xs text-gray-400">
+                            THB {req.amount?.toLocaleString()} · {req.billing_type?.replace("_", " ")} · {fmtDate(req.created_at)}
+                        </p>
+                        {(() => {
+                            const actual = req.receipts?.reduce((sum, r) => sum + (Number(r.amount) || 0), 0) || 0;
+                            const isOverBudget = actual > req.amount;
+                            if (actual === 0) return null;
+                            return (
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                                    <span className={`text-[10px] font-bold ${isOverBudget ? "text-red-500" : "text-emerald-500"}`}>
+                                        Actual: {actual.toLocaleString()}
+                                    </span>
+                                    {isOverBudget && (
+                                        <span className="px-1 py-0.5 rounded bg-red-100 text-red-700 text-[8px] font-black uppercase tracking-tighter">
+                                            Over Budget
+                                        </span>
+                                    )}
+                                </div>
+                            );
+                        })()}
+                    </div>
                 </div>
 
                 {/* Actions Block */}
