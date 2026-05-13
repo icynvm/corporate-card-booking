@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
             .insert({
                 event_id: body.eventId,
                 account_code: body.accountCode || null,
-                description: body.description || "Quick Added"
+                description: body.description || "Quick Added",
+                is_active: true // Default to active
             })
             .select()
             .single();
@@ -73,7 +74,8 @@ export async function PATCH(req: NextRequest) {
             .update({
                 event_id: updates.eventId,
                 account_code: updates.accountCode,
-                description: updates.description
+                description: updates.description,
+                is_active: updates.isActive ?? true
             })
             .eq("id", id)
             .select()

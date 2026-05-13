@@ -551,10 +551,20 @@ export function RequestEditModal({ isOpen, onClose, request, onSuccess }: Reques
                                                     className="w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all"
                                                 >
                                                     <option value="">Select Event...</option>
-                                                    {eventOptions.map((ev: EventMaster) => (
-                                                        <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
-                                                    ))}
-                                                </select>
+                                                     {eventOptions.map((ev: EventMaster) => {
+                                                         const isInactive = ev.is_active === false;
+                                                         return (
+                                                             <option 
+                                                                 key={ev.id} 
+                                                                 value={ev.event_id}
+                                                                 disabled={isInactive}
+                                                                 className={isInactive ? "text-gray-400 italic" : ""}
+                                                             >
+                                                                 {ev.event_id} - {ev.description || "No desc"} {isInactive ? "(Old/Inactive)" : ""}
+                                                             </option>
+                                                         );
+                                                     })}
+                                                 </select>
                                             </div>
                                             <div className="space-y-1">
                                                 <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-tight ml-1">Account Code #{idx + 1}</label>

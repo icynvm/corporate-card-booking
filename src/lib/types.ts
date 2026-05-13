@@ -132,6 +132,7 @@ export interface EventMaster {
     event_id: string;
     account_code: string | null;
     description: string | null;
+    is_active?: boolean;
     created_at: string;
     updated_at: string;
 }

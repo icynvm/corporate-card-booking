@@ -8,6 +8,7 @@ interface EventMaster {
     event_id: string;
     account_code: string;
     description: string;
+    is_active?: boolean;
     created_at: string;
 }
 
@@ -23,7 +24,8 @@ export default function EventMasterPage() {
     });
     const [editForm, setEditForm] = useState({
         eventId: "",
-        description: ""
+        description: "",
+        isActive: true
     });
     const [error, setError] = useState<string | null>(null);
 
@@ -85,8 +87,30 @@ export default function EventMasterPage() {
         setEditingId(event.id);
         setEditForm({
             eventId: event.event_id,
-            description: event.description || ""
+            description: event.description || "",
+            isActive: event.is_active ?? true
         });
+    };
+
+    const handleToggleActive = async (event: EventMaster) => {
+        try {
+            const res = await fetch("/api/master-data/events", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    id: event.id, 
+                    eventId: event.event_id,
+                    description: event.description,
+                    isActive: !(event.is_active ?? true) 
+                }),
+            });
+
+            if (res.ok) {
+                fetchEvents();
+            }
+        } catch (err) {
+            console.error("Failed to toggle active status:", err);
+        }
     };
 
     const handleUpdate = async (e: React.FormEvent) => {
@@ -190,6 +214,7 @@ export default function EventMasterPage() {
                             <tr className="border-b border-gray-100 dark:border-gray-800/50">
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Event ID</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                         </thead>
@@ -204,10 +229,10 @@ export default function EventMasterPage() {
                                 </tr>
                             ) : (
                                 events.map((event) => (
-                                    <tr key={event.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors group">
+                                    <tr key={event.id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors group ${!(event.is_active ?? true) ? "opacity-60" : ""}`}>
                                         {editingId === event.id ? (
-                                            <td colSpan={3} className="px-6 py-4">
-                                                <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                            <td colSpan={4} className="px-6 py-4">
+                                                <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                                                     <div>
                                                         <label className="label-text text-[10px] uppercase font-bold text-gray-400">Event ID</label>
                                                         <input
@@ -227,50 +252,78 @@ export default function EventMasterPage() {
                                                             onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                                                         />
                                                     </div>
-                                                    <div className="flex gap-2">
-                                                        <button type="submit" className="btn-primary flex-1">Update</button>
-                                                        <button type="button" onClick={() => setEditingId(null)} className="btn-secondary">Cancel</button>
-                                                    </div>
-                                                </form>
-                                            </td>
-                                        ) : (
-                                            <>
-                                                <td className="px-6 py-4 text-gray-900 dark:text-gray-100 font-medium">
-                                                    {event.event_id}
-                                                </td>
-                                                <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">{event.description || "-"}</td>
-                                                <td className="px-6 py-4 text-right">
-                                                    {canManage && (
-                                                        <div className="flex justify-end gap-1">
-                                                            <button
-                                                                onClick={() => handleEdit(event)}
-                                                                className="p-2 text-gray-400 hover:text-brand-500 transition-colors opacity-0 group-hover:opacity-100"
-                                                                title="Edit"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                                                </svg>
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDelete(event.id)}
-                                                                className="p-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                                                title="Delete"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                    <polyline points="3 6 5 6 21 6" />
-                                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                                                </svg>
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                            </>
-                                        )}
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
+                                                    <div className="flex flex-col gap-2">
+                                                        <label className="label-text text-[10px] uppercase font-bold text-gray-400">Active Status</label>
+                                                        <div className="flex items-center gap-2 h-[42px]">
+                                                            <input
+                                                                 type="checkbox"
+                                                                 checked={editForm.isActive}
+                                                                 onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
+                                                                 className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                                             />
+                                                             <span className="text-sm text-gray-600">Active</span>
+                                                         </div>
+                                                     </div>
+                                                     <div className="flex gap-2">
+                                                         <button type="submit" className="btn-primary flex-1">Update</button>
+                                                         <button type="button" onClick={() => setEditingId(null)} className="btn-secondary">Cancel</button>
+                                                     </div>
+                                                 </form>
+                                             </td>
+                                         ) : (
+                                             <>
+                                                 <td className="px-6 py-4 text-gray-900 dark:text-gray-100 font-medium">
+                                                     {event.event_id}
+                                                 </td>
+                                                 <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">{event.description || "-"}</td>
+                                                 <td className="px-6 py-4">
+                                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${event.is_active ?? true ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+                                                         {event.is_active ?? true ? "Active" : "Inactive / Old"}
+                                                     </span>
+                                                 </td>
+                                                 <td className="px-6 py-4 text-right">
+                                                     {canManage && (
+                                                         <div className="flex justify-end gap-1">
+                                                             <button
+                                                                 onClick={() => handleToggleActive(event)}
+                                                                 className={`p-2 transition-colors opacity-0 group-hover:opacity-100 ${event.is_active ?? true ? "text-gray-400 hover:text-amber-500" : "text-amber-500 hover:text-emerald-500"}`}
+                                                                 title={event.is_active ?? true ? "Disable / Mark as Old" : "Enable / Mark as Active"}
+                                                             >
+                                                                 {event.is_active ?? true ? (
+                                                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                                                                 ) : (
+                                                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                                                 )}
+                                                             </button>
+                                                             <button
+                                                                 onClick={() => handleEdit(event)}
+                                                                 className="p-2 text-gray-400 hover:text-brand-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                                 title="Edit"
+                                                             >
+                                                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                                 </svg>
+                                                             </button>
+                                                             <button
+                                                                 onClick={() => handleDelete(event.id)}
+                                                                 className="p-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                                 title="Delete"
+                                                             >
+                                                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                     <polyline points="3 6 5 6 21 6" />
+                                                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                                 </svg>
+                                                             </button>
+                                                         </div>
+                                                     )}
+                                                 </td>
+                                             </>
+                                         )}
+                                     </tr>
+                                 ))
+                             )}
+                         </tbody>
                     </table>
                 </div>
             </GlassCard>

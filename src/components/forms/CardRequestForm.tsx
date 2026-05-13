@@ -438,10 +438,20 @@ export function CardRequestForm() {
                                                     }}
                                                 >
                                                     <option value="">Select Event...</option>
-                                                    {eventOptions.map((ev: EventMaster) => (
-                                                        <option key={ev.id} value={ev.event_id}>{ev.event_id} - {ev.description || "No desc"}</option>
-                                                    ))}
-                                                </select>
+                                                     {eventOptions.map((ev: EventMaster) => {
+                                                         const isInactive = ev.is_active === false;
+                                                         return (
+                                                             <option 
+                                                                 key={ev.id} 
+                                                                 value={ev.event_id}
+                                                                 disabled={isInactive}
+                                                                 className={isInactive ? "text-gray-400 italic" : ""}
+                                                             >
+                                                                 {ev.event_id} - {ev.description || "No desc"} {isInactive ? "(Old/Inactive)" : ""}
+                                                             </option>
+                                                         );
+                                                     })}
+                                                 </select>
                                                 {errors.eventDetails?.[index]?.eventId && <p className="text-red-400 text-[10px] mt-1">{errors.eventDetails[index]?.eventId?.message}</p>}
                                             </div>
                                             <div>
