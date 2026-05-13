@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { parseISO, eachMonthOfInterval, format } from "date-fns";
+import { parseISO, format, addDays, endOfMonth, isAfter } from "date-fns";
 import { Modal } from "@/components/ui/Modal";
 import { RequestRecord } from "@/lib/types";
+import { getMonthsInRange } from "@/lib/utils/receipt-utils";
 
 interface ReceiptUploadModalProps {
     isOpen: boolean;
@@ -18,6 +19,8 @@ const MONTHS = [
 
 const MAX_FILES = 3;
 
+const isValidDate = (d: any) => d instanceof Date && !isNaN(d.getTime());
+
 export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadModalProps) {
     const [selectedMonth, setSelectedMonth] = useState("");
     const [files, setFiles] = useState<File[]>([]);
@@ -28,11 +31,9 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
     const isYearlyMonthly = request?.billing_type === "YEARLY_MONTHLY";
 
     // New logic: Monthly but spans > 2 months
+    const monthsInRange = getMonthsInRange(request?.start_date, request?.end_date);
     const startDate = request?.start_date ? parseISO(request.start_date) : null;
     const endDate = request?.end_date ? parseISO(request.end_date) : null;
-    const monthsInRange = (startDate && endDate)
-        ? eachMonthOfInterval({ start: startDate, end: endDate })
-        : [];
 
     const isMonthlyLongTerm = request?.billing_type === "MONTHLY" && monthsInRange.length > 2;
     const showMonthlyGrid = isYearlyMonthly || isMonthlyLongTerm;
@@ -155,7 +156,12 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                     {showMonthlyGrid && (
                         <div>
                             <label className="label-text mb-3 block">
-                                {isYearlyMonthly ? `Monthly Tracking (${currentYear})` : `Monthly Tracking (${format(startDate!, "MMM yyyy")} - ${format(endDate!, "MMM yyyy")})`}
+                                {isYearlyMonthly 
+                                    ? `Monthly Tracking (${currentYear})` 
+                                    : (isValidDate(startDate) && isValidDate(endDate)
+                                        ? `Monthly Tracking (${format(startDate!, "MMM yyyy")} - ${format(endDate!, "MMM yyyy")})`
+                                        : "Monthly Tracking")
+                                }
                             </label>
                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                 {(isYearlyMonthly ? MONTHS.map((_, i) => new Date(currentYear, i, 1)) : monthsInRange).map((mDate) => {
@@ -164,19 +170,34 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                     const existingFiles = request?.receipts?.filter(r => r.month_year === mKey) || [];
                                     const hasFiles = existingFiles.length > 0;
                                     const isSelected = selectedMonth === mKey;
+                                    
+                                    // Overdue check
+                                    const today = new Date();
+                                    const deadline = addDays(endOfMonth(mDate), 7);
+                                    const isOverdue = !hasFiles && isAfter(today, deadline);
 
                                     return (
                                         <button
                                             key={mKey}
                                             onClick={() => setSelectedMonth(mKey)}
-                                            className={`flex flex-col items-center p-2 rounded-xl border transition-all ${isSelected
+                                            className={`flex flex-col items-center p-2 rounded-xl border transition-all relative ${isSelected
                                                 ? "border-brand-500 bg-brand-50 shadow-sm"
                                                 : hasFiles
                                                     ? "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50"
-                                                    : "border-gray-100 hover:border-gray-200 hover:bg-gray-50 dark:bg-gray-900/50"
+                                                    : isOverdue
+                                                        ? "border-red-200 bg-red-50 hover:bg-red-100/50"
+                                                        : "border-gray-100 hover:border-gray-200 hover:bg-gray-50 dark:bg-gray-900/50"
                                                 }`}
                                         >
-                                            <span className={`text-[10px] uppercase font-bold tracking-wider ${isSelected ? "text-brand-600" : "text-gray-400 dark:text-gray-500"}`}>
+                                            {isOverdue && (
+                                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm z-10">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                                        <line x1="12" y1="9" x2="12" y2="13" />
+                                                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                            <span className={`text-[10px] uppercase font-bold tracking-wider ${isSelected ? "text-brand-600" : isOverdue ? "text-red-600" : "text-gray-400 dark:text-gray-500"}`}>
                                                 {monthLabel.slice(0, 3)}
                                             </span>
                                             <div className="mt-1 relative">
@@ -194,7 +215,7 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                                         )}
                                                     </>
                                                 ) : (
-                                                    <div className={`w-5 h-5 rounded-full border-2 border-dashed ${isSelected ? "border-brand-300" : "border-gray-200"}`} />
+                                                    <div className={`w-5 h-5 rounded-full border-2 border-dashed ${isSelected ? "border-brand-300" : isOverdue ? "border-red-300" : "border-gray-200"}`} />
                                                 )}
                                             </div>
                                         </button>
@@ -209,8 +230,11 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                         <div className="bg-brand-50/30 rounded-2xl p-5 border border-brand-100 animate-slide-up">
                             <div className="mb-4">
                                 <h4 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
-                                    {showMonthlyGrid
-                                        ? `${format(parseISO(`${selectedMonth}-01`), "MMMM yyyy")}`
+                                    {showMonthlyGrid && selectedMonth && !selectedMonth.startsWith("SINGLE")
+                                        ? (() => {
+                                            const d = parseISO(`${selectedMonth}-01`);
+                                            return isValidDate(d) ? format(d, "MMMM yyyy") : "Monthly Receipt";
+                                        })()
                                         : "Attached Files"}
                                 </h4>
                             </div>

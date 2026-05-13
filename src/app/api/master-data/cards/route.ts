@@ -56,10 +56,42 @@ export async function POST(req: NextRequest) {
     }
 }
 
+export async function PATCH(req: NextRequest) {
+    try {
+        const session = getSession(req);
+        if (!session || (session.role !== "admin" && session.role !== "manager")) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const supabase = createServerSupabase();
+        const body = await req.json();
+        const { id, ...updates } = body;
+
+        if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
+
+        const { data, error } = await supabase
+            .from("credit_card_master")
+            .update({
+                card_no: updates.cardNo,
+                card_name: updates.cardName,
+                bank: updates.bank,
+                description: updates.description
+            })
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return NextResponse.json(data);
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
 export async function DELETE(req: NextRequest) {
     try {
         const session = getSession(req);
-        if (!session || session.role !== "admin") {
+        if (!session || (session.role !== "admin" && session.role !== "manager")) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 

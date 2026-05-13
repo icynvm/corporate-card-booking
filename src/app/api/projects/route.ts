@@ -97,4 +97,74 @@ export async function POST(req: NextRequest) {
             { status: 500 }
         );
     }
+export async function PATCH(req: NextRequest) {
+    try {
+        const session = getSession(req);
+        if (!session || (session.role !== "admin" && session.role !== "manager")) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const supabase = createServerSupabase();
+        const body = await req.json();
+        const { id, projectName } = body;
+
+        if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
+
+        const { data, error } = await supabase
+            .from("projects")
+            .update({ project_name: projectName })
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Audit log
+        await supabase.from("audit_logs").insert({
+            entity_type: "PROJECT",
+            entity_id: id,
+            action: "UPDATE",
+            user_id: session.pid,
+            user_name: session.name || session.email,
+            changes: { project_name: projectName },
+        });
+
+        return NextResponse.json(data);
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function DELETE(req: NextRequest) {
+    try {
+        const session = getSession(req);
+        if (!session || (session.role !== "admin" && session.role !== "manager")) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get("id");
+        if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
+
+        const supabase = createServerSupabase();
+        const { error } = await supabase
+            .from("projects")
+            .delete()
+            .eq("id", id);
+
+        if (error) throw error;
+
+        // Audit log
+        await supabase.from("audit_logs").insert({
+            entity_type: "PROJECT",
+            entity_id: id,
+            action: "DELETE",
+            user_id: session.pid,
+            user_name: session.name || session.email,
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 }

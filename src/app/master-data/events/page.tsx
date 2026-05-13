@@ -14,16 +14,35 @@ interface EventMaster {
 export default function EventMasterPage() {
     const [events, setEvents] = useState<EventMaster[]>([]);
     const [loading, setLoading] = useState(true);
+    const [userRole, setUserRole] = useState<string>("");
     const [isAdding, setIsAdding] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [newEvent, setNewEvent] = useState({
+        eventId: "",
+        description: ""
+    });
+    const [editForm, setEditForm] = useState({
         eventId: "",
         description: ""
     });
     const [error, setError] = useState<string | null>(null);
 
+    const canManage = userRole === "admin" || userRole === "manager";
+
     useEffect(() => {
         fetchEvents();
+        fetchUser();
     }, []);
+
+    const fetchUser = async () => {
+        try {
+            const res = await fetch("/api/auth/me");
+            if (res.ok) {
+                const data = await res.json();
+                setUserRole(data.user?.role || "");
+            }
+        } catch {}
+    };
 
     const fetchEvents = async () => {
         try {
@@ -62,6 +81,36 @@ export default function EventMasterPage() {
         }
     };
 
+    const handleEdit = (event: EventMaster) => {
+        setEditingId(event.id);
+        setEditForm({
+            eventId: event.event_id,
+            description: event.description || ""
+        });
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        try {
+            const res = await fetch("/api/master-data/events", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: editingId, ...editForm }),
+            });
+
+            if (res.ok) {
+                setEditingId(null);
+                fetchEvents();
+            } else {
+                const data = await res.json();
+                setError(data.error || "Failed to update event");
+            }
+        } catch (err) {
+            setError("Failed to connect to server");
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure you want to delete this event?")) return;
         try {
@@ -85,16 +134,18 @@ export default function EventMasterPage() {
                         Manage standardized Event IDs and their default Account Codes.
                     </p>
                 </div>
-                <button
-                    onClick={() => setIsAdding(!isAdding)}
-                    className="btn-primary flex items-center gap-2"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    {isAdding ? "Cancel" : "Add New Event"}
-                </button>
+                {canManage && (
+                    <button
+                        onClick={() => setIsAdding(!isAdding)}
+                        className="btn-primary flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        {isAdding ? "Cancel" : "Add New Event"}
+                    </button>
+                )}
             </div>
 
             {isAdding && (
@@ -154,21 +205,68 @@ export default function EventMasterPage() {
                             ) : (
                                 events.map((event) => (
                                     <tr key={event.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors group">
-                                        <td className="px-6 py-4 text-gray-900 dark:text-gray-100 font-medium">
-                                            {event.event_id}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">{event.description || "-"}</td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button
-                                                onClick={() => handleDelete(event.id)}
-                                                className="p-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <polyline points="3 6 5 6 21 6" />
-                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                                </svg>
-                                            </button>
-                                        </td>
+                                        {editingId === event.id ? (
+                                            <td colSpan={3} className="px-6 py-4">
+                                                <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                                    <div>
+                                                        <label className="label-text text-[10px] uppercase font-bold text-gray-400">Event ID</label>
+                                                        <input
+                                                            type="text"
+                                                            required
+                                                            className="input-field"
+                                                            value={editForm.eventId}
+                                                            onChange={(e) => setEditForm({ ...editForm, eventId: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="label-text text-[10px] uppercase font-bold text-gray-400">Description</label>
+                                                        <input
+                                                            type="text"
+                                                            className="input-field"
+                                                            value={editForm.description}
+                                                            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button type="submit" className="btn-primary flex-1">Update</button>
+                                                        <button type="button" onClick={() => setEditingId(null)} className="btn-secondary">Cancel</button>
+                                                    </div>
+                                                </form>
+                                            </td>
+                                        ) : (
+                                            <>
+                                                <td className="px-6 py-4 text-gray-900 dark:text-gray-100 font-medium">
+                                                    {event.event_id}
+                                                </td>
+                                                <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">{event.description || "-"}</td>
+                                                <td className="px-6 py-4 text-right">
+                                                    {canManage && (
+                                                        <div className="flex justify-end gap-1">
+                                                            <button
+                                                                onClick={() => handleEdit(event)}
+                                                                className="p-2 text-gray-400 hover:text-brand-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                                title="Edit"
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                                </svg>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDelete(event.id)}
+                                                                className="p-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                                title="Delete"
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <polyline points="3 6 5 6 21 6" />
+                                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </>
+                                        )}
                                     </tr>
                                 ))
                             )}

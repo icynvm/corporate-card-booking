@@ -14,6 +14,7 @@ import {
     ColumnFiltersState,
 } from "@tanstack/react-table";
 import { RequestRecord } from "@/lib/types";
+import { getOverdueMonths } from "@/lib/utils/receipt-utils";
 import SubProjectAllocation from "./SubProjectAllocation";
 
 const columnHelper = createColumnHelper<RequestRecord>();
@@ -170,6 +171,10 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                 header: "Status",
                 cell: (info) => {
                     const status = info.getValue();
+                    const row = info.row.original;
+                    const overdueMonths = getOverdueMonths(row);
+                    const isWarning = overdueMonths.length > 0;
+
                     const className =
                         status === "PENDING"
                             ? "status-pending"
@@ -178,7 +183,24 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned }: Request
                                 : status === "REJECTED"
                                     ? "status-rejected"
                                     : "status-completed";
-                    return <span className={className}>{status}</span>;
+                                    
+                    return (
+                        <div className="flex items-center gap-2">
+                            <span className={className}>{status}</span>
+                            {isWarning && (
+                                <div 
+                                    className="flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-600 animate-pulse cursor-help"
+                                    title={`Overdue Receipts: ${overdueMonths.join(", ")}`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                        <line x1="12" y1="9" x2="12" y2="13" />
+                                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
+                    );
                 },
             }),
             columnHelper.accessor("created_at", {
