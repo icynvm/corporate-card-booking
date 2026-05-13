@@ -97,6 +97,8 @@ export async function POST(req: NextRequest) {
             { status: 500 }
         );
     }
+}
+
 export async function PATCH(req: NextRequest) {
     try {
         const session = getSession(req);
