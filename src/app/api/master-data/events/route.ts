@@ -49,7 +49,6 @@ export async function POST(req: NextRequest) {
             .from("event_master")
             .insert({
                 event_id: body.eventId,
-                account_code: body.accountCode || null,
                 description: body.description || "Quick Added",
                 is_active: true // Default to active
             })
@@ -84,7 +83,6 @@ export async function PATCH(req: NextRequest) {
         // Build update object dynamically to avoid sending undefined values
         const updateData: any = {};
         if (updates.eventId !== undefined) updateData.event_id = updates.eventId;
-        if (updates.accountCode !== undefined) updateData.account_code = updates.accountCode || null;
         if (updates.description !== undefined) updateData.description = updates.description;
         if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
 
