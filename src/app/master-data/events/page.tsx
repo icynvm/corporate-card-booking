@@ -205,8 +205,13 @@ export default function EventMasterPage() {
                                 <button type="submit" className="btn-primary">Save Event ID</button>
                             </div>
                         </form>
-                        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
                     </GlassCard>
+                </div>
+            )}
+
+            {error && (
+                <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm animate-shake">
+                    {error}
                 </div>
             )}
 
