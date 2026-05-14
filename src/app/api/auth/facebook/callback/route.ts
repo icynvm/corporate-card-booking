@@ -11,11 +11,11 @@ export async function GET(req: NextRequest) {
     const error = searchParams.get("error");
 
     if (error) {
-        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/profile?error=${error}`);
+        return NextResponse.redirect(new URL(`/profile?error=${error}`, req.nextUrl.origin));
     }
 
     if (!code) {
-        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/profile?error=no_code`);
+        return NextResponse.redirect(new URL("/profile?error=no_code", req.nextUrl.origin));
     }
 
     try {
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
         const session = token ? parseSessionToken(token) : null;
         
         if (!session) {
-            return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login`);
+            return NextResponse.redirect(new URL("/login", req.nextUrl.origin));
         }
 
         // 2. Exchange code for short-lived token
@@ -45,9 +45,9 @@ export async function GET(req: NextRequest) {
 
         if (updateError) throw updateError;
 
-        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/profile?success=facebook_connected`);
+        return NextResponse.redirect(new URL("/profile?success=facebook_connected", req.nextUrl.origin));
     } catch (err: any) {
         console.error("Facebook Callback Error:", err);
-        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/profile?error=${encodeURIComponent(err.message)}`);
+        return NextResponse.redirect(new URL(`/profile?error=${encodeURIComponent(err.message)}`, req.nextUrl.origin));
     }
 }
