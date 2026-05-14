@@ -37,6 +37,8 @@ export const CreateRequestSchema = z.object({
   projectId: z.string().uuid().optional().nullable().or(z.literal("").transform(() => null)),
   reqId: z.string().optional(),
   creditCardNo: z.string().min(1, "Credit card number is required"),
+  fbCampaignId: z.string().optional(),
+  fbAdAccountId: z.string().optional(),
 });
 
 export const UpdateStatusSchema = z.object({

@@ -39,6 +39,8 @@ export const requestFormSchema = z.object({
             accessList: z.string().min(1, "Access list is required"),
         })
     ).min(1, "At least one promotional channel must be selected and filled"),
+    fbCampaignId: z.string().optional(),
+    fbAdAccountId: z.string().optional(),
 });
 
 export type RequestFormData = z.infer<typeof requestFormSchema>;

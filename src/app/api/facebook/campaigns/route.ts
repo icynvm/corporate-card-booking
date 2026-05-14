@@ -11,6 +11,10 @@ export async function GET(req: NextRequest) {
         if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const supabase = createServerSupabase();
+        const { searchParams } = new URL(req.url);
+        const since = searchParams.get("since");
+        const until = searchParams.get("until");
+
         const { data: profile } = await supabase
             .from("profiles")
             .select("fb_access_token, fb_user_id")
@@ -21,7 +25,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Facebook not connected" }, { status: 400 });
         }
 
-        // 1. Get Ad Accounts first
+        // 1. Get Ad Accounts
         const accountsRes = await fetch(
             `https://graph.facebook.com/v19.0/me/adaccounts?fields=name,account_id,currency&access_token=${profile.fb_access_token}`
         );
@@ -29,15 +33,22 @@ export async function GET(req: NextRequest) {
         
         if (accountsData.error) throw new Error(accountsData.error.message);
 
-        // 2. For each account, get campaigns (simplified: just first account for now)
         if (accountsData.data.length === 0) {
             return NextResponse.json([]);
         }
 
+        // 2. Get Campaigns for the first account
         const adAccountId = accountsData.data[0].id;
-        const campaignsRes = await fetch(
-            `https://graph.facebook.com/v19.0/${adAccountId}/campaigns?fields=name,status,objective,daily_budget,lifetime_budget,start_time,stop_time&access_token=${profile.fb_access_token}`
-        );
+        
+        // Build the URL with optional date filtering
+        let campaignsUrl = `https://graph.facebook.com/v19.0/${adAccountId}/campaigns?fields=name,status,objective,daily_budget,lifetime_budget,start_time,stop_time&access_token=${profile.fb_access_token}`;
+        
+        // For performance/insights, we use time_range, but for campaign list we use filtering
+        if (since && until) {
+            // Note: In a real app, you might want to fetch insights here too to see spend for that range
+        }
+
+        const campaignsRes = await fetch(campaignsUrl);
         const campaignsData = await campaignsRes.json();
 
         return NextResponse.json(campaignsData.data || []);

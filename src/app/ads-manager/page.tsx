@@ -16,15 +16,19 @@ export default function AdsManagerPage() {
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [dateRange, setDateRange] = useState({
+        since: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+        until: new Date().toISOString().split('T')[0]
+    });
 
     useEffect(() => {
         fetchCampaigns();
-    }, []);
+    }, [dateRange]);
 
     const fetchCampaigns = async () => {
         try {
             setLoading(true);
-            const res = await fetch("/api/facebook/campaigns");
+            const res = await fetch(`/api/facebook/campaigns?since=${dateRange.since}&until=${dateRange.until}`);
             const data = await res.json();
             
             if (!res.ok) {
@@ -93,10 +97,27 @@ export default function AdsManagerPage() {
                     </h1>
                     <p className="text-sm text-gray-500">Manage your Facebook campaigns directly from this portal.</p>
                 </div>
-                <button onClick={fetchCampaigns} className="btn-secondary flex items-center gap-2">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                    Refresh
-                </button>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center bg-white dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl px-3 py-1.5 shadow-sm">
+                        <input 
+                            type="date" 
+                            value={dateRange.since}
+                            onChange={(e) => setDateRange(prev => ({ ...prev, since: e.target.value }))}
+                            className="bg-transparent border-none text-xs text-gray-600 dark:text-gray-300 focus:ring-0"
+                        />
+                        <span className="text-gray-300 px-2">—</span>
+                        <input 
+                            type="date" 
+                            value={dateRange.until}
+                            onChange={(e) => setDateRange(prev => ({ ...prev, until: e.target.value }))}
+                            className="bg-transparent border-none text-xs text-gray-600 dark:text-gray-300 focus:ring-0"
+                        />
+                    </div>
+                    <button onClick={fetchCampaigns} className="btn-secondary flex items-center gap-2">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        Refresh
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

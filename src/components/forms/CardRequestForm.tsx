@@ -25,6 +25,8 @@ export function CardRequestForm() {
     const [cardOptions, setCardOptions] = useState<CreditCardMaster[]>([]);
     const [customChannelName, setCustomChannelName] = useState<string>("");
     const [showCustomInput, setShowCustomInput] = useState<boolean>(false);
+    const [fbCampaigns, setFbCampaigns] = useState<any[]>([]);
+    const [fbAdAccountId, setFbAdAccountId] = useState<string>("");
 
     // Inline Add States
     const [isAddingProject, setIsAddingProject] = useState(false);
@@ -101,6 +103,14 @@ export function CardRequestForm() {
                 // Fetch Credit Cards
                 const resCards = await fetch("/api/master-data/cards");
                 if (resCards.ok) setCardOptions(await resCards.json());
+
+                // Fetch Facebook Campaigns for mapping
+                const resFb = await fetch("/api/facebook/me/campaigns");
+                if (resFb.ok) {
+                    const fbData = await resFb.json();
+                    setFbCampaigns(fbData.campaigns || []);
+                    setFbAdAccountId(fbData.adAccountId || "");
+                }
             } catch (err) {
                 console.error("Master data fetch failed:", err);
             }
@@ -691,10 +701,28 @@ export function CardRequestForm() {
                                     key={field.id}
                                     className="bg-gradient-to-r from-brand-50/50 to-purple-50/50 rounded-xl p-5 border border-brand-100/50 animate-slide-up"
                                 >
-                                    <div className="flex items-center gap-2 mb-4">
+                                    <div className="flex items-center justify-between mb-4">
                                         <span className="px-2.5 py-1 rounded-lg bg-brand-100 text-brand-700 text-xs font-semibold">
                                             {field.channel}
                                         </span>
+                                        
+                                        {field.channel === "Facebook" && fbCampaigns.length > 0 && (
+                                            <div className="flex-1 max-w-xs ml-4">
+                                                <select 
+                                                    {...register("fbCampaignId")}
+                                                    onChange={(e) => {
+                                                        setValue("fbCampaignId", e.target.value);
+                                                        setValue("fbAdAccountId", fbAdAccountId);
+                                                    }}
+                                                    className="select-field !py-1 !text-[10px] !h-8"
+                                                >
+                                                    <option value="">Link to FB Campaign...</option>
+                                                    {fbCampaigns.map(c => (
+                                                        <option key={c.id} value={c.id}>{c.name} ({c.status})</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>

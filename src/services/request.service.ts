@@ -111,6 +111,8 @@ export class RequestService {
         account_code: sanitizedBody.eventDetails?.[0]?.accountCode || null,
         event_details: sanitizedBody.eventDetails || [],
         credit_card_no: sanitizedBody.creditCardNo || null,
+        fb_campaign_id: sanitizedBody.fbCampaignId || null,
+        fb_ad_account_id: sanitizedBody.fbAdAccountId || null,
         status: RequestStatus.PENDING_APPROVAL,
       })
       .select()
