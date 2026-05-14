@@ -39,6 +39,8 @@ model User {
   department String
   role       Role      @default(USER)
   requests   Request[]
+  fbAccessToken String?  @map("fb_access_token")
+  fbUserId      String?  @map("fb_user_id")
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
@@ -87,6 +89,8 @@ model Request {
   approvalTokenExpiry  DateTime?     @map("approval_token_expiry")
   approvalNotes        String?       @map("approval_notes")
   approvalFileUrl      String?       @map("approval_file_url")
+  fbCampaignId         String?       @map("fb_campaign_id")
+  fbAdAccountId        String?       @map("fb_ad_account_id")
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")
   receipts             Receipt[]
