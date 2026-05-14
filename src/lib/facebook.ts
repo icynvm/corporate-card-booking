@@ -1,9 +1,7 @@
 export const FB_SCOPES = [
     "ads_management",
     "ads_read",
-    "business_management",
-    "public_profile",
-    "email"
+    "business_management"
 ].join(",");
 
 export function getFacebookLoginUrl() {
