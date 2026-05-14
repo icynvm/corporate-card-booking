@@ -170,10 +170,13 @@ export default function RegisterPage() {
                         </form>
                     )}
 
-                    <div className="mt-6 text-center">
-                        <p className="text-sm text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500">
+                    <div className="mt-6 text-center space-y-2">
+                        <p className="text-sm text-gray-400">
                             Already have an account?{" "}
                             <a href="/login" className="text-brand-500 hover:text-brand-700 font-medium transition-colors">Sign In</a>
+                        </p>
+                        <p className="text-xs">
+                            <a href="/privacy-policy" className="text-gray-400 hover:text-gray-600 underline transition-colors">Privacy Policy</a>
                         </p>
                     </div>
                 </div>
