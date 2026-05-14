@@ -30,6 +30,7 @@ export default function EventMasterPage() {
     const [error, setError] = useState<string | null>(null);
 
     const canManage = userRole === "admin" || userRole === "manager";
+    const canAdd = canManage || userRole === "user";
 
     useEffect(() => {
         fetchEvents();
@@ -158,7 +159,7 @@ export default function EventMasterPage() {
                         Manage standardized Event IDs and their default Account Codes.
                     </p>
                 </div>
-                {canManage && (
+                {canAdd && (
                     <button
                         onClick={() => setIsAdding(!isAdding)}
                         className="btn-primary flex items-center gap-2"

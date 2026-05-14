@@ -33,6 +33,7 @@ export default function CreditCardMasterPage() {
     const [error, setError] = useState<string | null>(null);
 
     const canManage = userRole === "admin" || userRole === "manager";
+    const canAdd = canManage || userRole === "user";
 
     useEffect(() => {
         fetchCards();
@@ -141,7 +142,7 @@ export default function CreditCardMasterPage() {
                         Manage the master list of corporate credit cards.
                     </p>
                 </div>
-                {canManage && (
+                {canAdd && (
                     <button
                         onClick={() => setIsAdding(!isAdding)}
                         className="btn-primary flex items-center gap-2"

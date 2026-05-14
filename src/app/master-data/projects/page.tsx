@@ -38,6 +38,7 @@ export default function ProjectMasterPage() {
     const [error, setError] = useState<string | null>(null);
 
     const canManage = userRole === "admin" || userRole === "manager";
+    const canAdd = canManage || userRole === "user";
 
     useEffect(() => {
         fetchProjects();
@@ -141,7 +142,7 @@ export default function ProjectMasterPage() {
                         Manage defined promotional projects available for requests.
                     </p>
                 </div>
-                {canManage && (
+                {canAdd && (
                     <div className="flex gap-3">
                         <button
                             onClick={() => setIsAdding(!isAdding)}

@@ -27,6 +27,7 @@ export default function AccountMasterPage() {
     const [error, setError] = useState<string | null>(null);
 
     const canManage = userRole === "admin" || userRole === "manager";
+    const canAdd = canManage || userRole === "user";
 
     useEffect(() => {
         fetchAccounts();
@@ -133,7 +134,7 @@ export default function AccountMasterPage() {
                         Centralized list of official account codes used across all requests.
                     </p>
                 </div>
-                {canManage && (
+                {canAdd && (
                     <button
                         onClick={() => setIsAdding(!isAdding)}
                         className="btn-primary flex items-center gap-2"
