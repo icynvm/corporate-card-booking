@@ -67,12 +67,13 @@ export async function PATCH(req: NextRequest) {
 
         if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
 
+        const updateData: any = {};
+        if (updates.code !== undefined) updateData.code = updates.code;
+        if (updates.description !== undefined) updateData.description = updates.description;
+
         const { data, error } = await supabase
             .from("account_code_master")
-            .update({
-                code: updates.code,
-                description: updates.description
-            })
+            .update(updateData)
             .eq("id", id)
             .select()
             .single();

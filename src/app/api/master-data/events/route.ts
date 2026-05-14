@@ -69,14 +69,16 @@ export async function PATCH(req: NextRequest) {
 
         if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
 
+        // Build update object dynamically to avoid sending undefined values
+        const updateData: any = {};
+        if (updates.eventId !== undefined) updateData.event_id = updates.eventId;
+        if (updates.accountCode !== undefined) updateData.account_code = updates.accountCode || null;
+        if (updates.description !== undefined) updateData.description = updates.description;
+        if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+
         const { data, error } = await supabase
             .from("event_master")
-            .update({
-                event_id: updates.eventId,
-                account_code: updates.accountCode,
-                description: updates.description,
-                is_active: updates.isActive ?? true
-            })
+            .update(updateData)
             .eq("id", id)
             .select()
             .single();

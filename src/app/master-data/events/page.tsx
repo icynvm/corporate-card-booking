@@ -24,6 +24,7 @@ export default function EventMasterPage() {
     });
     const [editForm, setEditForm] = useState({
         eventId: "",
+        accountCode: "",
         description: "",
         isActive: true
     });
@@ -88,6 +89,7 @@ export default function EventMasterPage() {
         setEditingId(event.id);
         setEditForm({
             eventId: event.event_id,
+            accountCode: event.account_code || "",
             description: event.description || "",
             isActive: event.is_active ?? true
         });
@@ -251,6 +253,15 @@ export default function EventMasterPage() {
                                                             className="input-field"
                                                             value={editForm.description}
                                                             onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="label-text text-[10px] uppercase font-bold text-gray-400">Account Code</label>
+                                                        <input
+                                                            type="text"
+                                                            className="input-field"
+                                                            value={editForm.accountCode}
+                                                            onChange={(e) => setEditForm({ ...editForm, accountCode: e.target.value })}
                                                         />
                                                     </div>
                                                     <div className="flex flex-col gap-2">

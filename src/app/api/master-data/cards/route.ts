@@ -69,14 +69,15 @@ export async function PATCH(req: NextRequest) {
 
         if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
 
+        const updateData: any = {};
+        if (updates.cardNo !== undefined) updateData.card_no = updates.cardNo;
+        if (updates.cardName !== undefined) updateData.card_name = updates.cardName;
+        if (updates.bank !== undefined) updateData.bank = updates.bank;
+        if (updates.description !== undefined) updateData.description = updates.description;
+
         const { data, error } = await supabase
             .from("credit_card_master")
-            .update({
-                card_no: updates.cardNo,
-                card_name: updates.cardName,
-                bank: updates.bank,
-                description: updates.description
-            })
+            .update(updateData)
             .eq("id", id)
             .select()
             .single();
