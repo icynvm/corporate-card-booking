@@ -130,7 +130,8 @@ export default function EventMasterPage() {
             } else {
                 const data = await res.json();
                 const detailStr = data.details ? ` (${data.details}${data.hint ? ` - ${data.hint}` : ""})` : "";
-                setError(`${data.error || "Failed to update event"}${detailStr}`);
+                const fullErrStr = data.fullError ? ` [Debug: ${data.fullError}]` : "";
+                setError(`${data.error || "Failed to update event"}${detailStr}${fullErrStr}`);
             }
         } catch (err) {
             setError("Failed to connect to server");

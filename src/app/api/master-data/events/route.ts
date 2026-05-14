@@ -92,15 +92,15 @@ export async function PATCH(req: NextRequest) {
             .from("event_master")
             .update(updateData)
             .eq("id", id)
-            .select()
-            .single();
+            .select();
 
         if (error) throw error;
-        return NextResponse.json(data);
+        return NextResponse.json(data?.[0] || null);
     } catch (error: any) {
         console.error("[Events PATCH Error]:", error);
         return NextResponse.json({ 
             error: error.message || "Internal Server Error",
+            fullError: JSON.stringify(error),
             details: error.details || null,
             hint: error.hint || null
         }, { status: 500 });
