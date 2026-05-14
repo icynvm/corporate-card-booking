@@ -24,7 +24,6 @@ export default function EventMasterPage() {
     });
     const [editForm, setEditForm] = useState({
         eventId: "",
-        accountCode: "",
         description: "",
         isActive: true
     });
@@ -89,7 +88,6 @@ export default function EventMasterPage() {
         setEditingId(event.id);
         setEditForm({
             eventId: event.event_id,
-            accountCode: event.account_code || "",
             description: event.description || "",
             isActive: event.is_active ?? true
         });
@@ -131,7 +129,8 @@ export default function EventMasterPage() {
                 fetchEvents();
             } else {
                 const data = await res.json();
-                setError(data.error || "Failed to update event");
+                const detailStr = data.details ? ` (${data.details}${data.hint ? ` - ${data.hint}` : ""})` : "";
+                setError(`${data.error || "Failed to update event"}${detailStr}`);
             }
         } catch (err) {
             setError("Failed to connect to server");
@@ -255,17 +254,8 @@ export default function EventMasterPage() {
                                                             onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                                                         />
                                                     </div>
-                                                    <div>
-                                                        <label className="label-text text-[10px] uppercase font-bold text-gray-400">Account Code</label>
-                                                        <input
-                                                            type="text"
-                                                            className="input-field"
-                                                            value={editForm.accountCode}
-                                                            onChange={(e) => setEditForm({ ...editForm, accountCode: e.target.value })}
-                                                        />
-                                                    </div>
                                                     <div className="flex flex-col gap-2">
-                                                        <label className="label-text text-[10px] uppercase font-bold text-gray-400">Active Status</label>
+                                                        <label className="label-text text-[10px] uppercase font-bold text-gray-400">Status</label>
                                                         <div className="flex items-center gap-2 h-[42px]">
                                                             <input
                                                                  type="checkbox"

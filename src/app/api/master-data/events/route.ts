@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
 import { parseSessionToken, getSessionCookieName } from "@/lib/session";
 
+export const dynamic = 'force-dynamic';
+
 function getSession(req: NextRequest) {
     const token = req.cookies.get(getSessionCookieName())?.value;
     if (!token) return null;
@@ -24,7 +26,12 @@ export async function GET(req: NextRequest) {
         if (error) throw error;
         return NextResponse.json(data || []);
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("[Events GET Error]:", error);
+        return NextResponse.json({ 
+            error: error.message || "Internal Server Error",
+            details: error.details || null,
+            hint: error.hint || null
+        }, { status: 500 });
     }
 }
 
@@ -52,7 +59,12 @@ export async function POST(req: NextRequest) {
         if (error) throw error;
         return NextResponse.json(data, { status: 201 });
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("[Events POST Error]:", error);
+        return NextResponse.json({ 
+            error: error.message || "Internal Server Error",
+            details: error.details || null,
+            hint: error.hint || null
+        }, { status: 500 });
     }
 }
 
@@ -86,7 +98,12 @@ export async function PATCH(req: NextRequest) {
         if (error) throw error;
         return NextResponse.json(data);
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("[Events PATCH Error]:", error);
+        return NextResponse.json({ 
+            error: error.message || "Internal Server Error",
+            details: error.details || null,
+            hint: error.hint || null
+        }, { status: 500 });
     }
 }
 
@@ -110,6 +127,11 @@ export async function DELETE(req: NextRequest) {
         if (error) throw error;
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("[Events API Error]:", error);
+        return NextResponse.json({ 
+            error: error.message || "Internal Server Error",
+            details: error.details || null,
+            hint: error.hint || null
+        }, { status: 500 });
     }
 }
