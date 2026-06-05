@@ -42,7 +42,7 @@ async function testNotify() {
       }
     };
 
-    const res = await fetch("https://api.line.me/v2/bot/message/push", {
+    const res = await fetch("https://api.line.me/v2/bot/message/reply", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
