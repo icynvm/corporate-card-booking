@@ -15,7 +15,7 @@ export default function PrivacyPolicy() {
                     <section className="mb-8">
                         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">1. Introduction</h2>
                         <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                            Welcome to <strong>Reservation Credit Card</strong> ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, and safeguard your data when you use our application and link your Facebook Marketing accounts.
+                            Welcome to <strong>Reservation Credit Card</strong> (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, and safeguard your data when you use our application and link your Facebook Marketing accounts.
                         </p>
                     </section>
 

@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PostSubmissionActions } from "@/components/forms/PostSubmissionActions";
 import { normalizeThai } from "@/lib/thai-utils";
-import { supabase } from "@/lib/supabase";
 import { Project, EventMaster, AccountCodeMaster, CreditCardMaster } from "@/lib/types";
 import {
     requestFormSchema,
@@ -64,7 +63,6 @@ export function CardRequestForm() {
             endDate: "",
             amount: 0,
             billingType: "ONE_TIME",
-            accountCode: "",
             creditCardNo: "",
             eventDetails: [{ eventId: "", accountCode: "" }],
             promotionalChannels: [],
@@ -195,7 +193,6 @@ export function CardRequestForm() {
             if (res.ok) {
                 const added = await res.json();
                 setAccountOptions([added, ...accountOptions]);
-                setValue("accountCode", added.code);
                 setIsAddingAccount(false);
                 setNewAccountCode("");
             } else {

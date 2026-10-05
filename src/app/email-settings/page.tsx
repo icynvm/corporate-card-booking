@@ -197,7 +197,7 @@ export default function EmailSettingsPage() {
                                 The email address used to send notifications and OTPs. This <strong>must</strong> use a domain verified on your Resend account.
                             </p>
                             <p className="text-[10px] text-brand-400 mt-0.5">
-                                Leave blank to use testing address: Card Booking System &lt;support@booking.kie-ra.online&gt;
+                                Leave blank to fall back to the SENDER_EMAIL environment variable.
                             </p>
                         </div>
 

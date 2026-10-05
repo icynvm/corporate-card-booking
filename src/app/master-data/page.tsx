@@ -48,7 +48,7 @@ export default function MasterDataOverviewPage() {
                     Management <span className="gradient-text">Console</span>
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400">
-                    Select a category to manage your organization's master data and ensure pattern consistency.
+                    Select a category to manage your organization&apos;s master data and ensure pattern consistency.
                 </p>
             </div>
 

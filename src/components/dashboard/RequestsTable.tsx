@@ -14,6 +14,7 @@ import {
     ColumnFiltersState,
 } from "@tanstack/react-table";
 import { RequestRecord } from "@/lib/types";
+import { RequestStatus } from "@/types/enums";
 import { getOverdueMonths } from "@/lib/utils/receipt-utils";
 import SubProjectAllocation from "./SubProjectAllocation";
 import { isAfter, endOfDay, parseISO } from "date-fns";
@@ -204,7 +205,7 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned, userRole 
                     const isPeriodEnded = endDate && isAfter(today, endOfDay(endDate));
 
                     const className =
-                        status === "PENDING"
+                        status === RequestStatus.PENDING_APPROVAL
                             ? "status-pending"
                             : status === "APPROVED"
                                 ? "status-approved"
@@ -404,7 +405,7 @@ export function RequestsTable({ data, onUploadReceipt, onUploadSigned, userRole 
                                     <p className="text-sm font-bold text-gray-800 dark:text-gray-100">THB {row.original.amount?.toLocaleString()}</p>
                                 </div>
                                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${row.original.status === "APPROVED" ? "bg-green-100 text-green-700" :
-                                        row.original.status === "PENDING" ? "bg-amber-100 text-amber-700" : "bg-gray-100 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300"
+                                        row.original.status === RequestStatus.PENDING_APPROVAL ? "bg-amber-100 text-amber-700" : "bg-gray-100 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300"
                                     }`}>
                                     {row.original.status}
                                 </span>

@@ -4,15 +4,19 @@ export async function sendOTPEmail(email: string, code: string, name?: string, f
     const activeResendKey = resendApiKey || process.env.RESEND_API_KEY;
     
     if (!activeResendKey || activeResendKey.startsWith("re_xxxx") || activeResendKey === "re_dummy_key_for_build") {
-        if (process.env.NODE_ENV !== "production") console.log(`[DEV] OTP for ${email}: ${code}`);
-        return { success: true, dev: true, code };
+                return { success: true, dev: true, code };
+    }
+
+    const from = fromEmail || process.env.SENDER_EMAIL;
+    if (!from) {
+        throw new Error("Sender email is not configured. Set SENDER_EMAIL (env or app settings).");
     }
 
     const { Resend } = await import("resend");
     const resend = new Resend(activeResendKey);
 
     const { data, error } = await resend.emails.send({
-        from: fromEmail || "Card Booking System <support@booking.kie-ra.online>",
+        from,
         to: email,
         subject: `Your verification code: ${code}`,
         html: `
@@ -36,7 +40,7 @@ export async function sendOTPEmail(email: string, code: string, name?: string, f
         console.error("Resend OTP Error details:", {
             error,
             email,
-            from: fromEmail || "Card Booking System <support@booking.kie-ra.online>",
+            from,
         });
         throw new Error(error.message ? `OTP Email Error: ${error.message}` : "Failed to send verification email. Please check your admin configuration.");
     }

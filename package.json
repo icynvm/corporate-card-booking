@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -20,13 +21,13 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.2",
     "resend": "^4.1.2",
+    "server-only": "^0.0.1",
     "uuid": "^11.0.5",
-    "zod": "^3.24.2",
-    "puppeteer-core": "^22.0.0",
-    "@sparticuz/chromium-min": "^122.0.0"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.4",
+    "@types/pdfmake": "^0.2.13",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@types/uuid": "^10.0.0",

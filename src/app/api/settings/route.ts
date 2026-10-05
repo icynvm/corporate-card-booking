@@ -32,8 +32,8 @@ export async function GET(req: NextRequest) {
         });
 
         return NextResponse.json({
-            managerEmail: settings.MANAGER_EMAIL || "manager@company.com",
-            senderEmail: settings.SENDER_EMAIL || "support@booking.kie-ra.online",
+            managerEmail: settings.MANAGER_EMAIL || "",
+            senderEmail: settings.SENDER_EMAIL || "",
             resendApiKey: settings.RESEND_API_KEY ? `${settings.RESEND_API_KEY.slice(0, 7)}...${settings.RESEND_API_KEY.slice(-4)}` : null,
             lineChannelId: settings.LINE_CHANNEL_ID || "",
             lineChannelSecret: settings.LINE_CHANNEL_SECRET ? `${settings.LINE_CHANNEL_SECRET.slice(0, 4)}...${settings.LINE_CHANNEL_SECRET.slice(-4)}` : null,

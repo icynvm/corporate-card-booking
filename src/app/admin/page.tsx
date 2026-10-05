@@ -212,7 +212,7 @@ export default function AdminPage() {
                                     r.status,
                                     new Date(r.created_at).toLocaleDateString("en-GB"),
                                     r.end_date || "N/A",
-                                    `"${r.user_name || r.user_id || "Unknown"}"`
+                                    `"${r.profiles?.name || r.full_name || r.user_id || "Unknown"}"`
                                 ].join(","))
                             ].join("\n");
 
@@ -256,7 +256,7 @@ export default function AdminPage() {
             {showEmailSettings && (
                 <GlassCard className="!p-4 sm:!p-5 border-l-4 border-l-brand-500 animate-slide-down">
                     <h3 className="font-bold text-gray-800 mb-2 sm:mb-3 text-sm">Manager Email Configuration</h3>
-                    <p className="text-xs text-gray-500 mb-3 sm:mb-4 break-words">Set the email address that will receive approval requests when users click "Send Email".</p>
+                    <p className="text-xs text-gray-500 mb-3 sm:mb-4 break-words">Set the email address that will receive approval requests when users click &quot;Send Email&quot;.</p>
                     <div className="flex flex-col sm:flex-row gap-3 sm:items-end sm:max-w-md">
                         <div className="flex-1">
                             <label className="block text-xs font-semibold text-gray-700 mb-1">Target Email</label>

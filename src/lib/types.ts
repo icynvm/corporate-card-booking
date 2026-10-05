@@ -75,6 +75,7 @@ export interface ReceiptRecord {
     request_id: string;
     month_year: string;
     receipt_file_url: string;
+    amount?: number | null;
     status: "UPLOADED" | "VERIFIED";
     created_at: string;
 }

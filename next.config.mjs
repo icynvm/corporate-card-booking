@@ -1,12 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    serverExternalPackages: ["@sparticuz/chromium"],
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
-    typescript: {
-        ignoreBuildErrors: true,
-    },
+    output: "standalone",
     async headers() {
         return [
             {
@@ -15,17 +9,11 @@ const nextConfig = {
                     { key: 'X-Frame-Options', value: 'DENY' },
                     { key: 'X-Content-Type-Options', value: 'nosniff' },
                     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+                    { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
+                    { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
                 ],
             },
         ];
-    },
-    experimental: {
-        serverActions: {
-            bodySizeLimit: '10mb',
-        },
-        outputFileTracingIncludes: {
-            '/api/**/*': ['./node_modules/@sparticuz/chromium/bin/*'],
-        },
     },
 };
 

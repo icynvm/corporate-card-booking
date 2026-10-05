@@ -1,15 +1,18 @@
+import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dummy.supabase.co";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "dummy";
-
-// Browser client (for client components)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Server client (for API routes — uses service role for admin operations)
+/**
+ * Server-side Supabase client using the service role key (bypasses RLS).
+ * Never import this from client components. Env is validated at call time so
+ * the build does not need credentials.
+ */
 export function createServerSupabase() {
-    return createClient(
-        supabaseUrl,
-        process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey || "dummy"
-    );
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceKey) {
+        throw new Error(
+            "Supabase is not configured: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set."
+        );
+    }
+    return createClient(url, serviceKey, { auth: { persistSession: false } });
 }
