@@ -54,3 +54,15 @@ docker run -p 3000:3000 --env-file .env.local card-booking
 - Legacy password hashes are upgraded to the current scheme automatically on login.
 - `createServerSupabase()` uses the service role key and is server-only; it throws if the key is not configured.
 - No Content-Security-Policy is set yet (follow-up); other security headers are configured in `next.config.mjs`.
+
+## Development
+
+```bash
+npm run dev         # start the dev server
+npm test            # run unit tests once (Vitest)
+npm run test:watch  # run tests in watch mode
+npm run typecheck   # tsc --noEmit
+npm run lint        # next lint
+```
+
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and a build on every push and pull request.
