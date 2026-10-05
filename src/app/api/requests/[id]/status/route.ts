@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 const ALL_STATUSES = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "REJECTED", "ACTIVE", "COMPLETED", "CANCELLED"];
 
@@ -10,8 +10,9 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = await getSession(req);
-        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const auth = await requireSession(req, { freshRole: true });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const body = await req.json();
@@ -51,7 +52,11 @@ export async function PUT(
                     { status: 403 }
                 );
             }
-            // Users can only cancel their own or DRAFT/PENDING_APPROVAL
+            // Non-admins can only cancel their own requests
+            if (currentRequest.user_id !== session.pid) {
+                return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            }
+            // ...and only while DRAFT/PENDING_APPROVAL
             if (!["DRAFT", "PENDING_APPROVAL"].includes(oldStatus)) {
                 return NextResponse.json(
                     { error: "You can only cancel Draft or Pending Approval requests" },
@@ -93,10 +98,7 @@ export async function PUT(
         return NextResponse.json(data);
     } catch (error: any) {
         console.error("Failed to update request status:", error);
-        return NextResponse.json(
-            { error: error.message || "Failed to update status" },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: "Failed to update status" }, { status: 500 });
     }
 }
 

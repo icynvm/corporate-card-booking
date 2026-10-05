@@ -91,7 +91,7 @@ export default function MyRequestsPage() {
                 endDate: request.end_date,
                 amount: request.amount,
                 creditCardNo: request.credit_card_no,
-                eventDetails: request.event_details || [],
+                eventDetails: (request.event_details || []) as any,
             };
 
             const { generateRequestPdf } = await import("@/lib/pdf-generator");

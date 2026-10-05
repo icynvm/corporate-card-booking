@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { requireSession, isPrivileged } from "@/lib/auth";
 import { RequestService } from "@/services/request.service";
 import { CreateRequestSchema, RequestQuerySchema } from "@/lib/validations/schemas";
 import { RequestStatus } from "@/types/enums";
@@ -11,8 +11,9 @@ import { RequestStatus } from "@/types/enums";
 
 export async function GET(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const auth = await requireSession(req, { freshRole: true });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const { searchParams } = new URL(req.url);
         
@@ -23,9 +24,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Role-based scope filtering
-        const userId = (session.role !== "admin" && session.role !== "manager") 
-            ? session.pid 
-            : undefined;
+        const userId = isPrivileged(session) ? undefined : session.pid;
 
         const data = await RequestService.getRequests({ ...query, userId });
         return NextResponse.json(data);
@@ -37,8 +36,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const auth = await requireSession(req);
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const body = await req.json();
         const validatedData = CreateRequestSchema.parse(body);
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json(
-            { error: error.message || "Failed to create request" }, 
+            { error: "Failed to create request" }, 
             { status: 500 }
         );
     }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession, isPrivileged } from "@/lib/auth";
+import { BillingType } from "@/types/enums";
 
 // Helper to get session from cookie
 export async function GET(
@@ -8,8 +9,9 @@ export async function GET(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = await getSession(req);
-        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const auth = await requireSession(req, { freshRole: true });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const requestId = params.id;
         if (!requestId) return NextResponse.json({ error: "Request ID is required" }, { status: 400 });
@@ -17,15 +19,15 @@ export async function GET(
         const supabase = createServerSupabase();
         const { data, error } = await supabase
             .from("requests")
-            .select("*, profiles(*), projects(*), receipts(*), request_payments(*)")
+            .select("*, profiles(id, name, email, department, role), projects(*), receipts(*), request_payments(*)")
             .eq("id", requestId)
             .single();
 
-        if (error) throw error;
+        if (error && error.code !== "PGRST116") throw error;
         if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
         // Ensure user can only see their own request, unless admin or manager
-        if (session.role !== "admin" && session.role !== "manager" && data.user_id !== session.pid) {
+        if (!isPrivileged(session) && data.user_id !== session.pid) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
@@ -41,10 +43,9 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = await getSession(req);
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const requestId = params.id;
         if (!requestId) {
@@ -79,10 +80,7 @@ export async function DELETE(
         return NextResponse.json({ success: true, message: "Request deleted successfully" });
     } catch (error: any) {
         console.error("Failed to delete request:", error);
-        return NextResponse.json(
-            { error: error.message || "Failed to delete request" },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: "Failed to delete request" }, { status: 500 });
     }
 }
 
@@ -98,14 +96,33 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = await getSession(req);
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { freshRole: true });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const requestId = params.id;
         if (!requestId) {
             return NextResponse.json({ error: "Request ID is required" }, { status: 400 });
+        }
+
+        const supabase = createServerSupabase();
+
+        const { data: existing, error: existingError } = await supabase
+            .from("requests")
+            .select("id, user_id, status")
+            .eq("id", requestId)
+            .maybeSingle();
+
+        if (existingError) throw existingError;
+        if (!existing) {
+            return NextResponse.json({ error: "Request not found" }, { status: 404 });
+        }
+
+        const isOwnerEditable =
+            existing.user_id === session.pid &&
+            ["DRAFT", "PENDING_APPROVAL"].includes(existing.status);
+        if (!isPrivileged(session) && !isOwnerEditable) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         const { 
@@ -127,7 +144,18 @@ export async function PUT(
             credit_card_no
         } = await req.json();
 
-        const supabase = createServerSupabase();
+        if (amount !== undefined) {
+            const n = typeof amount === "string" ? parseFloat(amount) : amount;
+            if (typeof n !== "number" || !Number.isFinite(n) || n < 0) {
+                return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+            }
+        }
+        if (billing_type !== undefined && !Object.values(BillingType).includes(billing_type)) {
+            return NextResponse.json({ error: "Invalid billing type" }, { status: 400 });
+        }
+        if (req_id !== undefined && session.role !== "admin") {
+            return NextResponse.json({ error: "Only admin can change the request ID" }, { status: 403 });
+        }
 
         const updatePayload: any = {};
         if (objective !== undefined) updatePayload.objective = cleanText(objective);
@@ -166,6 +194,7 @@ export async function PUT(
             entity_type: "REQUEST",
             entity_id: requestId,
             action: "UPDATE",
+            user_id: session.pid,
             user_name: session.name || session.email || "User",
             changes: updatePayload,
         });
@@ -173,9 +202,6 @@ export async function PUT(
         return NextResponse.json({ success: true, message: "Request updated successfully" });
     } catch (error: any) {
         console.error("Failed to update request:", error);
-        return NextResponse.json(
-            { error: error.message || "Failed to update request" },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: "Failed to update request" }, { status: 500 });
     }
 }

@@ -138,7 +138,7 @@ export default function RequestViewPage({ params }: { params: { id: string } }) 
                 body: JSON.stringify({ status: "CANCELLED" }),
             });
             if (res.ok) {
-                setRequest((prev) => prev ? { ...prev, status: "CANCELLED" } : null);
+                setRequest((prev) => prev ? { ...prev, status: "CANCELLED" as RequestRecord["status"] } : null);
                 addToast("Request cancelled successfully!", "success");
             } else {
                 const data = await res.json();

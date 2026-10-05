@@ -1,21 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession, isPrivileged } from "@/lib/auth";
 
-// Helper to get session from cookie
+type Access = { ok: true; supabase: ReturnType<typeof createServerSupabase> } | { ok: false; response: NextResponse };
+
+// Loads the parent request and checks access.
+// mode "read": owner or admin/manager. mode "write": admin, or owner while DRAFT/PENDING_APPROVAL.
+async function authorize(req: NextRequest, requestId: string, mode: "read" | "write"): Promise<Access> {
+    const auth = await requireSession(req, { freshRole: true });
+    if ("response" in auth) return { ok: false, response: auth.response };
+    const { session } = auth;
+
+    const supabase = createServerSupabase();
+    const { data: parent, error } = await supabase
+        .from("requests")
+        .select("id, user_id, status")
+        .eq("id", requestId)
+        .maybeSingle();
+
+    if (error) {
+        console.error("Sub-projects parent lookup error:", error);
+        return { ok: false, response: NextResponse.json({ error: "Internal server error" }, { status: 500 }) };
+    }
+    if (!parent) {
+        return { ok: false, response: NextResponse.json({ error: "Request not found" }, { status: 404 }) };
+    }
+
+    const isOwner = parent.user_id === session.pid;
+    const allowed =
+        mode === "read"
+            ? isOwner || isPrivileged(session)
+            : session.role === "admin" || (isOwner && ["DRAFT", "PENDING_APPROVAL"].includes(parent.status));
+
+    if (!allowed) {
+        return { ok: false, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+    }
+    return { ok: true, supabase };
+}
+
 export async function GET(
     request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = await getSession(request);
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const access = await authorize(request, params.id, "read");
+        if (!access.ok) return access.response;
 
-        const supabase = createServerSupabase();
-
-        const { data, error } = await supabase
+        const { data, error } = await access.supabase
             .from("sub_projects")
             .select("*")
             .eq("request_id", params.id)
@@ -23,20 +54,14 @@ export async function GET(
 
         if (error) {
             console.error("Fetch sub-projects error:", error);
-            return NextResponse.json({ error: error.message }, { status: 500 });
+            return NextResponse.json({ error: "Failed to fetch sub-projects" }, { status: 500 });
         }
 
         return NextResponse.json({ subProjects: data || [] });
     } catch (err: any) {
-        return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
+        console.error("Sub-projects GET failed:", err);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
-}
-
-export async function PUSH(
-    request: Request,
-    { params }: { params: { id: string } }
-) {
-    return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
 }
 
 export async function POST(
@@ -44,10 +69,9 @@ export async function POST(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = await getSession(request);
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const access = await authorize(request, params.id, "write");
+        if (!access.ok) return access.response;
+        const { supabase } = access;
 
         const { names, totalAmount } = await request.json();
 
@@ -55,11 +79,9 @@ export async function POST(
             return NextResponse.json({ error: "Names array is required and must not be empty" }, { status: 400 });
         }
 
-        if (typeof totalAmount !== "number") {
-            return NextResponse.json({ error: "Total amount is required and must be a number" }, { status: 400 });
+        if (typeof totalAmount !== "number" || !Number.isFinite(totalAmount) || totalAmount < 0) {
+            return NextResponse.json({ error: "Total amount is required and must be a non-negative number" }, { status: 400 });
         }
-
-        const supabase = createServerSupabase();
 
         // Calculate the divided amount per sub-project
         const count = names.length;
@@ -86,12 +108,13 @@ export async function POST(
 
         if (error) {
             console.error("Insert sub-projects error:", error);
-            return NextResponse.json({ error: error.message }, { status: 500 });
+            return NextResponse.json({ error: "Failed to save sub-projects" }, { status: 500 });
         }
 
         return NextResponse.json({ subProjects: data });
     } catch (err: any) {
-        return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
+        console.error("Sub-projects POST failed:", err);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
 
@@ -100,25 +123,22 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = await getSession(request);
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const access = await authorize(request, params.id, "write");
+        if (!access.ok) return access.response;
 
-        const supabase = createServerSupabase();
-
-        const { error } = await supabase
+        const { error } = await access.supabase
             .from("sub_projects")
             .delete()
             .eq("request_id", params.id);
 
         if (error) {
             console.error("Delete sub-projects error:", error);
-            return NextResponse.json({ error: error.message }, { status: 500 });
+            return NextResponse.json({ error: "Failed to delete sub-projects" }, { status: 500 });
         }
 
         return NextResponse.json({ success: true });
     } catch (err: any) {
-        return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
+        console.error("Sub-projects DELETE failed:", err);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

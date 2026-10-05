@@ -3,16 +3,66 @@
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 
 function ApprovalResultContent() {
     const searchParams = useSearchParams();
-    const status = searchParams.get("status");
-    const action = searchParams.get("action");
-    const eventId = searchParams.get("eventId");
-    const requester = searchParams.get("requester");
-    const amount = searchParams.get("amount");
-    const message = searchParams.get("message");
+    const token = searchParams.get("token");
+    const [result, setResult] = useState<Record<string, any> | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+
+    // Result of the POST (magic link) takes precedence over query-param based rendering
+    const status = result?.status ?? searchParams.get("status");
+    const action = result?.action ?? searchParams.get("action");
+    const eventId = result?.reqId ?? searchParams.get("reqId") ?? searchParams.get("eventId");
+    const requester = result?.requester ?? searchParams.get("requester");
+    const amount = result?.amount != null ? String(result.amount) : searchParams.get("amount");
+    const message = result?.message ?? searchParams.get("message");
+
+    const needsConfirm = !!token && !status && (action === "approve" || action === "reject");
+
+    const handleConfirm = async () => {
+        setSubmitting(true);
+        try {
+            const res = await fetch("/api/approve", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token, action }),
+            });
+            const data = await res.json().catch(() => null);
+            setResult(data && data.status ? data : { status: "error", message: "An unexpected error occurred" });
+        } catch {
+            setResult({ status: "error", message: "An unexpected error occurred" });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (needsConfirm) {
+        const approving = action === "approve";
+        return (
+            <div className="flex items-center justify-center min-h-[80vh]">
+                <div className="max-w-md w-full animate-slide-up">
+                    <GlassCard className="text-center">
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+                            {approving ? "Approve this card request?" : "Reject this card request?"}
+                        </h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                            Please confirm your decision. This action cannot be undone.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={handleConfirm}
+                            disabled={submitting}
+                            className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-60 ${approving ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"}`}
+                        >
+                            {submitting ? "Processing..." : approving ? "Confirm Approval" : "Confirm Rejection"}
+                        </button>
+                    </GlassCard>
+                </div>
+            </div>
+        );
+    }
 
     const isApproved = action === "approve";
     const isError = status === "error";

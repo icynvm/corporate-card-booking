@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession, isPrivileged } from "@/lib/auth";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { IMPACT_LOGO_BASE64 } from "@/lib/logo-base64";
 
@@ -9,33 +9,37 @@ export async function GET(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = await getSession(req);
-        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const auth = await requireSession(req, { freshRole: true });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
 
         const { data: request, error: fetchError } = await supabase
             .from("requests")
-            .select("*, profiles(*), projects(*)")
+            .select("*, profiles(name, department), projects(*)")
             .eq("id", params.id)
             .single();
             
         if (fetchError) {
             console.error("Fetch request error:", fetchError);
-            return NextResponse.json({ error: "Failed to fetch request details", details: fetchError.message }, { status: 500 });
+            if (fetchError.code === "PGRST116") {
+                return NextResponse.json({ error: "Request not found" }, { status: 404 });
+            }
+            return NextResponse.json({ error: "Failed to fetch request details" }, { status: 500 });
         }
 
         if (!request) {
             return NextResponse.json({ error: "Request not found" }, { status: 404 });
         }
 
-        if (session.role !== "admin" && request.user_id !== session.pid) {
+        if (!isPrivileged(session) && request.user_id !== session.pid) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         // Map database data to form data structure for the PDF generator
         const formData = {
-            eventId: request.event_id,
+            reqId: request.req_id || request.event_id || "",
             fullName: request.full_name || request.profiles?.name || "",
             department: request.profiles?.department || "",
             contactNo: request.contact_no || "",
@@ -53,14 +57,14 @@ export async function GET(
         const { generateRequestPdf } = await import("@/lib/pdf-generator");
         const pdfBytes = await generateRequestPdf(formData);
 
-        return new NextResponse(pdfBytes, {
+        return new NextResponse(Buffer.from(pdfBytes), {
             headers: {
                 "Content-Type": "application/pdf",
-                "Content-Disposition": `attachment; filename="card-request-${formData.eventId}.pdf"`,
+                "Content-Disposition": `attachment; filename="card-request-${String(formData.reqId).replace(/[^a-z0-9._-]/gi, "_")}.pdf"`,
             },
         });
     } catch (error: any) {
         console.error("PDF generation error:", error);
-        return NextResponse.json({ error: "Failed to generate PDF", details: error.message || String(error) }, { status: 500 });
+        return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
     }
 }

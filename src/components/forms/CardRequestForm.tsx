@@ -17,6 +17,7 @@ import {
 export function CardRequestForm() {
     const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
     const [submittedData, setSubmittedData] = useState<RequestFormData | null>(null);
+    const [createdRequestId, setCreatedRequestId] = useState<string | null>(null);
     const [selectedChannels, setSelectedChannels] = useState<Set<string>>(new Set());
     const [projectOptions, setProjectOptions] = useState<Project[]>([]);
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -258,6 +259,8 @@ export function CardRequestForm() {
             });
 
             if (res.ok) {
+                const created = await res.json().catch(() => null);
+                setCreatedRequestId(created?.id ?? null);
                 setSubmittedData(requestBody as any);
                 setIsSubmitted(true);
             } else {
@@ -277,7 +280,7 @@ export function CardRequestForm() {
     const { onChange: objectiveOnChange, ...objectiveProps } = register("objective");
 
     if (isSubmitted && submittedData) {
-        return <div className="max-w-3xl mx-auto"><PostSubmissionActions formData={submittedData} /></div>;
+        return <div className="max-w-3xl mx-auto"><PostSubmissionActions formData={submittedData} requestId={createdRequestId} /></div>;
     }
 
     return (

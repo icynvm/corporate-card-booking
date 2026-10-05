@@ -7,9 +7,10 @@ import { RequestFormData } from "@/lib/validations/schema";
 
 interface PostSubmissionActionsProps {
     formData: RequestFormData;
+    requestId?: string | null;
 }
 
-export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) {
+export function PostSubmissionActions({ formData, requestId }: PostSubmissionActionsProps) {
     const router = useRouter();
     const [isSending, setIsSending] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -27,7 +28,7 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
                 contactNo: formData.contactNo,
                 email: formData.email,
                 objective: formData.objective,
-                projectName: formData.projectName,
+                projectName: formData.projectName || "",
                 promotionalChannels: formData.promotionalChannels || [],
                 bookingDate: formData.bookingDate,
                 effectiveDate: formData.effectiveDate,
@@ -64,12 +65,16 @@ export function PostSubmissionActions({ formData }: PostSubmissionActionsProps) 
     };
 
     const handleSendToManager = async () => {
+        if (!requestId) {
+            alert("Request ID is missing. Please send the approval email from My Requests.");
+            return;
+        }
         setIsSending(true);
         try {
             const res = await fetch("/api/send-approval", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ id: requestId }),
             });
 
             if (!res.ok) throw new Error("Failed to send approval request");
