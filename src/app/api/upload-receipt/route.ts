@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
+import { canAccessRequest } from "@/lib/access";
+import { detectFileType, sanitizeFileName } from "@/lib/file-validation";
 
 const MAX_FILES = 3;
+const MONTH_YEAR_RE = /^\d{4}-\d{2}$/;
+const RECEIPT_STATUSES = ["UPLOADED", "VERIFIED", "REJECTED"];
 
 export async function POST(req: NextRequest) {
     try {
-        const session = await getSession(req);
+        const auth = await requireSession(req, { freshRole: true });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
+
         const supabase = createServerSupabase();
         const formData = await req.formData();
         const id = (formData.get("id") || formData.get("requestId")) as string;
@@ -32,6 +39,21 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        if (typeof id !== "string" || typeof monthYear !== "string" || !MONTH_YEAR_RE.test(monthYear)) {
+            return NextResponse.json({ error: "Invalid monthYear (expected YYYY-MM)" }, { status: 400 });
+        }
+
+        if (!Number.isFinite(amount) || amount < 0) {
+            return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+        }
+
+        const access = await canAccessRequest(supabase, id, session);
+        if (!access.ok) {
+            return access.notFound
+                ? NextResponse.json({ error: "Request not found" }, { status: 404 })
+                : NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         if (files.length > MAX_FILES) {
             return NextResponse.json(
                 { error: `Maximum ${MAX_FILES} files allowed per upload` },
@@ -39,7 +61,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
         const receipts = [];
 
         for (let i = 0; i < files.length; i++) {
@@ -47,17 +68,19 @@ export async function POST(req: NextRequest) {
 
             // Validation: 2MB limit per file
             if (file.size > 2 * 1024 * 1024) {
-                return NextResponse.json({ error: `File "${file.name}" exceeds 2MB limit` }, { status: 400 });
-            }
-
-            // Validation: MIME types
-            if (!allowedTypes.includes(file.type)) {
-                return NextResponse.json({ error: `File "${file.name}": Only JPEG, PNG and PDF files are allowed` }, { status: 400 });
+                return NextResponse.json({ error: `File "${sanitizeFileName(file.name)}" exceeds 2MB limit` }, { status: 400 });
             }
 
             const buffer = Buffer.from(await file.arrayBuffer());
+
+            // Validation: file type by magic bytes (client-declared MIME is not trusted)
+            const detectedType = detectFileType(buffer);
+            if (!detectedType) {
+                return NextResponse.json({ error: `File "${sanitizeFileName(file.name)}": Only JPEG, PNG and PDF files are allowed` }, { status: 400 });
+            }
+
             // Sanitize filename: remove spaces and special characters
-            const safeName = file.name.replace(/[^a-z0-9._-]/gi, "_");
+            const safeName = sanitizeFileName(file.name);
             // For multiple files, append index suffix to storage path to avoid overwriting
             const fileKey = files.length > 1 ? `${monthYear}-${i + 1}-${safeName}` : `${monthYear}-${safeName}`;
             const storagePath = `${id}/${fileKey}`;
@@ -66,13 +89,13 @@ export async function POST(req: NextRequest) {
             const { error: uploadError } = await supabase.storage
                 .from("receipt")
                 .upload(storagePath, buffer, {
-                    contentType: file.type,
+                    contentType: detectedType,
                     upsert: true,
                 });
 
             if (uploadError) {
                 console.error("Storage upload error:", uploadError);
-                return NextResponse.json({ error: `Failed to upload "${file.name}" to storage` }, { status: 500 });
+                return NextResponse.json({ error: `Failed to upload "${safeName}" to storage` }, { status: 500 });
             }
 
             // We use a proxy route to handle the viewing
@@ -142,12 +165,13 @@ export async function POST(req: NextRequest) {
             entity_type: "RECEIPT",
             entity_id: receipts[0]?.id || id,
             action: "UPLOAD",
-            user_name: session?.name || session?.email || "User",
+            user_id: session.pid,
+            user_name: session.name || session.email || "User",
             changes: {
                 month_year: monthYear,
                 amount: amount,
                 file_count: files.length,
-                file_names: files.map(f => f.name),
+                file_names: files.map(f => sanitizeFileName(f.name)),
             },
         });
 
@@ -167,9 +191,16 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
     try {
-        const session = await getSession(req);
+        const auth = await requireSession(req, { roles: ["admin", "manager"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
+
         const supabase = createServerSupabase();
         const { receiptId, status } = await req.json();
+
+        if (typeof receiptId !== "string" || !receiptId || !RECEIPT_STATUSES.includes(status)) {
+            return NextResponse.json({ error: "Invalid receiptId or status" }, { status: 400 });
+        }
 
         const { data: receipt } = await supabase
             .from("receipts")
@@ -183,7 +214,8 @@ export async function PATCH(req: NextRequest) {
             entity_type: "RECEIPT",
             entity_id: receiptId,
             action: "VERIFY",
-            user_name: session?.name || session?.email || "User",
+            user_id: session.pid,
+            user_name: session.name || session.email || "User",
             changes: { new_status: status },
         });
 

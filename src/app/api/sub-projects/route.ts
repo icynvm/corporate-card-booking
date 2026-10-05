@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await getSession(request);
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(request);
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const { data, error } = await supabase
@@ -15,13 +14,15 @@ export async function GET(request: NextRequest) {
             .select("name");
 
         if (error) {
-            return NextResponse.json({ error: error.message }, { status: 500 });
+            console.error("sub-projects error:", error);
+            return NextResponse.json({ error: "Internal server error" }, { status: 500 });
         }
 
         // Filter uniques in memory
         const names = Array.from(new Set((data || []).map(d => d.name).filter(Boolean)));
         return NextResponse.json({ names });
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 });
+    } catch (err) {
+        console.error("sub-projects/route.ts error:", err);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

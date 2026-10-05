@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
+
+// Escape LIKE/ILIKE wildcards in user input
+function escapeLike(input: string): string {
+    return input.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
 
 // GET: Search/list projects
 export async function GET(req: NextRequest) {
     try {
+        const auth = await requireSession(req);
+        if ("response" in auth) return auth.response;
+
         const supabase = createServerSupabase();
         const { searchParams } = new URL(req.url);
         const search = searchParams.get("search") || "";
@@ -15,7 +23,7 @@ export async function GET(req: NextRequest) {
             .order("created_at", { ascending: false });
 
         if (search) {
-            query = query.ilike("project_name", `%${search}%`);
+            query = query.ilike("project_name", `%${escapeLike(search)}%`);
         }
 
         const { data, error } = await query.limit(20);
@@ -31,37 +39,18 @@ export async function GET(req: NextRequest) {
 // POST: Create a new project
 export async function POST(req: NextRequest) {
     try {
-        const session = await getSession(req);
+        const auth = await requireSession(req);
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
+
         const body = await req.json();
         const supabase = createServerSupabase();
 
-        let userId = body.userId || session?.pid;
-        if (!userId) {
-            // Find or create the dev profile
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("id")
-                .eq("email", "dev@company.com")
-                .maybeSingle();
-
-            if (profile) {
-                userId = profile.id;
-            } else {
-                const { data: newProfile, error: createError } = await supabase
-                    .from("profiles")
-                    .insert({
-                        name: "Developer Admin",
-                        email: "dev@company.com",
-                        department: "Development",
-                        role: "admin"
-                    })
-                    .select("id")
-                    .single();
-
-                if (createError) throw new Error(`Failed to create dev profile: ${createError.message}`);
-                userId = newProfile.id;
-            }
+        if (typeof body.projectName !== "string" || !body.projectName.trim()) {
+            return NextResponse.json({ error: "Project name is required" }, { status: 400 });
         }
+
+        const userId = session.pid;
 
         const { data, error } = await supabase
             .from("projects")
@@ -79,7 +68,7 @@ export async function POST(req: NextRequest) {
             entity_id: data.id,
             action: "CREATE",
             user_id: userId,
-            user_name: session?.name || session?.email || "Developer Admin",
+            user_name: session.name || session.email,
             changes: { project_name: body.projectName },
         });
 
@@ -87,7 +76,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Failed to create project:", error);
         return NextResponse.json(
-            { error: error.message || "Failed to create project" },
+            { error: "Failed to create project" },
             { status: 500 }
         );
     }
@@ -95,10 +84,9 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || (session.role !== "admin" && session.role !== "manager")) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin", "manager"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const body = await req.json();
@@ -126,17 +114,17 @@ export async function PATCH(req: NextRequest) {
         });
 
         return NextResponse.json(data);
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("projects/route.ts error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
 
 export async function DELETE(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || (session.role !== "admin" && session.role !== "manager")) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin", "manager"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const { searchParams } = new URL(req.url);
         const id = searchParams.get("id");
@@ -160,7 +148,8 @@ export async function DELETE(req: NextRequest) {
         });
 
         return NextResponse.json({ success: true });
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("projects/route.ts error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

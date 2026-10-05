@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { PaymentService } from "@/services/payment.service";
 
 /**
@@ -13,8 +14,15 @@ export async function GET(req: Request) {
     const authHeader = req.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
-    // Only enforce if CRON_SECRET is set in environment
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    // Fail closed: the secret must be configured
+    if (!cronSecret) {
+      console.error("CRON_SECRET not configured");
+      return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 500 });
+    }
+
+    const expected = Buffer.from(`Bearer ${cronSecret}`);
+    const provided = Buffer.from(authHeader || "");
+    if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -25,9 +33,9 @@ export async function GET(req: Request) {
       message: "Cron job executed successfully",
       ...result
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Cron Job Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Cron job failed" }, { status: 500 });
   }
 }
 

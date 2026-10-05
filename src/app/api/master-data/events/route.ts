@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req);
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const { data, error } = await supabase
@@ -21,20 +20,15 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(data || []);
     } catch (error: any) {
         console.error("[Events GET Error]:", error);
-        return NextResponse.json({ 
-            error: error.message || "Internal Server Error",
-            details: error.details || null,
-            hint: error.hint || null
-        }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
 
 export async function POST(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req);
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const body = await req.json();
@@ -53,20 +47,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(data, { status: 201 });
     } catch (error: any) {
         console.error("[Events POST Error]:", error);
-        return NextResponse.json({ 
-            error: error.message || "Internal Server Error",
-            details: error.details || null,
-            hint: error.hint || null
-        }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
 
 export async function PATCH(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || (session.role !== "admin" && session.role !== "manager")) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin", "manager"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const body = await req.json();
@@ -90,21 +79,15 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json(data?.[0] || null);
     } catch (error: any) {
         console.error("[Events PATCH Error]:", error);
-        return NextResponse.json({ 
-            error: error.message || "Internal Server Error",
-            fullError: JSON.stringify(error),
-            details: error.details || null,
-            hint: error.hint || null
-        }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
 
 export async function DELETE(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || (session.role !== "admin" && session.role !== "manager")) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin", "manager"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const { searchParams } = new URL(req.url);
         const id = searchParams.get("id");
@@ -120,10 +103,6 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error("[Events API Error]:", error);
-        return NextResponse.json({ 
-            error: error.message || "Internal Server Error",
-            details: error.details || null,
-            hint: error.hint || null
-        }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

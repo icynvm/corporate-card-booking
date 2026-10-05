@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendLineNotification } from "@/lib/line";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const result = await sendLineNotification("✅ LINE Notification System is active! This is a test message from your Card Booking System.");
 
         if (!result.success) {
-            return NextResponse.json({ error: result.error }, { status: 500 });
+            console.error("LINE test failed:", result.error);
+            return NextResponse.json({ error: "LINE test message failed" }, { status: 500 });
         }
 
         return NextResponse.json({ success: true });
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("settings/test-line/route.ts error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

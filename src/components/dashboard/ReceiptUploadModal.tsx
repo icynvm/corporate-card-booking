@@ -289,9 +289,9 @@ export function ReceiptUploadModal({ isOpen, onClose, request }: ReceiptUploadMo
                                                                 <p className="text-[10px] text-gray-400 dark:text-gray-500">
                                                                     {receipt.status === "VERIFIED" ? "✓ Verified" : "Pending verification"}
                                                                 </p>
-                                                                {receipt.amount > 0 && (
+                                                                {(receipt as { amount?: number }).amount! > 0 && (
                                                                     <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                                                                        THB {receipt.amount.toLocaleString()}
+                                                                        THB {((receipt as { amount?: number }).amount ?? 0).toLocaleString()}
                                                                     </span>
                                                                 )}
                                                             </div>

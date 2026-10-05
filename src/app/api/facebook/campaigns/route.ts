@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const auth = await requireSession(req);
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const { searchParams } = new URL(req.url);
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
         );
         const accountsData = await accountsRes.json();
         
-        if (accountsData.error) throw new Error(accountsData.error.message);
+        if (accountsData.error) throw new Error("Facebook API error");
 
         if (accountsData.data.length === 0) {
             return NextResponse.json([]);
@@ -51,15 +52,17 @@ export async function GET(req: NextRequest) {
         const campaignsData = await campaignsRes.json();
 
         return NextResponse.json(campaignsData.data || []);
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("Facebook campaigns error:", error);
+        return NextResponse.json({ error: "Failed to reach Facebook" }, { status: 500 });
     }
 }
 
 export async function PATCH(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const auth = await requireSession(req);
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const body = await req.json();
         const { campaignId, status, dailyBudget } = body;
@@ -73,6 +76,10 @@ export async function PATCH(req: NextRequest) {
 
         if (!profile?.fb_access_token) {
             return NextResponse.json({ error: "Facebook not connected" }, { status: 400 });
+        }
+
+        if (typeof campaignId !== "string" || !/^\d+$/.test(campaignId)) {
+            return NextResponse.json({ error: "Invalid campaignId" }, { status: 400 });
         }
 
         const updates: any = {};
@@ -89,10 +96,11 @@ export async function PATCH(req: NextRequest) {
         );
 
         const data = await res.json();
-        if (data.error) throw new Error(data.error.message);
+        if (data.error) throw new Error("Facebook API error");
 
         return NextResponse.json({ success: true });
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("Facebook campaigns error:", error);
+        return NextResponse.json({ error: "Failed to reach Facebook" }, { status: 500 });
     }
 }

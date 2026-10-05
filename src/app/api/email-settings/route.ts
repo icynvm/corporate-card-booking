@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 // GET: Fetch email settings
 export async function GET(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const { data } = await supabase
@@ -25,18 +24,18 @@ export async function GET(req: NextRequest) {
             email_to: settings.email_to || "",
             email_cc: settings.email_cc || "",
         });
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("email-settings/route.ts error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
 
 // PUT: Update email settings
 export async function PUT(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const { email_to, email_cc } = await req.json();
@@ -54,7 +53,8 @@ export async function PUT(req: NextRequest) {
         );
 
         return NextResponse.json({ success: true });
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("email-settings/route.ts error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

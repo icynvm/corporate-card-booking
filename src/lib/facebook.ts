@@ -4,24 +4,28 @@ export const FB_SCOPES = [
     "business_management"
 ].join(",");
 
-export function getFacebookLoginUrl() {
-    const appId = process.env.FACEBOOK_APP_ID;
-    const redirectUri = process.env.FACEBOOK_REDIRECT_URI;
-    
-    if (!appId || !redirectUri) {
-        throw new Error("Facebook configuration missing");
+function requireEnv(name: string): string {
+    const value = process.env[name];
+    if (!value) {
+        throw new Error(`Facebook configuration missing: ${name}`);
     }
+    return value;
+}
 
-    return `https://www.facebook.com/v19.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${FB_SCOPES}&response_type=code`;
+export function getFacebookLoginUrl(state: string) {
+    const appId = requireEnv("FACEBOOK_APP_ID");
+    const redirectUri = requireEnv("FACEBOOK_REDIRECT_URI");
+
+    return `https://www.facebook.com/v19.0/dialog/oauth?client_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${FB_SCOPES}&response_type=code&state=${encodeURIComponent(state)}`;
 }
 
 export async function exchangeCodeForToken(code: string) {
-    const appId = process.env.FACEBOOK_APP_ID;
-    const appSecret = process.env.FACEBOOK_APP_SECRET;
-    const redirectUri = process.env.FACEBOOK_REDIRECT_URI;
+    const appId = requireEnv("FACEBOOK_APP_ID");
+    const appSecret = requireEnv("FACEBOOK_APP_SECRET");
+    const redirectUri = requireEnv("FACEBOOK_REDIRECT_URI");
 
     const response = await fetch(
-        `https://graph.facebook.com/v19.0/oauth/access_token?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${appSecret}&code=${code}`
+        `https://graph.facebook.com/v19.0/oauth/access_token?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${appSecret}&code=${encodeURIComponent(code)}`
     );
 
     if (!response.ok) {
@@ -33,11 +37,11 @@ export async function exchangeCodeForToken(code: string) {
 }
 
 export async function getLongLivedToken(shortLivedToken: string) {
-    const appId = process.env.FACEBOOK_APP_ID;
-    const appSecret = process.env.FACEBOOK_APP_SECRET;
+    const appId = requireEnv("FACEBOOK_APP_ID");
+    const appSecret = requireEnv("FACEBOOK_APP_SECRET");
 
     const response = await fetch(
-        `https://graph.facebook.com/v19.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`
+        `https://graph.facebook.com/v19.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${encodeURIComponent(shortLivedToken)}`
     );
 
     if (!response.ok) {

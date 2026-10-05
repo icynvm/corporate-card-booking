@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 
 // GET: Fetch audit logs
 export async function GET(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || (session.role !== "admin" && session.role !== "manager")) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin", "manager"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const { searchParams } = new URL(req.url);

@@ -1,13 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
+import { requireSession } from "@/lib/auth";
+import { canAccessRequest } from "@/lib/access";
+import { buildReceiptResponse, isSafePathSegment } from "@/lib/file-validation";
 
 export async function GET(
     req: NextRequest,
     { params }: { params: { id: string; monthYear: string } }
 ) {
     try {
+        const auth = await requireSession(req, { freshRole: true });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
+
         const { id, monthYear } = params;
+        if (!isSafePathSegment(id) || !isSafePathSegment(monthYear)) {
+            return new NextResponse("Bad Request", { status: 400 });
+        }
+
         const supabase = createServerSupabase();
+
+        const access = await canAccessRequest(supabase, id, session);
+        if (!access.ok) {
+            return access.notFound
+                ? new NextResponse("Not found", { status: 404 })
+                : new NextResponse("Forbidden", { status: 403 });
+        }
 
         let filePath = `${id}/${monthYear}`;
         let fileName = monthYear;
@@ -39,6 +57,10 @@ export async function GET(
             data = retry.data;
         }
 
+        if (!data) {
+            return new NextResponse("File not found in storage", { status: 404 });
+        }
+
         // Clean up the download filename if it has the prefix
         let downloadFileName = fileName;
         const parts = fileName.split("-");
@@ -46,12 +68,7 @@ export async function GET(
             downloadFileName = parts.slice(2).join("-");
         }
 
-        return new NextResponse(data, {
-            headers: {
-                "Content-Type": data?.type || "application/octet-stream",
-                "Content-Disposition": `inline; filename="${downloadFileName}"`,
-            },
-        });
+        return await buildReceiptResponse(data, downloadFileName);
     } catch (error) {
         console.error("View receipt error:", error);
         return new NextResponse("Internal Server Error", { status: 500 });

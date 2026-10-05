@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
+
+const ALLOWED_SETTING_KEYS = [
+    "MANAGER_EMAIL",
+    "SENDER_EMAIL",
+    "RESEND_API_KEY",
+    "LINE_CHANNEL_ID",
+    "LINE_CHANNEL_SECRET",
+    "LINE_ACCESS_TOKEN",
+    "LINE_DESTINATION_ID",
+];
 
 // GET: Fetch application settings
 export async function GET(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const { data, error } = await supabase
@@ -22,13 +31,6 @@ export async function GET(req: NextRequest) {
             settings[row.key] = row.value;
         });
 
-        // The instruction asks to update the fallback sender email to `support@booking.kie-ra.online`.
-        // The current code already has this fallback.
-        // The provided Code Edit snippet was syntactically incorrect for direct insertion.
-        // Assuming the intent was to ensure the fallback is set correctly,
-        // and to potentially introduce a new variable for managerEmail if it was missing.
-        // However, the managerEmail line in the snippet uses `requestData` which is not defined here.
-        // Sticking to the explicit instruction for senderEmail fallback, which is already correct.
         return NextResponse.json({
             managerEmail: settings.MANAGER_EMAIL || "manager@company.com",
             senderEmail: settings.SENDER_EMAIL || "support@booking.kie-ra.online",
@@ -38,24 +40,27 @@ export async function GET(req: NextRequest) {
             lineAccessToken: settings.LINE_ACCESS_TOKEN ? `${settings.LINE_ACCESS_TOKEN.slice(0, 10)}...${settings.LINE_ACCESS_TOKEN.slice(-10)}` : null,
             lineDestinationId: settings.LINE_DESTINATION_ID || "",
         });
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("settings/route.ts error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
 
 // POST: Update application setting
 export async function POST(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const { key, value } = await req.json();
 
-        if (!key) {
-             return NextResponse.json({ error: "Key is required" }, { status: 400 });
+        if (typeof key !== "string" || !ALLOWED_SETTING_KEYS.includes(key)) {
+             return NextResponse.json({ error: "Invalid setting key" }, { status: 400 });
+        }
+        if (typeof value !== "string") {
+             return NextResponse.json({ error: "Invalid setting value" }, { status: 400 });
         }
 
         const { error } = await supabase.from("app_settings").upsert(
@@ -65,7 +70,8 @@ export async function POST(req: NextRequest) {
         if (error) throw error;
 
         return NextResponse.json({ success: true });
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("settings/route.ts error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

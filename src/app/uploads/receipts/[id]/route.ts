@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
+import { requireSession } from "@/lib/auth";
+import { canAccessRequest } from "@/lib/access";
+import { buildReceiptResponse, isSafePathSegment } from "@/lib/file-validation";
 
 export async function GET(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const auth = await requireSession(req, { freshRole: true });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
+
         const { id } = params;
+        if (!isSafePathSegment(id)) {
+            return new NextResponse("Bad Request", { status: 400 });
+        }
         const supabase = createServerSupabase();
 
         // 1. Fetch the receipt record from Supabase
@@ -18,6 +28,13 @@ export async function GET(
 
         if (fetchError || !receipt) {
             return new NextResponse("Receipt not found", { status: 404 });
+        }
+
+        const access = await canAccessRequest(supabase, receipt.request_id, session);
+        if (!access.ok) {
+            return access.notFound
+                ? new NextResponse("Receipt not found", { status: 404 })
+                : new NextResponse("Forbidden", { status: 403 });
         }
 
         // 2. Extract the storage path from the month_year and request_id 
@@ -43,17 +60,12 @@ export async function GET(
             .from("receipt")
             .download(filePath);
 
-        if (downloadError) {
+        if (downloadError || !data) {
             console.error("Download error:", downloadError);
             return new NextResponse("Failed to download file", { status: 500 });
         }
 
-        return new NextResponse(data, {
-            headers: {
-                "Content-Type": data.type || "application/octet-stream",
-                "Content-Disposition": `inline; filename="${file.name}"`,
-            },
-        });
+        return await buildReceiptResponse(data, file.name);
     } catch (error) {
         console.error("View legacy receipt error:", error);
         return new NextResponse("Internal Server Error", { status: 500 });

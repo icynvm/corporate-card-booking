@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const { data, error } = await supabase
@@ -17,17 +16,17 @@ export async function GET(req: NextRequest) {
 
         if (error) throw error;
         return NextResponse.json(data || []);
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("master-data/route.ts error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
 
 export async function POST(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const supabase = createServerSupabase();
         const body = await req.json();
@@ -44,17 +43,17 @@ export async function POST(req: NextRequest) {
 
         if (error) throw error;
         return NextResponse.json(data, { status: 201 });
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("master-data/route.ts error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
 
 export async function DELETE(req: NextRequest) {
     try {
-        const session = await getSession(req);
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const { searchParams } = new URL(req.url);
         const id = searchParams.get("id");
@@ -68,7 +67,8 @@ export async function DELETE(req: NextRequest) {
 
         if (error) throw error;
         return NextResponse.json({ success: true });
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        console.error("master-data/route.ts error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
