@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
-
-function getSession(req: NextRequest) {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    if (!token) return null;
-    return parseSessionToken(token);
-}
+import { getSession } from "@/lib/auth";
 
 // GET: Search/list projects
 export async function GET(req: NextRequest) {
@@ -37,7 +31,7 @@ export async function GET(req: NextRequest) {
 // POST: Create a new project
 export async function POST(req: NextRequest) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         const body = await req.json();
         const supabase = createServerSupabase();
 
@@ -101,7 +95,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         if (!session || (session.role !== "admin" && session.role !== "manager")) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
@@ -139,7 +133,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         if (!session || (session.role !== "admin" && session.role !== "manager")) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }

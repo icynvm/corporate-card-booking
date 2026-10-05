@@ -1,36 +1,113 @@
-const SESSION_COOKIE = "cc_session";
-const SESSION_SECRET = process.env.APPROVAL_SECRET || "dev-session-secret-key-2024";
+// Session token handling. Uses Web Crypto only, so it works in both the Edge
+// runtime (middleware) and Node. Do NOT import Node-only modules here.
 
-export function createSessionToken(profile: {
+const SESSION_COOKIE = "cc_session";
+
+export const SESSION_TTL_SECONDS = 3 * 24 * 60 * 60; // 3 days
+
+const DEV_FALLBACK_SECRET = "INSECURE-DEV-ONLY-SESSION-SECRET-DO-NOT-USE-IN-PRODUCTION";
+
+export type SessionPayload = {
+    pid: string;
+    email: string;
+    role: string;
+    name: string;
+    department: string;
+};
+
+let warnedDevSecret = false;
+
+function getSecret(): string {
+    const secret = process.env.SESSION_SECRET || process.env.APPROVAL_SECRET;
+    if (secret) return secret;
+    if (process.env.NODE_ENV === "production") {
+        throw new Error("SESSION_SECRET (or APPROVAL_SECRET) must be set in production");
+    }
+    if (!warnedDevSecret) {
+        warnedDevSecret = true;
+        console.warn("[session] SESSION_SECRET is not set; using an insecure dev-only secret.");
+    }
+    return DEV_FALLBACK_SECRET;
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
+    let bin = "";
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function base64UrlToBytes(str: string): Uint8Array {
+    if (!/^[A-Za-z0-9_-]*$/.test(str)) throw new Error("Invalid base64url");
+    let b64 = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4 !== 0) b64 += "=";
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+}
+
+function utf8ToBase64Url(s: string): string {
+    return bytesToBase64Url(new TextEncoder().encode(s));
+}
+
+function base64UrlToUtf8(s: string): string {
+    return new TextDecoder().decode(base64UrlToBytes(s));
+}
+
+async function importKey(usage: "sign" | "verify"): Promise<CryptoKey> {
+    return crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(getSecret()),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        [usage]
+    );
+}
+
+export async function createSessionToken(profile: {
     id: string;
     email: string;
     role: string;
     name: string;
     department: string;
-}): string {
+}): Promise<string> {
+    const iat = Math.floor(Date.now() / 1000);
     const payload = {
         pid: profile.id,
         email: profile.email,
         role: profile.role,
         name: profile.name,
         department: profile.department,
-        exp: Date.now() + 3 * 24 * 60 * 60 * 1000,
-        sig: SESSION_SECRET.slice(0, 8),
+        iat,
+        exp: iat + SESSION_TTL_SECONDS,
     };
-    return Buffer.from(JSON.stringify(payload)).toString("base64url");
+    const payloadPart = utf8ToBase64Url(JSON.stringify(payload));
+    const key = await importKey("sign");
+    const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payloadPart));
+    return `${payloadPart}.${bytesToBase64Url(new Uint8Array(sig))}`;
 }
 
-export function parseSessionToken(token: string): {
-    pid: string;
-    email: string;
-    role: string;
-    name: string;
-    department: string;
-} | null {
+export async function parseSessionToken(token: string): Promise<SessionPayload | null> {
     try {
-        const payload = JSON.parse(Buffer.from(token, "base64url").toString());
-        if (payload.sig !== SESSION_SECRET.slice(0, 8)) return null;
-        if (payload.exp < Date.now()) return null;
+        if (typeof token !== "string") return null;
+        const parts = token.split(".");
+        if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+        const [payloadPart, sigPart] = parts;
+
+        const key = await importKey("verify");
+        const ok = await crypto.subtle.verify(
+            "HMAC",
+            key,
+            base64UrlToBytes(sigPart) as BufferSource,
+            new TextEncoder().encode(payloadPart)
+        );
+        if (!ok) return null;
+
+        const payload = JSON.parse(base64UrlToUtf8(payloadPart));
+        if (!payload || typeof payload !== "object") return null;
+        if (typeof payload.exp !== "number" || payload.exp <= Math.floor(Date.now() / 1000)) return null;
+        if (typeof payload.pid !== "string" || !payload.pid) return null;
+
         return {
             pid: payload.pid,
             email: payload.email,
@@ -38,7 +115,11 @@ export function parseSessionToken(token: string): {
             name: payload.name,
             department: payload.department,
         };
-    } catch {
+    } catch (err) {
+        // Missing secret in production is a config error; surface it in logs.
+        if (err instanceof Error && err.message.startsWith("SESSION_SECRET")) {
+            console.error(err.message);
+        }
         return null;
     }
 }
@@ -47,65 +128,22 @@ export function getSessionCookieName() {
     return SESSION_COOKIE;
 }
 
+export function sessionCookieOptions() {
+    return {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax" as const,
+        path: "/",
+        maxAge: SESSION_TTL_SECONDS,
+    };
+}
+
 export function generateOTP(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-// Password hashing using Web Crypto (no extra dependencies)
-export async function hashPassword(password: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password + SESSION_SECRET);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-    const computed = await hashPassword(password);
-    return computed === hash;
-}
-
-export async function sendOTPEmail(email: string, code: string, name?: string, fromEmail?: string, resendApiKey?: string) {
-    const activeResendKey = resendApiKey || process.env.RESEND_API_KEY;
-    
-    if (!activeResendKey || activeResendKey.startsWith("re_xxxx") || activeResendKey === "re_dummy_key_for_build") {
-        console.log(`[DEV] OTP for ${email}: ${code}`);
-        return { success: true, dev: true, code };
-    }
-
-    const { Resend } = await import("resend");
-    const resend = new Resend(activeResendKey);
-
-    const { data, error } = await resend.emails.send({
-        from: fromEmail || "Card Booking System <support@booking.kie-ra.online>",
-        to: email,
-        subject: `Your verification code: ${code}`,
-        html: `
-            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; background: #f8fafc; padding: 32px;">
-                <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 24px 32px; border-radius: 16px 16px 0 0; text-align: center;">
-                    <h1 style="color: white; margin: 0; font-size: 20px;">Corporate Card Booking</h1>
-                    <p style="color: rgba(255,255,255,0.8); margin: 4px 0 0; font-size: 13px;">Email Verification Code</p>
-                </div>
-                <div style="background: white; padding: 32px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); text-align: center;">
-                    ${name ? `<p style="color: #64748b; margin-bottom: 8px;">Hello, ${name}</p>` : ""}
-                    <p style="color: #334155; font-size: 16px; margin-bottom: 24px;">Your verification code is:</p>
-                    <div style="background: #f1f5f9; border-radius: 12px; padding: 20px; display: inline-block; min-width: 200px;">
-                        <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #1e293b;">${code}</span>
-                    </div>
-                    <p style="margin-top: 24px; font-size: 13px; color: #94a3b8;">This code expires in 10 minutes.</p>
-                </div>
-            </div>`,
-    });
-
-    if (error) {
-        console.error("Resend OTP Error details:", {
-            error,
-            email,
-            from: fromEmail || "Card Booking System <support@booking.kie-ra.online>",
-            apiKeyUsed: activeResendKey ? `${activeResendKey.slice(0, 7)}...` : "none"
-        });
-        throw new Error(error.message ? `OTP Email Error: ${error.message}` : "Failed to send verification email. Please check your admin configuration.");
-    }
-
-    return { success: true };
+    // Rejection sampling for a uniform value in [0, 900000)
+    const limit = 0x100000000 - (0x100000000 % 900000);
+    const buf = new Uint32Array(1);
+    do {
+        crypto.getRandomValues(buf);
+    } while (buf[0] >= limit);
+    return String(100000 + (buf[0] % 900000));
 }

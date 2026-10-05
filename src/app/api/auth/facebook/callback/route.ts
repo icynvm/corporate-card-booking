@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+import { getSession } from "@/lib/auth";
 import { exchangeCodeForToken, getLongLivedToken } from "@/lib/facebook";
 
 export const dynamic = 'force-dynamic';
@@ -20,8 +20,7 @@ export async function GET(req: NextRequest) {
 
     try {
         // 1. Get current session
-        const token = req.cookies.get(getSessionCookieName())?.value;
-        const session = token ? parseSessionToken(token) : null;
+        const session = await getSession(req);
         
         if (!session) {
             return NextResponse.redirect(new URL("/login", req.nextUrl.origin));

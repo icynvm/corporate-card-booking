@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+import { getSession } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     try {
-        const token = req.cookies.get(getSessionCookieName())?.value;
-        const session = token ? parseSessionToken(token) : null;
+        const session = await getSession(req);
         if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const supabase = createServerSupabase();

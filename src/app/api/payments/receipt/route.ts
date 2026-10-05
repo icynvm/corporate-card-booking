@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+import { getSession } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -9,8 +9,7 @@ import { v4 as uuidv4 } from "uuid";
  */
 export async function POST(req: NextRequest) {
   try {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    const session = token ? parseSessionToken(token) : null;
+    const session = await getSession(req);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const formData = await req.formData();

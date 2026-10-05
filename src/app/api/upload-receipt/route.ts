@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
-
-function getSession(req: NextRequest) {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    if (!token) return null;
-    return parseSessionToken(token);
-}
+import { getSession } from "@/lib/auth";
 
 const MAX_FILES = 3;
 
 export async function POST(req: NextRequest) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         const supabase = createServerSupabase();
         const formData = await req.formData();
         const id = (formData.get("id") || formData.get("requestId")) as string;
@@ -173,7 +167,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         const supabase = createServerSupabase();
         const { receiptId, status } = await req.json();
 

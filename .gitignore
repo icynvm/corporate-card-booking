@@ -37,6 +37,7 @@ next-env.d.ts
 # Local Tooling & SQL
 *.ps1
 *.sql
+!supabase/migrations/*.sql
 *.js
 !next.config.mjs
 !postcss.config.mjs

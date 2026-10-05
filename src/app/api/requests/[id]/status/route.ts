@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
-
-function getSession(req: NextRequest) {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    if (!token) return null;
-    return parseSessionToken(token);
-}
+import { getSession } from "@/lib/auth";
 
 const ALL_STATUSES = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "REJECTED", "ACTIVE", "COMPLETED", "CANCELLED"];
 
@@ -16,7 +10,7 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const supabase = createServerSupabase();

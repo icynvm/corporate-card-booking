@@ -1,30 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+import { requireSession } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
-
-// Helper to get session from cookie
-function getSession(req: NextRequest) {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    if (!token) return null;
-    return parseSessionToken(token);
-}
 
 // GET: Fetch all users (profiles)
 export async function GET(req: NextRequest) {
     try {
-        const session = getSession(req);
         // Only allow admins to fetch all users
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
 
         const supabase = createServerSupabase();
         
         const { data, error } = await supabase
             .from("profiles")
-            .select("*")
+            .select("id, name, email, department, role, email_verified, created_at")
             .order("created_at", { ascending: false });
 
         if (error) throw error;

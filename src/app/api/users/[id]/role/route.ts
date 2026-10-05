@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
-
-function getSession(req: NextRequest) {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    if (!token) return null;
-    return parseSessionToken(token);
-}
+import { requireSession } from "@/lib/auth";
 
 // PATCH: Update user role
 export async function PATCH(
@@ -14,11 +8,10 @@ export async function PATCH(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = getSession(req);
         // Only admins can change roles
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const body = await req.json();
         const newRole = body.role;
@@ -53,7 +46,7 @@ export async function PATCH(
     } catch (error: any) {
         console.error("Failed to update role:", error);
         return NextResponse.json(
-            { error: error.message || "Failed to update role" },
+            { error: "Failed to update role" },
             { status: 500 }
         );
     }

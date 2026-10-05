@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
-
-function getSession(req: NextRequest) {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    if (!token) return null;
-    return parseSessionToken(token);
-}
+import { getSession } from "@/lib/auth";
 
 // POST: Upload approval file (base64)
 export async function POST(
@@ -14,7 +8,7 @@ export async function POST(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         const supabase = createServerSupabase();
         const formData = await req.formData();
         const file = formData.get("file") as File;

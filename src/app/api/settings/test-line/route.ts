@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendLineNotification } from "@/lib/line";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
-
-function getSession(req: NextRequest) {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    if (!token) return null;
-    return parseSessionToken(token);
-}
+import { getSession } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         if (!session || session.role !== "admin") {
             return NextResponse.json({ error: "Admin access required" }, { status: 403 });
         }

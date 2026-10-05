@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+import { getSession } from "@/lib/auth";
 
 // Helper to get session from cookie
-function getSession(req: NextRequest) {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    if (!token) return null;
-    return parseSessionToken(token);
-}
-
 export async function GET(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const requestId = params.id;
@@ -47,7 +41,7 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         if (!session || session.role !== "admin") {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
@@ -104,7 +98,7 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }

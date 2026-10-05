@@ -23,3 +23,15 @@ export const truncate = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + "...";
 };
+
+/**
+ * Escapes a value for safe interpolation into HTML text/attribute context.
+ */
+export const escapeHtml = (value: unknown): string => {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+};

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+import { getSession } from "@/lib/auth";
 import { RequestService } from "@/services/request.service";
 import { CreateRequestSchema, RequestQuerySchema } from "@/lib/validations/schemas";
 import { RequestStatus } from "@/types/enums";
@@ -9,15 +9,9 @@ import { RequestStatus } from "@/types/enums";
  * Uses RequestService to handle complex business rules and side effects.
  */
 
-function getSession(req: NextRequest) {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    if (!token) return null;
-    return parseSessionToken(token);
-}
-
 export async function GET(req: NextRequest) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const { searchParams } = new URL(req.url);
@@ -43,7 +37,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const session = getSession(req);
+        const session = await getSession(req);
         if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const body = await req.json();

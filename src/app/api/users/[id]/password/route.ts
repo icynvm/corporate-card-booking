@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName, hashPassword } from "@/lib/session";
-
-function getSession(req: NextRequest) {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    if (!token) return null;
-    return parseSessionToken(token);
-}
+import { requireSession } from "@/lib/auth";
+import { hashPassword } from "@/lib/password";
 
 // PATCH: Admin resets a user's password
 export async function PATCH(
@@ -14,11 +9,10 @@ export async function PATCH(
     { params }: { params: { id: string } }
 ) {
     try {
-        const session = getSession(req);
         // Only admins can reset passwords
-        if (!session || session.role !== "admin") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const auth = await requireSession(req, { roles: ["admin"] });
+        if ("response" in auth) return auth.response;
+        const { session } = auth;
 
         const body = await req.json();
         const { password } = body;
@@ -27,8 +21,8 @@ export async function PATCH(
             return NextResponse.json({ error: "Password is required" }, { status: 400 });
         }
 
-        if (password.length < 6) {
-            return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+        if (password.length < 8) {
+            return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
         }
 
         const supabase = createServerSupabase();
@@ -64,7 +58,7 @@ export async function PATCH(
     } catch (error: any) {
         console.error("Failed to reset password:", error);
         return NextResponse.json(
-            { error: error.message || "Failed to reset password" },
+            { error: "Failed to reset password" },
             { status: 500 }
         );
     }

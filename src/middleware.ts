@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { parseSessionToken } from "@/lib/session";
 
-// In-memory rate limiter (per Edge container instance)
+// In-memory rate limiter: best-effort only, per Edge instance (not shared across instances).
+// Auth endpoints use the persistent DB-backed limiter in src/lib/rate-limit.ts.
 const rateLimitMap = new Map<string, { count: number; timestamp: number }>();
 const BLOCK_WINDOW_MS = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 60; // 60 requests per minute
@@ -32,28 +33,27 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    const payload = parseSessionToken(sessionCookie);
+    const payload = await parseSessionToken(sessionCookie);
     if (!payload) {
         const response = NextResponse.redirect(new URL("/login", request.url));
         response.cookies.set("cc_session", "", { maxAge: 0 });
         return response;
     }
 
-        // Admin-only route protection
-        if (request.nextUrl.pathname.startsWith("/admin") && payload.role !== "admin" && payload.role !== "manager") {
-            return NextResponse.redirect(new URL("/dashboard", request.url));
-        }
+    // Admin-only route protection
+    if (request.nextUrl.pathname.startsWith("/admin") && payload.role !== "admin" && payload.role !== "manager") {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
 
-        // Email settings: admin only
-        if (request.nextUrl.pathname.startsWith("/email-settings") && payload.role !== "admin") {
-            return NextResponse.redirect(new URL("/dashboard", request.url));
-        }
+    // Email settings: admin only
+    if (request.nextUrl.pathname.startsWith("/email-settings") && payload.role !== "admin") {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
 
-        // Audit logs: only admin and manager
-        if (request.nextUrl.pathname.startsWith("/audit-logs") && payload.role === "user") {
-            return NextResponse.redirect(new URL("/dashboard", request.url));
-        }
-
+    // Audit logs: only admin and manager
+    if (request.nextUrl.pathname.startsWith("/audit-logs") && payload.role === "user") {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
 
     return NextResponse.next();
 }

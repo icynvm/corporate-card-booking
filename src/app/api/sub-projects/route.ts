@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
-
-function getSession(req: NextRequest) {
-    const token = req.cookies.get(getSessionCookieName())?.value;
-    if (!token) return null;
-    return parseSessionToken(token);
-}
+import { getSession } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
     try {
-        const session = getSession(request);
+        const session = await getSession(request);
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }

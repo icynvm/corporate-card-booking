@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase";
-import { parseSessionToken, getSessionCookieName } from "@/lib/session";
+import { getSession } from "@/lib/auth";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { IMPACT_LOGO_BASE64 } from "@/lib/logo-base64";
 
@@ -9,9 +9,7 @@ export async function GET(
     { params }: { params: { id: string } }
 ) {
     try {
-        const token = req.cookies.get(getSessionCookieName())?.value;
-        if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const session = parseSessionToken(token);
+        const session = await getSession(req);
         if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const supabase = createServerSupabase();
