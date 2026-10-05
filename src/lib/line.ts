@@ -1,5 +1,17 @@
 import { createServerSupabase } from "./supabase";
 
+const LINE_TIMEOUT_MS = 10_000;
+
+/**
+ * Returns "<NEXT_PUBLIC_APP_URL>/<path>" or null when the base URL is unset/invalid
+ * (LINE rejects messages containing invalid URIs).
+ */
+export function buildAppUrl(path: string): string | null {
+    const base = (process.env.NEXT_PUBLIC_APP_URL || "").trim().replace(/\/+$/, "");
+    if (!/^https?:\/\/[^\s/]+/i.test(base)) return null;
+    return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 export async function sendLineNotification(message: string | any) {
     try {
         const supabase = createServerSupabase();
@@ -28,17 +40,25 @@ export async function sendLineNotification(message: string | any) {
             ? { type: "text", text: message } 
             : message;
 
-        const response = await fetch("https://api.line.me/v2/bot/message/push", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({
-                to: destinationId,
-                messages: [lineMessage],
-            }),
-        });
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), LINE_TIMEOUT_MS);
+        let response: Response;
+        try {
+            response = await fetch("https://api.line.me/v2/bot/message/push", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Authorization": `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({
+                    to: destinationId,
+                    messages: [lineMessage],
+                }),
+                signal: controller.signal,
+            });
+        } finally {
+            clearTimeout(timer);
+        }
 
         if (!response.ok) {
             const errorText = await response.text();

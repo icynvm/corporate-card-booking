@@ -1,8 +1,36 @@
 import { createServerSupabase } from "@/lib/supabase";
 import { RequestPayment, RequestRecord } from "@/lib/types";
-import { sendLineNotification } from "@/lib/line";
+import { sendLineNotification, buildAppUrl } from "@/lib/line";
+import { parseDateOnly, dueDateForMonth } from "@/lib/billing/schedule";
 import { BillingType, RequestStatus } from "@/types/enums";
-import { addDays, isSameDay, format as formatDate } from "date-fns";
+
+const BUSINESS_TZ = process.env.BUSINESS_TZ || "Asia/Bangkok";
+
+/** Today's calendar date (YYYY-MM-DD) in the business timezone. */
+function todayInBusinessTz(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: BUSINESS_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/** Adds N days to a YYYY-MM-DD string using UTC arithmetic (no TZ/DST effects). */
+function addDaysToDateString(dateStr: string, days: number): string {
+  const { y, m, d } = parseDateOnly(dateStr);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+/**
+ * due_date format emitted to clients: "YYYY-MM-DDT00:00:00" (no zone designator).
+ * JS parses this as LOCAL midnight, so the existing UI (`new Date(due_date)` + date-fns
+ * `isSameDay` against local calendar days) shows the correct day in every timezone,
+ * whereas a bare "YYYY-MM-DD" is parsed as UTC midnight and shifts a day in negative-offset zones.
+ */
+function toClientDueDate(dateStr: string): string {
+  return `${dateStr}T00:00:00`;
+}
 
 export class PaymentService {
   /**
@@ -15,7 +43,7 @@ export class PaymentService {
     // 1. Fetch explicit installments from request_payments
     const { data: explicitPayments, error: expErr } = await supabase
       .from("request_payments")
-      .select("*, requests(*, profiles(*))")
+      .select("*, requests(*, profiles(id, name, email, department, role))")
       .eq("month_year", monthStr);
 
     if (expErr) throw expErr;
@@ -23,7 +51,7 @@ export class PaymentService {
     // 2. Fetch all APPROVED/ACTIVE requests to calculate virtual installments
     const { data: approvedRequests, error: appErr } = await supabase
       .from("requests")
-      .select("*, profiles(*)")
+      .select("*, profiles(id, name, email, department, role)")
       .in("status", [RequestStatus.APPROVED, RequestStatus.ACTIVE]);
 
     if (appErr) throw appErr;
@@ -53,8 +81,15 @@ export class PaymentService {
 
     // Final Status override: If an explicit payment doesn't have PAID status yet but has a receipt, mark as PAID
     // Also attach all receipt URLs for multi-file display
+    const receiptsByRequest = new Map<string, any[]>();
+    for (const r of receipts || []) {
+      const list = receiptsByRequest.get(r.request_id);
+      if (list) list.push(r);
+      else receiptsByRequest.set(r.request_id, [r]);
+    }
+
     return merged.map(p => {
-      const matchingReceipts = receipts?.filter(r => r.request_id === p.request_id) || [];
+      const matchingReceipts = receiptsByRequest.get(p.request_id) || [];
       const hasReceipt = matchingReceipts.length > 0;
       return {
         ...p,
@@ -69,19 +104,19 @@ export class PaymentService {
    * Automatically scans for payments due exactly X days from now and notifies users. (Cron Job Entry Point)
    */
   static async runDailyAutoReminders(daysAhead: number = 14) {
-    const targetDate = addDays(new Date(), daysAhead);
-    const targetYear = targetDate.getFullYear();
-    const targetMonth = targetDate.getMonth() + 1;
-    
+    // Target calendar date in the business timezone, as a date-only string
+    const targetDate = addDaysToDateString(todayInBusinessTz(), daysAhead);
+    const { y: targetYear, m: targetMonth } = parseDateOnly(targetDate);
+
     const allPaymentsInTargetMonth = await this.getPaymentsByMonth(targetYear, targetMonth);
-    
+
     const matchingPayments = allPaymentsInTargetMonth.filter(p => {
       if (!p.due_date) return false;
-      const dueDate = new Date(p.due_date);
-      return isSameDay(dueDate, targetDate);
+      if (p.status === "PAID") return false;
+      return String(p.due_date).slice(0, 10) === targetDate;
     });
 
-    if (matchingPayments.length === 0) return { success: true, count: 0 };
+    if (matchingPayments.length === 0) return { success: true, count: 0, targetDate };
 
     const results = [];
     for (const payment of matchingPayments) {
@@ -97,13 +132,14 @@ export class PaymentService {
     return { 
       success: true, 
       count: matchingPayments.length, 
-      targetDate: formatDate(targetDate, "yyyy-MM-dd"),
+      targetDate,
       results 
     };
   }
 
   /**
    * Calculates virtual payment dates for requests that aren't in request_payments table.
+   * All comparisons use date-only "YYYY-MM-DD" strings (lexicographic order == chronological).
    */
   private static generateVirtualEvents(
     requests: RequestRecord[], 
@@ -115,41 +151,53 @@ export class PaymentService {
     const events: any[] = [];
     const monthStr = `${year}-${String(month).padStart(2, "0")}`;
 
+    const explicitKeys = new Set(explicitPayments.map(p => `${p.request_id}|${p.month_year}`));
+    const receiptsByRequest = new Map<string, any[]>();
+    for (const r of receipts) {
+      const list = receiptsByRequest.get(r.request_id);
+      if (list) list.push(r);
+      else receiptsByRequest.set(r.request_id, [r]);
+    }
+
     for (const req of requests) {
       if (!req.start_date) continue;
 
       // Deduplication: If a record already exists in the database for this request/month, skip virtual generation
-      const exists = explicitPayments.find(p => p.request_id === req.id && p.month_year === monthStr);
-      if (exists) continue;
+      if (explicitKeys.has(`${req.id}|${monthStr}`)) continue;
 
-      const startDate = new Date(req.start_date);
-      const endDate = req.end_date ? new Date(req.end_date) : null;
+      let start;
+      try {
+        start = parseDateOnly(req.start_date);
+      } catch {
+        continue;
+      }
+      const startStr = req.start_date.slice(0, 10);
+      const endStr = req.end_date ? req.end_date.slice(0, 10) : null;
       const billingType = req.billing_type as BillingType;
 
-      // Calculate due day (day part of start_date)
-      const dueDay = startDate.getDate();
-      const currentMonthDueDate = new Date(year, month - 1, dueDay);
+      // Due date = start day clamped to this month's length (Jan 31 -> Feb 28/29)
+      const dueStr = dueDateForMonth(start.d, year, month);
 
       // Validate if the due date falls within the request's active period
-      if (currentMonthDueDate < startDate) continue;
-      if (endDate && currentMonthDueDate > endDate) continue;
+      if (dueStr < startStr) continue;
+      if (endStr && dueStr > endStr) continue;
 
       let isDueThisMonth = false;
 
       if (billingType === BillingType.ONE_TIME) {
-        // Only if start_date is in this month
-        isDueThisMonth = startDate.getMonth() === (month - 1) && startDate.getFullYear() === year;
+        // Only in the start month
+        isDueThisMonth = start.m === month && start.y === year;
       } else if (billingType === BillingType.MONTHLY || billingType === BillingType.YEARLY_MONTHLY) {
-        // Every month within period
+        // Every month within period (bounds enforced above)
         isDueThisMonth = true;
       } else if (billingType === BillingType.YEARLY) {
-        // Only if startMonth matches
-        isDueThisMonth = startDate.getMonth() === (month - 1);
+        // Anniversary month only
+        isDueThisMonth = start.m === month && year >= start.y;
       }
 
       if (isDueThisMonth) {
         // Check if a receipt already exists for this virtual installment
-        const matchingReceipts = receipts.filter(r => r.request_id === req.id);
+        const matchingReceipts = receiptsByRequest.get(req.id) || [];
         const hasReceipt = matchingReceipts.length > 0;
 
         events.push({
@@ -158,7 +206,7 @@ export class PaymentService {
           amount_due: req.amount,
           month_year: monthStr,
           status: hasReceipt ? "PAID" : "PENDING",
-          due_date: currentMonthDueDate.toISOString(),
+          due_date: toClientDueDate(dueStr),
           requests: req,
           is_virtual: true,
           receipt_file_url: matchingReceipts[0]?.receipt_file_url || null,
@@ -169,15 +217,34 @@ export class PaymentService {
     return events;
   }
 
+  /**
+   * Explicit rows may lack due_date: derive it from the request's start day for that month_year.
+   * Date-only values are normalised to the same client format as virtual events.
+   */
+  private static withDueDate(p: any) {
+    const raw: string | null | undefined = p.due_date;
+    if (raw && /^\d{4}-\d{2}-\d{2}$/.test(raw)) return { ...p, due_date: toClientDueDate(raw) };
+    if (raw) return p;
+
+    const startDate = p.requests?.start_date;
+    const [y, m] = String(p.month_year || "").split("-").map(Number);
+    if (!startDate || !y || !m) return p;
+    try {
+      const due = dueDateForMonth(parseDateOnly(startDate).d, y, m);
+      return { ...p, due_date: toClientDueDate(due) };
+    } catch {
+      return p;
+    }
+  }
+
   private static mergeAndSortPayments(explicit: any[], virtual: any[]) {
-    // Merge both lists
-    const all = [...explicit, ...virtual];
-    
-    // Sort by due_date (day of month)
+    const all = [...(explicit || []).map(p => this.withDueDate(p)), ...virtual];
+
+    // Sort by full due date string (rows without a due date go last)
     return all.sort((a, b) => {
-      const dayA = a.due_date ? new Date(a.due_date).getDate() : 1;
-      const dayB = b.due_date ? new Date(b.due_date).getDate() : 1;
-      return dayA - dayB;
+      const da = a.due_date ? String(a.due_date) : "9999-12-31";
+      const db = b.due_date ? String(b.due_date) : "9999-12-31";
+      return da < db ? -1 : da > db ? 1 : 0;
     });
   }
 
@@ -198,7 +265,7 @@ export class PaymentService {
 
       const { data: request, error } = await supabase
         .from("requests")
-        .select("*, profiles(*)")
+        .select("*, profiles(id, name, email, department, role)")
         .eq("id", reqId)
         .single();
 
@@ -207,7 +274,7 @@ export class PaymentService {
       paymentData = {
         requests: request,
         amount_due: (request as any).amount,
-        month_year: `${year}-${month}`,
+        month_year: `${year}-${String(month).padStart(2, "0")}`,
         status: "PENDING",
         is_virtual: true
       };
@@ -215,7 +282,7 @@ export class PaymentService {
       // Fetch explicit payment with request and profile details
       const { data: p, error } = await supabase
         .from("request_payments")
-        .select("*, requests(*, profiles(*))")
+        .select("*, requests(*, profiles(id, name, email, department, role))")
         .eq("id", paymentId)
         .single();
       if (error || !p) throw new Error("Payment record not found");
@@ -230,7 +297,7 @@ export class PaymentService {
     const flexMessage = this.createPaymentFlexMessage({
       projectName: request.project_name,
       monthLabel,
-      amount: amount_due,
+      amount: Number(amount_due),
       userName: profile?.name || "N/A",
       status: status || "PENDING"
     });
@@ -248,12 +315,16 @@ export class PaymentService {
     userName: string; 
     status: string; 
   }) {
+    const projectName = data.projectName?.trim() ? data.projectName : "N/A";
+    const userName = data.userName?.trim() ? data.userName : "N/A";
+    const amount = Number.isFinite(Number(data.amount)) ? Number(data.amount) : 0;
+    const appUrl = buildAppUrl("/dashboard");
     const isOverdue = data.status === "OVERDUE";
     const headerColor = isOverdue ? "#EF4444" : "#2563EB"; // Red for overdue, Blue for pending
     
     return {
       type: "flex",
-      altText: `แจ้งเตือนการชำระเงิน: ${data.projectName}`,
+      altText: `แจ้งเตือนการชำระเงิน: ${projectName}`,
       contents: {
         type: "bubble",
         header: {
@@ -276,7 +347,7 @@ export class PaymentService {
           contents: [
             {
               type: "text",
-              text: data.projectName,
+              text: projectName,
               weight: "bold",
               size: "md",
               wrap: true
@@ -304,7 +375,7 @@ export class PaymentService {
                   layout: "horizontal",
                   contents: [
                     { type: "text", text: "ยอดชำระ", size: "xs", color: "#aaaaaa", flex: 0 },
-                    { type: "text", text: `${data.amount.toLocaleString()} บาท`, size: "xs", color: "#666666", align: "end", weight: "bold" }
+                    { type: "text", text: `${amount.toLocaleString()} บาท`, size: "xs", color: "#666666", align: "end", weight: "bold" }
                   ]
                 },
                 {
@@ -312,30 +383,32 @@ export class PaymentService {
                   layout: "horizontal",
                   contents: [
                     { type: "text", text: "ผู้รับผิดชอบ", size: "xs", color: "#aaaaaa", flex: 0 },
-                    { type: "text", text: data.userName, size: "xs", color: "#666666", align: "end" }
+                    { type: "text", text: userName, size: "xs", color: "#666666", align: "end" }
                   ]
                 }
               ]
             }
           ]
         },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "button",
-              action: {
-                type: "uri",
-                label: "ตรวจสอบในระบบ",
-                uri: "https://line.me" // Placeholder: should be APP_URL
-              },
-              style: "primary",
-              color: headerColor,
-              height: "sm"
-            }
-          ]
-        }
+        ...(appUrl && {
+          footer: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                action: {
+                  type: "uri",
+                  label: "ตรวจสอบในระบบ",
+                  uri: appUrl
+                },
+                style: "primary",
+                color: headerColor,
+                height: "sm"
+              }
+            ]
+          }
+        })
       }
     };
   }
